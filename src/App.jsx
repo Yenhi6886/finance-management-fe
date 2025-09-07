@@ -4,7 +4,6 @@ import { AuthProvider } from './modules/auth/contexts/AuthContext'
 import { ThemeProvider } from './shared/contexts/ThemeContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import DashboardLayout from './components/DashboardLayout'
-
 // Auth pages
 import Login from './modules/auth/pages/Login'
 import Register from './modules/auth/pages/Register'

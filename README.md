@@ -5,6 +5,7 @@ Hệ thống quản lý tài chính cá nhân được xây dựng với React, 
 ## 🚀 Tính năng chính
 
 ### Sprint 1 - Quản lý tài khoản
+
 - ✅ **Đăng ký tài khoản**: Tạo tài khoản với username và password (6-8 ký tự)
 - ✅ **Đăng nhập**: Xác thực bằng username/password
 - ✅ **Đăng nhập mạng xã hội**: Hỗ trợ Google, Facebook, GitHub
@@ -61,28 +62,33 @@ src/
 ## ⚙️ Cài đặt và chạy dự án
 
 ### Prerequisites
+
 - Node.js >= 16
 - npm hoặc yarn
 
 ### Installation
 
 1. Clone repository:
+
 ```bash
 git clone <repository-url>
 cd FINANCE_FE
 ```
 
 2. Cài đặt dependencies:
+
 ```bash
 npm install
 ```
 
 3. Tạo file environment variables:
+
 ```bash
 cp .env.example .env
 ```
 
 4. Cấu hình environment variables:
+
 ```env
 VITE_API_BASE_URL=http://localhost:8000/api
 VITE_GOOGLE_CLIENT_ID=your_google_client_id
@@ -91,6 +97,7 @@ VITE_GITHUB_CLIENT_ID=your_github_client_id
 ```
 
 5. Chạy development server:
+
 ```bash
 npm run dev
 ```
@@ -115,6 +122,7 @@ npm run build
 Dự án được thiết kế để tích hợp với REST API. Các endpoint cần thiết:
 
 ### Authentication
+
 - `POST /auth/login` - Đăng nhập
 - `POST /auth/register` - Đăng ký
 - `POST /auth/logout` - Đăng xuất
@@ -125,11 +133,13 @@ Dự án được thiết kế để tích hợp với REST API. Các endpoint c
 - `PATCH /auth/profile` - Cập nhật profile
 
 ### Social Auth
+
 - `POST /auth/google` - Đăng nhập Google
 - `POST /auth/facebook` - Đăng nhập Facebook
 - `POST /auth/github` - Đăng nhập GitHub
 
 ### Dashboard
+
 - `GET /dashboard/stats` - Thống kê tổng quan
 - `GET /dashboard/recent-transactions` - Giao dịch gần đây
 
@@ -152,12 +162,14 @@ Dự án được thiết kế để tích hợp với REST API. Các endpoint c
 ## 🎯 Roadmap
 
 ### Sprint 2 (Upcoming)
+
 - Quản lý giao dịch thu/chi
 - Phân loại theo danh mục
 - Báo cáo tài chính
 - Quản lý ví tiền
 
 ### Sprint 3 (Future)
+
 - Lập ngân sách
 - Mục tiêu tiết kiệm
 - Thông báo và nhắc nhở
