@@ -63,17 +63,17 @@ const Register = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Họ</Label>
-                  <Input id="lastName" name="lastName" placeholder="Ngô" value={formData.lastName} onChange={handleChange} />
+                  <Input id="lastName" name="lastName" placeholder="Họ" value={formData.lastName} onChange={handleChange} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Tên</Label>
-                  <Input id="firstName" name="firstName" placeholder="Khánh" value={formData.firstName} onChange={handleChange} />
+                  <Input id="firstName" name="firstName" placeholder="Tên" value={formData.firstName} onChange={handleChange} />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="username">Tên đăng nhập</Label>
-                <Input id="username" name="username" placeholder="ngogiakhanh" value={formData.username} onChange={handleChange} />
+                <Input id="username" name="username" placeholder="Tên đăng nhập" value={formData.username} onChange={handleChange} />
               </div>
 
               <div className="space-y-2">
