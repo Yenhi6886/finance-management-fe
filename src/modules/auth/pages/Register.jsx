@@ -78,7 +78,7 @@ const Register = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="example@email.com" value={formData.email} onChange={handleChange} />
+                <Input id="email" name="email" type="email" placeholder="Email" value={formData.email} onChange={handleChange} />
               </div>
 
               <div className="space-y-2">
