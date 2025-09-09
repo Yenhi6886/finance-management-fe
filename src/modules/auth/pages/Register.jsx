@@ -62,27 +62,27 @@ const Register = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Họ</Label>
+                  <Label htmlFor="lastName">Họ <span className="text-red-500">*</span></Label>
                   <Input id="lastName" name="lastName" placeholder="Họ" value={formData.lastName} onChange={handleChange} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">Tên</Label>
+                  <Label htmlFor="firstName">Tên <span className="text-red-500">*</span></Label>
                   <Input id="firstName" name="firstName" placeholder="Tên" value={formData.firstName} onChange={handleChange} />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="username">Tên đăng nhập</Label>
+                <Label htmlFor="username">Tên đăng nhập <span className="text-red-500">*</span></Label>
                 <Input id="username" name="username" placeholder="Tên đăng nhập" value={formData.username} onChange={handleChange} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="example@email.com" value={formData.email} onChange={handleChange} />
+                <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+                <Input id="email" name="email" type="email" placeholder="Email" value={formData.email} onChange={handleChange} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
+                <Label htmlFor="password">Mật khẩu <span className="text-red-500">*</span></Label>
                 <div className="relative">
                   <Input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={formData.password} onChange={handleChange} className="pr-10" />
                   <button type="button" className="absolute inset-y-0 right-0 flex items-center pr-3" onClick={() => setShowPassword(!showPassword)}>
@@ -92,7 +92,7 @@ const Register = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
+                <Label htmlFor="confirmPassword">Xác nhận mật khẩu <span className="text-red-500">*</span></Label>
                 <div className="relative">
                   <Input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} className="pr-10" />
                   <button type="button" className="absolute inset-y-0 right-0 flex items-center pr-3" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>

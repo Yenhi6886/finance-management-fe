@@ -112,6 +112,11 @@ const Login = () => {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Đang xử lý...' : 'Đăng nhập'}
               </Button>
+              <a href="http://localhost:8080/oauth2/authorize/google">
+                <Button type="button" className="w-full">
+                  Đăng nhập với Google
+                </Button>
+              </a>
             </form>
           </CardContent>
 

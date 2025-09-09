@@ -28,6 +28,7 @@ import {
 
 // Error page
 import ErrorPage from './modules/error/ErrorPage'
+import OAuthCallback from './modules/auth/pages/oauth-callback'
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
               <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />
+                <Route path="/oauth2/callback" element={<OAuthCallback/>} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/activate" element={<ActivateAccount />} />

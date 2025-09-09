@@ -72,6 +72,23 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const loginGoogle = async (token) => {
+    try {
+      setLoading(true)
+      localStorage.setItem(appConfig.auth.tokenKey, token)
+      const response = await authService.getCurrentUserProfile()
+      updateUserContext(response.data.data)
+      setIsAuthenticated(true)
+      errorHandler.showSuccess('Đăng nhập thành công!')
+      return response.data
+    } catch (error) {
+      errorHandler.handleApiError(error, 'Đăng nhập thất bại')
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const register = async (userData) => {
     try {
       setLoading(true)
@@ -133,6 +150,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated,
     login,
+    loginGoogle,
     register,
     logout,
     updateProfile,
