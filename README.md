@@ -185,6 +185,443 @@ module/
 └── 📂 hooks/               # Custom hooks (nếu cần)
 ```
 
+## 📋 Chi tiết Files và Luồng chạy
+
+### 🚀 Entry Points (Điểm khởi đầu)
+
+#### `src/main.jsx`
+
+**Mục đích**: File khởi tạo ứng dụng React
+**Nội dung**:
+
+- Import React và ReactDOM
+- Import CSS global (`index.css`)
+- Render App component vào DOM
+- Setup StrictMode cho development
+
+**Cách hoạt động**:
+
+```jsx
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+```
+
+#### `src/App.jsx`
+
+**Mục đích**: Component gốc của ứng dụng, setup routing và providers
+**Nội dung**:
+
+- **ThemeProvider**: Quản lý dark/light mode
+- **AuthProvider**: Quản lý authentication state
+- **Router**: Setup React Router cho navigation
+- **Routes**: Định nghĩa tất cả routes (public + protected)
+- **Toaster**: Setup thông báo toast global
+
+**Luồng hoạt động**:
+
+1. Wrap toàn bộ app với ThemeProvider và AuthProvider
+2. Setup Router với các routes:
+   - Public routes: `/login`, `/register`, `/oauth2/callback`
+   - Protected routes: `/dashboard`, `/wallets/*`, `/profile`
+3. Protected routes được bảo vệ bởi `<ProtectedRoute>`
+4. Setup Toaster với duration 3s
+
+---
+
+### 🔐 Authentication Module (`src/modules/auth/`)
+
+#### `contexts/AuthContext.jsx`
+
+**Mục đích**: Quản lý global auth state
+**Nội dung**:
+
+- **State**: `user`, `loading`, `isAuthenticated`
+- **Functions**: `login()`, `loginGoogle()`, `register()`, `logout()`, `updateProfile()`, `deleteAccount()`
+- **Token Management**: Lưu/xóa JWT tokens
+- **Auto-initialization**: Tự động check token khi app load
+
+**Luồng hoạt động**:
+
+```mermaid
+graph TD
+    A[App Start] --> B[AuthContext Init]
+    B --> C{Check Token in localStorage}
+    C -->|Token exists| D[Verify with API]
+    C -->|No token| E[Set unauthenticated]
+    D -->|Valid| F[Set user & authenticated]
+    D -->|Invalid| G[Clear token & set unauthenticated]
+```
+
+#### `pages/Login.jsx`
+
+**Mục đích**: Trang đăng nhập với form validation
+**Nội dung**:
+
+- **Form**: Username/email + password
+- **Google OAuth**: Button redirect đến backend OAuth
+- **State**: `formData`, `showPassword`, `notification`
+- **Validation**: Client-side validation
+- **UI**: Responsive form với dark mode support
+
+**Luồng xử lý**:
+
+1. User nhập thông tin → `handleChange()` update state
+2. Submit form → `handleSubmit()` → `login()` từ AuthContext
+3. Success → navigate to `/dashboard`
+4. Error → hiển thị error message
+
+#### `pages/Register.jsx`
+
+**Mục đích**: Trang đăng ký tài khoản mới
+**Nội dung**:
+
+- **Form fields**: firstName, lastName, username, email, password, confirmPassword
+- **Validation**: Required fields với dấu \* đỏ
+- **Password toggle**: Show/hide password
+- **Responsive**: Grid layout cho mobile/desktop
+
+#### `pages/oauth-callback.jsx`
+
+**Mục đích**: Xử lý callback từ Google OAuth
+**Nội dung**:
+
+- **useSearchParams**: Lấy token từ URL params
+- **useRef**: Ngăn duplicate processing
+- **Error handling**: Redirect về login nếu lỗi
+
+**Luồng OAuth**:
+
+```
+User click Google → Backend OAuth → Google Auth →
+Backend callback → Frontend callback (/oauth2/callback?token=xxx) →
+Extract token → loginGoogle() → Navigate to dashboard
+```
+
+#### `services/authService.js`
+
+**Mục đích**: Tất cả API calls liên quan đến authentication
+**Nội dung**:
+
+- `login()`: POST /auth/login
+- `register()`: POST /auth/register
+- `logout()`: POST /auth/logout
+- `getCurrentUserProfile()`: GET /user/profile
+- `updateProfile()`: PUT /user/profile
+- `uploadAvatar()`: POST /user/avatar (multipart)
+
+---
+
+### 💰 Wallets Module (`src/modules/wallets/`)
+
+#### `index.js`
+
+**Mục đích**: Export tất cả pages và services của module
+**Nội dung**:
+
+```jsx
+export { default as WalletList } from "./pages/WalletList";
+export { default as WalletDetail } from "./pages/WalletDetail";
+export { default as AddWallet } from "./pages/AddWallet";
+// ... other exports
+export { walletService } from "./services/walletService";
+```
+
+#### `pages/WalletList.jsx`
+
+**Mục đích**: Hiển thị danh sách tất cả ví của user
+**Nội dung**:
+
+- **State**: `wallets`, `totalBalance`, `showArchived`
+- **Features**: Filter active/archived, search, sort
+- **Cards**: Mỗi ví hiển thị trong card với actions
+- **Permissions**: Hiển thị badges theo quyền (owner, shared, viewer)
+
+**Luồng hoạt động**:
+
+1. `useEffect` → `fetchWallets()` → `walletService.getWallets()`
+2. Tính tổng balance (convert USD → VND)
+3. Filter theo `showArchived`
+4. Render cards với actions tương ứng
+
+#### `pages/WalletDetail.jsx`
+
+**Mục đích**: Chi tiết 1 ví với thống kê và giao dịch
+**Nội dung**:
+
+- **Statistics Cards**: Balance, monthly income/expense, net change
+- **Charts**: Balance over time, expense by category
+- **Transactions**: Lịch sử giao dịch với pagination
+- **Actions**: Edit, Share, Add money (nếu có quyền)
+
+#### `pages/AddWallet.jsx`
+
+**Mục đích**: Form tạo ví mới
+**Nội dung**:
+
+- **Form fields**: name, icon, currency, initialAmount, description
+- **Icon picker**: Grid 32 icons để chọn
+- **Currency support**: VND, USD, EUR, JPY, GBP, KRW
+- **Preview**: Real-time preview của ví đang tạo
+- **Validation**: Required fields và format validation
+
+#### `pages/ShareWallet.jsx`
+
+**Mục đích**: Chia sẻ ví với permissions
+**Nội dung**:
+
+- **Share types**: view, edit, full permissions
+- **Multiple methods**: Email, SMS, link sharing
+- **Permission management**: View/revoke shared wallets
+- **QR Code**: Generate QR cho share link
+- **Security notice**: Warnings về bảo mật
+
+#### `services/walletService.js`
+
+**Mục đích**: Tất cả API calls cho wallet operations
+**Nội dung**:
+
+- CRUD: `getWallets()`, `createWallet()`, `updateWallet()`, `deleteWallet()`
+- Operations: `transferMoney()`, `addMoney()`, `getTransactions()`
+- Sharing: `shareWallet()`, `getSharedWallets()`, `revokeShare()`
+- Archive: `archiveWallet()`, `restoreWallet()`
+
+---
+
+### 📊 Dashboard Module (`src/modules/dashboard/`)
+
+#### `pages/Dashboard.jsx`
+
+**Mục đích**: Trang chủ với overview tài chính
+**Nội dung**:
+
+- **Stats Cards**: Total balance, income, expenses, savings
+- **Charts**:
+  - Line chart: Balance over time
+  - Bar chart: Income vs Expenses
+  - Doughnut: Spending by category
+  - Area: Savings trends
+- **Recent Transactions**: 5-10 giao dịch gần nhất
+- **Quick Actions**: Shortcuts đến các tính năng chính
+
+**Data Flow**:
+
+1. `useEffect` → Multiple API calls parallel
+2. `dashboardService.getStats()` → Overview numbers
+3. `dashboardService.getChartData()` → Chart data
+4. State updates → Re-render charts
+5. Error handling → Fallback UI
+
+#### `services/dashboardService.js`
+
+**Mục đích**: API calls cho dashboard data
+**Nội dung**:
+
+- `getStats()`: GET /dashboard/stats
+- `getRecentTransactions()`: GET /dashboard/recent-transactions
+- `getSpendingByCategory()`: GET /dashboard/spending-by-category
+- `getIncomeVsExpenses()`: GET /dashboard/income-vs-expenses
+
+---
+
+### 🎨 UI Components (`src/components/`)
+
+#### `ui/` folder (shadcn/ui components)
+
+**Mục đích**: Reusable UI primitives
+**Nội dung**:
+
+- `Button.jsx`: Button với variants (default, outline, ghost...)
+- `Card.jsx`: Card container với Header, Content, Footer
+- `Input.jsx`: Input field với styling
+- `Label.jsx`: Form labels
+- `Alert.jsx`: Alert/notification components
+
+#### `DashboardLayout.jsx`
+
+**Mục đích**: Layout wrapper cho protected pages
+**Nội dung**:
+
+- **Header**: User menu, theme toggle, notifications
+- **Sidebar**: Navigation menu với active states
+- **Main Content**: Outlet cho nested routes
+- **Responsive**: Collapsible sidebar trên mobile
+
+**Layout Structure**:
+
+```jsx
+<div className="dashboard-layout">
+  <Header />
+  <div className="flex">
+    <Sidebar />
+    <main className="flex-1">
+      <Outlet /> {/* Nested routes render here */}
+    </main>
+  </div>
+</div>
+```
+
+#### `ProtectedRoute.jsx`
+
+**Mục đích**: HOC bảo vệ routes cần authentication
+**Nội dung**:
+
+- Check `isAuthenticated` từ AuthContext
+- Nếu chưa auth → redirect to `/login`
+- Nếu đã auth → render children
+- Loading state trong khi check auth
+
+**Luồng bảo vệ**:
+
+```mermaid
+graph TD
+    A[User access protected route] --> B{Check isAuthenticated}
+    B -->|true| C[Render page]
+    B -->|false| D[Redirect to /login]
+    B -->|loading| E[Show loading spinner]
+```
+
+---
+
+### ⚙️ Shared Utilities (`src/shared/`)
+
+#### `config/appConfig.js`
+
+**Mục đích**: Central configuration cho toàn bộ app
+**Nội dung**:
+
+- **API config**: Base URL, timeout
+- **Auth config**: Token keys, session timeout
+- **App settings**: Name, version, theme defaults
+- **Social auth**: Provider client IDs
+- **Validation rules**: Password requirements
+
+#### `services/apiService.js`
+
+**Mục đích**: Axios instance với interceptors
+**Nội dung**:
+
+- **Base config**: Base URL, headers
+- **Request interceptor**: Auto-attach JWT token
+- **Response interceptor**: Handle token refresh, global errors
+- **Error handling**: Network errors, 401/403 handling
+
+**Request Flow**:
+
+```
+API Call → Request Interceptor (add JWT) →
+Server → Response Interceptor →
+Success: return data | Error: refresh token or logout
+```
+
+#### `utils/errorHandler.js`
+
+**Mục đích**: Centralized error handling
+**Nội dung**:
+
+- `handleApiError()`: Process API errors → user-friendly messages
+- `showSuccess()`: Success toast notifications
+- `showError()`: Error toast notifications
+- **Error mapping**: HTTP status → Vietnamese messages
+
+#### `contexts/ThemeContext.jsx`
+
+**Mục đích**: Dark/Light theme management
+**Nội dung**:
+
+- **State**: `theme` ('light' | 'dark' | 'system')
+- **Functions**: `toggleTheme()`, `setTheme()`
+- **Persistence**: Save to localStorage
+- **System detection**: Auto-detect OS preference
+
+---
+
+### 🔄 Application Flow (Luồng chạy tổng thể)
+
+#### 1. **App Initialization**
+
+```
+main.jsx → App.jsx → Providers setup → Router setup
+```
+
+#### 2. **Authentication Flow**
+
+```
+User lands → AuthContext checks token →
+Valid: Set authenticated + user data |
+Invalid: Clear auth state → Redirect if needed
+```
+
+#### 3. **Protected Route Access**
+
+```
+User navigates → ProtectedRoute checks auth →
+Authenticated: Render page |
+Not authenticated: Redirect to login
+```
+
+#### 4. **Login Flow**
+
+```
+Login page → User submits → AuthContext.login() →
+API call → Success: Save token + redirect |
+Error: Show error message
+```
+
+#### 5. **Google OAuth Flow**
+
+```
+Click Google button → Redirect to backend OAuth →
+Google auth → Backend callback → Frontend oauth-callback →
+Extract token → AuthContext.loginGoogle() → Dashboard
+```
+
+#### 6. **API Request Flow**
+
+```
+Component calls API → apiService interceptor adds JWT →
+Request sent → Response interceptor →
+Success: Return data |
+401: Try refresh token |
+Other errors: Show user message
+```
+
+#### 7. **Wallet Operations Flow**
+
+```
+WalletList → Fetch wallets → Display cards →
+User clicks action → Navigate to detail/edit page →
+Make changes → API call → Update state → Refresh UI
+```
+
+#### 8. **State Management Flow**
+
+```
+Component needs data → Check local state →
+Not available: Call API → Update context/state →
+Re-render components → UI reflects new data
+```
+
+#### 9. **Error Handling Flow**
+
+```
+Error occurs → errorHandler processes →
+Determine error type → Show appropriate message →
+Log for debugging → Graceful degradation
+```
+
+#### 10. **Theme Switching Flow**
+
+```
+User clicks theme toggle → ThemeContext.toggleTheme() →
+Update state → Save to localStorage →
+Apply CSS classes → UI updates immediately
+```
+
+---
+
 ## 🎨 Theme và Design
 
 - **Color Scheme**: Màu xanh chủ đạo phù hợp với tài chính

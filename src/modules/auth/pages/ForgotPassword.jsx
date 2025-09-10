@@ -63,17 +63,19 @@ const ForgotPassword = () => {
             </div>
             <CardTitle className="text-2xl font-bold">Email đã được gửi</CardTitle>
             <CardDescription>
-              Chúng tôi đã gửi link đặt lại mật khẩu đến email của bạn
+              Vui lòng kiểm tra email của bạn
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-4 text-center">
             <p className="text-sm text-muted-foreground">
-              Vui lòng kiểm tra hộp thư của bạn và làm theo hướng dẫn để đặt lại mật khẩu.
+              Chúng tôi đã gửi link đặt lại mật khẩu đến email của bạn. Vui lòng kiểm tra hộp thư (bao gồm cả thư mục spam) và làm theo hướng dẫn.
             </p>
-            <p className="text-sm text-muted-foreground">
-              Nếu bạn không nhận được email trong vòng 5 phút, vui lòng kiểm tra thư mục spam.
-            </p>
+            {/* <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Lưu ý bảo mật:</strong> Mật khẩu mới được gửi trực tiếp qua email. Đây là giải pháp tạm thời cho Sprint 1.
+              </p>
+            </div> */}
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">
@@ -108,7 +110,7 @@ const ForgotPassword = () => {
           </div>
           <CardTitle className="text-2xl font-bold">Quên mật khẩu</CardTitle>
           <CardDescription>
-            Nhập email để nhận link đặt lại mật khẩu
+            Nhập email để nhận mật khẩu mới qua email
           </CardDescription>
         </CardHeader>
         
@@ -135,7 +137,7 @@ const ForgotPassword = () => {
               className="w-full" 
               disabled={loading}
             >
-              {loading ? 'Đang gửi...' : 'Gửi link đặt lại mật khẩu'}
+              {loading ? 'Đang gửi...' : 'Gửi mật khẩu mới'}
             </Button>
           </form>
         </CardContent>
