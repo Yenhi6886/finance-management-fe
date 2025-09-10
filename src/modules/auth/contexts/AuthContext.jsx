@@ -145,6 +145,33 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const forgotPassword = async (email) => {
+    try {
+      setLoading(true)
+      const response = await authService.forgotPassword(email)
+      
+      // Hiển thị thông báo success từ API response
+      if (response.data && response.data.message) {
+        errorHandler.showSuccess(response.data.message)
+      } else {
+        errorHandler.showSuccess('Link đặt lại mật khẩu đã được gửi đến email của bạn.')
+      }
+      
+      return response.data
+    } catch (error) {
+      // Xử lý lỗi theo yêu cầu API
+      if (error.response && error.response.data && error.response.data.message) {
+        // Hiển thị message từ API response cho các lỗi cụ thể
+        errorHandler.handleApiError(error)
+      } else {
+        errorHandler.handleApiError(error, 'Không thể gửi email đặt lại mật khẩu')
+      }
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const value = {
     user,
     loading,
@@ -155,6 +182,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     deleteAccount,
+    forgotPassword,
     updateUserContext, // <-- Thêm hàm mới vào value
   }
 

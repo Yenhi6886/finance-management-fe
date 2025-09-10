@@ -72,7 +72,7 @@ function App() {
               <Toaster
                   position="top-right"
                   toastOptions={{
-                    duration: 3000,
+                    duration: 2500,
                     style: {
                       background: 'hsl(var(--card))',
                       color: 'hsl(var(--card-foreground))',
