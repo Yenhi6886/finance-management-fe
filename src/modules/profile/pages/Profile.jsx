@@ -1,16 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../auth/contexts/AuthContext'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card'
-import { UserIcon, CameraIcon, Loader2 } from 'lucide-react'
-import { authService } from '../../auth/services/authService'
-import { errorHandler } from '../../../shared/utils/errorHandler'
+import { Avatar } from '../../../components/ui/avatar'
+import { CameraIcon, Loader2 } from 'lucide-react'
 
 const Profile = () => {
-  // Lấy hàm updateUserContext thay vì setUser
-  const { user, updateProfile, loading, updateUserContext } = useAuth()
+  // Lấy hàm uploadAvatar từ AuthContext
+  const { user, updateProfile, loading, uploadAvatar } = useAuth()
 
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -20,6 +19,20 @@ const Profile = () => {
 
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl || null)
   const [isUploading, setIsUploading] = useState(false)
+
+  // Đồng bộ avatarPreview khi user.avatarUrl thay đổi
+  useEffect(() => {
+    setAvatarPreview(user?.avatarUrl || null)
+  }, [user?.avatarUrl])
+
+  // Đồng bộ formData khi user thay đổi
+  useEffect(() => {
+    setFormData({
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
+      phoneNumber: user?.phoneNumber || '',
+    })
+  }, [user])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -34,16 +47,13 @@ const Profile = () => {
     setIsUploading(true)
 
     try {
-      const response = await authService.uploadAvatar(file)
-      const updatedUser = response.data.data
-
-      // SỬ DỤNG HÀM MỚI TỪ CONTEXT
-      updateUserContext(updatedUser)
-
-      errorHandler.showSuccess('Ảnh đại diện đã được cập nhật!')
+      // Sử dụng hàm uploadAvatar từ AuthContext
+      await uploadAvatar(file)
+      // Avatar đã được cập nhật tự động trong AuthContext
+      
     } catch (error) {
+      // Khôi phục preview nếu có lỗi
       setAvatarPreview(user?.avatarUrl || null)
-      errorHandler.handleApiError(error, 'Cập nhật ảnh đại diện thất bại')
     } finally {
       setIsUploading(false)
       e.target.value = null;
@@ -70,7 +80,7 @@ const Profile = () => {
       lastName: user?.lastName || '',
       phoneNumber: user?.phoneNumber || '',
     })
-    setAvatarPreview(user?.avatarUrl || null)
+    // avatarPreview sẽ được đồng bộ tự động qua useEffect
   }
 
   return (
@@ -93,17 +103,12 @@ const Profile = () => {
             <CardContent className="space-y-4">
               <div className="flex flex-col items-center space-y-4">
                 <label htmlFor="avatar-upload" className="relative cursor-pointer group">
-                  {avatarPreview ? (
-                      <img
-                          src={avatarPreview}
-                          alt="Avatar"
-                          className="w-24 h-24 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700 group-hover:opacity-75 transition-opacity"
-                      />
-                  ) : (
-                      <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center border-4 border-gray-200 dark:border-gray-700 group-hover:opacity-75 transition-opacity">
-                        <UserIcon className="w-12 h-12 text-gray-400" />
-                      </div>
-                  )}
+                  <Avatar 
+                    src={avatarPreview}
+                    alt={`${user?.username} avatar`}
+                    size="2xl"
+                    className="border-4 border-gray-200 dark:border-gray-700 group-hover:opacity-75 transition-opacity"
+                  />
                   <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     {isUploading ? (
                         <Loader2 className="w-6 h-6 text-white animate-spin" />

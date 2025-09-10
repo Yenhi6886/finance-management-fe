@@ -2,6 +2,7 @@ import React from 'react'
 import { useAuth } from '../modules/auth/contexts/AuthContext.jsx'
 import { useTheme } from '../shared/contexts/ThemeContext.jsx'
 import { Button } from './ui/button'
+import { Avatar } from './ui/avatar'
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -61,20 +62,30 @@ const Header = () => {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-              <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center">
-                <UserIcon className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-              </div>
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+              <Avatar 
+                src={user?.avatarUrl} 
+                alt={`${user?.username} avatar`}
+                size="md"
+                className="hover:opacity-80 transition-opacity"
+              />
             </Button>
           </DropdownMenuTrigger>
           
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.username}</p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {user?.email}
-                </p>
+              <div className="flex items-center space-x-3">
+                <Avatar 
+                  src={user?.avatarUrl} 
+                  alt={`${user?.username} avatar`}
+                  size="sm"
+                />
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user?.username}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.email}
+                  </p>
+                </div>
               </div>
             </DropdownMenuLabel>
             

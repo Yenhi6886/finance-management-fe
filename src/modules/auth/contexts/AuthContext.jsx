@@ -172,6 +172,25 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const uploadAvatar = async (file) => {
+    try {
+      setLoading(true)
+      const response = await authService.uploadAvatar(file)
+      const updatedUser = response.data.data
+      
+      // Cập nhật user context với thông tin avatar mới
+      updateUserContext(updatedUser)
+      errorHandler.showSuccess('Ảnh đại diện đã được cập nhật!')
+      
+      return updatedUser
+    } catch (error) {
+      errorHandler.handleApiError(error, 'Cập nhật ảnh đại diện thất bại')
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const value = {
     user,
     loading,
@@ -183,6 +202,7 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     deleteAccount,
     forgotPassword,
+    uploadAvatar,
     updateUserContext, // <-- Thêm hàm mới vào value
   }
 
