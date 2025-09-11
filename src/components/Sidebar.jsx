@@ -18,12 +18,13 @@ import {
   ShareIcon,
   DollarSignIcon,
   ListIcon,
-  EditIcon
+  EditIcon,
+  MinusIcon
 } from 'lucide-react'
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false)
-  const [expandedMenus, setExpandedMenus] = useState({ wallets: false })
+  const [expandedMenus, setExpandedMenus] = useState({ wallets: false, expenses: false })
   const location = useLocation()
   const { user } = useAuth()
 
@@ -75,6 +76,19 @@ const Sidebar = () => {
           title: 'Chia Sẻ Ví',
           href: '/wallets/share',
           icon: ShareIcon,
+        }
+      ]
+    },
+    {
+      title: 'Chi Tiêu',
+      href: '/expenses',
+      icon: MinusIcon,
+      hasSubmenu: true,
+      submenu: [
+        {
+          title: 'Danh Sách Chi Tiêu',
+          href: '/expenses',
+          icon: ListIcon,
         }
       ]
     },
