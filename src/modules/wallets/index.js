@@ -5,6 +5,7 @@ export { default as EditWallet } from './pages/EditWallet'
 export { default as TransferMoney } from './pages/TransferMoney'
 export { default as ShareWallet } from './pages/ShareWallet'
 export { default as AddMoney } from './pages/AddMoney'
+export { default as DepositMoney } from './pages/DepositMoney'
 
 // Export service
 export { walletService } from './services/walletService'
