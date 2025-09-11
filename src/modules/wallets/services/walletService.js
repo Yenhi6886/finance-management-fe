@@ -418,5 +418,59 @@ export const walletService = {
         ]
       }
     }
+  },
+
+  // Nạp tiền vào ví
+  depositMoney: async (walletId, depositData) => {
+    // Validate amount
+    if (!depositData.amount || depositData.amount <= 0) {
+      return {
+        success: false,
+        message: "Số tiền phải lớn hơn 0",
+        status: 400
+      }
+    }
+
+    // Mock API call - thay thế bằng API call thực tế
+    // const response = await apiService.post(`/api/wallet/${walletId}/deposit`, depositData)
+    
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Mock response based on wallet data
+      const wallet = {
+        '1': { name: 'Ví Tiền Mặt', balance: 2500000 },
+        '2': { name: 'Tài Khoản Ngân Hàng', balance: 15750000 },
+        '3': { name: 'Ví Đầu Tư', balance: 1250.50 }
+      }[walletId]
+
+      if (!wallet) {
+        return {
+          success: false,
+          message: "Ví không tồn tại",
+          status: 404
+        }
+      }
+
+      const newBalance = wallet.balance + depositData.amount
+
+      return {
+        success: true,
+        message: "Nạp tiền thành công!",
+        data: {
+          newBalance: newBalance,
+          note: depositData.notes || "",
+          message: "Nạp tiền thành công!"
+        },
+        status: 200
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: "Có lỗi xảy ra khi nạp tiền",
+        status: 500
+      }
+    }
   }
 }
