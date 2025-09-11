@@ -3,10 +3,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import { LineChart, BarChart, DoughnutChart, AreaChart } from '../../../components/charts/ChartComponents'
 import { LoadingScreen } from '../../../components/Loading.jsx'
 import { dashboardService } from '../services/dashboardService.js'
-import { 
-  TrendingUpIcon, 
-  DollarSignIcon, 
-  CreditCardIcon, 
+import {
+  TrendingUpIcon,
+  DollarSignIcon,
+  CreditCardIcon,
   PiggyBankIcon,
   ArrowUpIcon,
   ArrowDownIcon,
@@ -28,32 +28,32 @@ const Dashboard = () => {
   const [weeklySpending, setWeeklySpending] = useState(null)
   const [topCategories, setTopCategories] = useState([])
   const [loading, setLoading] = useState(true)
-  
+
   // Advanced Chart Data States
-  const [setCashFlowData] = useState(null)
-  const [setVolatilityChart] = useState(null)
-  const [setCorrelationMatrix] = useState(null)
-  const [setRiskReturnScatter] = useState(null)
-  const [setMonteCarlo] = useState(null)
-  const [setLiquidityAnalysis] = useState(null)
-  const [setFinancialGoals] = useState([])
-  const [setInvestmentPerformance] = useState(null)
-  const [setBudgetAlerts] = useState([])
-  const [setGeographicSpending] = useState([])
-  const [setUpcomingBills] = useState([])
-  const [setExpenseHeatmap] = useState(null)
-  const [setFinancialHealth] = useState(null)
+  const [cashFlowData, setCashFlowData] = useState(null)
+  const [volatilityChart, setVolatilityChart] = useState(null)
+  const [correlationMatrix, setCorrelationMatrix] = useState(null)
+  const [riskReturnScatter, setRiskReturnScatter] = useState(null)
+  const [monteCarlo, setMonteCarlo] = useState(null)
+  const [liquidityAnalysis, setLiquidityAnalysis] = useState(null)
+  const [financialGoals, setFinancialGoals] = useState([])
+  const [investmentPerformance, setInvestmentPerformance] = useState(null)
+  const [budgetAlerts, setBudgetAlerts] = useState([])
+  const [geographicSpending, setGeographicSpending] = useState([])
+  const [upcomingBills, setUpcomingBills] = useState([])
+  const [expenseHeatmap, setExpenseHeatmap] = useState(null)
+  const [financialHealth, setFinancialHealth] = useState(null)
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true)
-        
-        await new Promise(resolve => setTimeout(resolve, 4537))
+
+        await new Promise(resolve => setTimeout(resolve, 1500)) // Reduced delay for better UX
         // Fetch all dashboard data
         const [
-          statsResponse, 
-          transactionsResponse, 
+          statsResponse,
+          transactionsResponse,
           spendingResponse,
           incomeExpensesResponse,
           savingsResponse,
@@ -334,7 +334,7 @@ const Dashboard = () => {
               backgroundColor: function(context) {
                 const colors = [
                   'rgba(34, 197, 94, 0.6)',
-                  'rgba(59, 130, 246, 0.6)', 
+                  'rgba(59, 130, 246, 0.6)',
                   'rgba(168, 85, 247, 0.6)',
                   'rgba(239, 68, 68, 0.6)',
                   'rgba(245, 158, 11, 0.6)',
@@ -526,337 +526,337 @@ const Dashboard = () => {
   } : null
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
-            Dashboard
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Tổng quan tài chính của bạn - Cập nhật {new Date().toLocaleDateString('vi-VN')}
-          </p>
-        </div>
-        <div className="mt-3 sm:mt-0 flex space-x-2">
-          <button className="h-10 px-4 text-sm font-light bg-primary-600 hover:bg-primary-700 text-white rounded-md border-0 flex items-center">
-            <TrendingUpIcon className="w-4 h-4 mr-1" />
-            Xuất Báo Cáo
-          </button>
-          <button className="h-10 px-4 text-sm font-light bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-md border-0 flex items-center">
-            <SettingsIcon className="w-4 h-4 mr-1" />
-            Cài Đặt
-          </button>
-        </div>
-      </div>
-
-      {/* Enhanced Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <Card key={index} className="relative overflow-hidden hover:shadow-md transition-all duration-300 group">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div className={`p-2 rounded-lg ${stat.bgColor} dark:bg-opacity-20 mx-auto mb-3 w-fit group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className={`w-5 h-5 ${stat.color}`} />
-                  </div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    {stat.title}
-                  </p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                    {stat.value}
-                  </p>
-                  <div className="flex items-center justify-center space-x-1">
-                    {stat.change.startsWith('+') || stat.change.startsWith('-') ? (
-                      stat.change.startsWith('+') ? (
-                        <ArrowUpIcon className="w-3 h-3 text-green-600" />
-                      ) : (
-                        <ArrowDownIcon className="w-3 h-3 text-red-600" />
-                      )
-                    ) : null}
-                    <span className={`text-xs font-medium ${stat.changeColor}`}>
-                      {stat.change}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Income vs Expenses Chart */}
-        <Card className="col-span-1 lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <div>
-              <CardTitle className="flex items-center space-x-2">
-                <BarChart3Icon className="w-5 h-5 text-blue-600" />
-                <span>Thu Nhập vs Chi Tiêu</span>
-              </CardTitle>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Xu hướng tài chính 9 tháng gần nhất
-              </p>
-            </div>
-            <div className="flex space-x-2">
-              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Thu nhập TB: {formatCurrency(32600000)}</span>
-              <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Chi tiêu TB: {formatCurrency(24800000)}</span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              {incomeExpenseChartData && <AreaChart data={incomeExpenseChartData} />}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Savings Growth */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2">
-              <TrendingUpIcon className="w-5 h-5 text-green-600" />
-              <span>Tăng Trưởng Tiết Kiệm</span>
-            </CardTitle>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Tích lũy theo thời gian
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Tổng quan tài chính của bạn - Cập nhật {new Date().toLocaleDateString('vi-VN')}
             </p>
-          </CardHeader>
-          <CardContent>
-            <div className="h-48">
-              {savingsChartData && <LineChart data={savingsChartData} />}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Portfolio Distribution */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2">
-              <PieChartIcon className="w-5 h-5 text-purple-600" />
-              <span>Phân Bổ Tài Sản</span>
-            </CardTitle>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Cơ cấu đầu tư hiện tại
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="h-48">
-              {portfolioChartData && <DoughnutChart data={portfolioChartData} />}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Weekly Spending & Top Categories */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Weekly Spending Pattern */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2">
-              <ActivityIcon className="w-5 h-5 text-orange-600" />
-              <span>Chi Tiêu Theo Tuần</span>
-            </CardTitle>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Thói quen chi tiêu hàng ngày
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="h-48">
-              {weeklySpendingChartData && <BarChart data={weeklySpendingChartData} />}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Top Spending Categories */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle>Danh Mục Chi Tiêu Hàng Đầu</CardTitle>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Các khoản chi lớn nhất tháng này
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {topCategories.map((category, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">{category.name}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{formatCurrency(category.amount)}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`flex items-center space-x-1 ${
-                      category.trend === 'up' ? 'text-red-600' : 'text-green-600'
-                    }`}>
-                      {category.trend === 'up' ? (
-                        <ArrowUpIcon className="w-3 h-3" />
-                      ) : (
-                        <ArrowDownIcon className="w-3 h-3" />
-                      )}
-                      <span className="text-sm font-medium">{category.change}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Enhanced Quick Actions */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle>Hành Động Nhanh</CardTitle>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Các thao tác thường dùng
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900 transition-all duration-300 group">
-              <div className="flex flex-col items-center space-y-2">
-                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full group-hover:scale-110 transition-transform">
-                  <TrendingUpIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="text-center">
-                  <p className="font-semibold text-gray-900 dark:text-white">Thêm Thu Nhập</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Ghi nhận khoản thu mới</p>
-                </div>
-              </div>
+          </div>
+          <div className="mt-3 sm:mt-0 flex space-x-2">
+            <button className="h-10 px-4 text-sm font-light bg-primary-600 hover:bg-primary-700 text-white rounded-md border-0 flex items-center">
+              <TrendingUpIcon className="w-4 h-4 mr-1" />
+              Xuất Báo Cáo
             </button>
-
-            <button className="p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-900 transition-all duration-300 group">
-              <div className="flex flex-col items-center space-y-2">
-                <div className="p-3 bg-red-100 dark:bg-red-900 rounded-full group-hover:scale-110 transition-transform">
-                  <CreditCardIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
-                </div>
-                <div className="text-center">
-                  <p className="font-semibold text-gray-900 dark:text-white">Thêm Chi Tiêu</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Ghi nhận khoản chi mới</p>
-                </div>
-              </div>
-            </button>
-
-            <button className="p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900 transition-all duration-300 group">
-              <div className="flex flex-col items-center space-y-2">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full group-hover:scale-110 transition-transform">
-                  <TargetIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="text-center">
-                  <p className="font-semibold text-gray-900 dark:text-white">Lập Mục Tiêu</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Đặt mục tiêu tiết kiệm</p>
-                </div>
-              </div>
+            <button className="h-10 px-4 text-sm font-light bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-md border-0 flex items-center">
+              <SettingsIcon className="w-4 h-4 mr-1" />
+              Cài Đặt
             </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Recent Transactions & Spending Categories */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Transactions */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <div>
-              <CardTitle>Giao Dịch Gần Đây</CardTitle>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                5 giao dịch mới nhất
-              </p>
-            </div>
-            <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-              Xem tất cả
-            </button>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentTransactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-full ${
-                      transaction.type === 'income' 
-                        ? 'bg-green-100 dark:bg-green-900' 
-                        : 'bg-red-100 dark:bg-red-900'
-                    }`}>
-                      {transaction.type === 'income' ? (
-                        <ArrowUpIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      ) : (
-                        <ArrowDownIcon className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white text-sm">{transaction.description}</p>
-                      <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-400">
-                        <span>{transaction.category}</span>
-                        <span>•</span>
-                        <span>{transaction.account}</span>
-                        <span>•</span>
-                        <span>{formatDate(transaction.date)}</span>
+        {/* Enhanced Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+          {stats.map((stat, index) => {
+            const Icon = stat.icon
+            return (
+                <Card key={index} className="relative overflow-hidden hover:shadow-md transition-all duration-300 group">
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <div className={`p-2 rounded-lg ${stat.bgColor} dark:bg-opacity-20 mx-auto mb-3 w-fit group-hover:scale-110 transition-transform duration-300`}>
+                        <Icon className={`w-5 h-5 ${stat.color}`} />
+                      </div>
+                      <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        {stat.title}
+                      </p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                        {stat.value}
+                      </p>
+                      <div className="flex items-center justify-center space-x-1">
+                        {stat.change.startsWith('+') || stat.change.startsWith('-') ? (
+                            stat.change.startsWith('+') ? (
+                                <ArrowUpIcon className="w-3 h-3 text-green-600" />
+                            ) : (
+                                <ArrowDownIcon className="w-3 h-3 text-red-600" />
+                            )
+                        ) : null}
+                        <span className={`text-xs font-medium ${stat.changeColor}`}>
+                      {stat.change}
+                    </span>
                       </div>
                     </div>
-                  </div>
-                  <p className={`font-bold text-sm ${
-                    transaction.type === 'income' 
-                      ? 'text-green-600 dark:text-green-400' 
-                      : 'text-red-600 dark:text-red-400'
-                  }`}>
-                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                  </CardContent>
+                </Card>
+            )
+          })}
+        </div>
 
-        {/* Enhanced Spending by Category */}
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Income vs Expenses Chart */}
+          <Card className="col-span-1 lg:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <div>
+                <CardTitle className="flex items-center space-x-2">
+                  <BarChart3Icon className="w-5 h-5 text-blue-600" />
+                  <span>Thu Nhập vs Chi Tiêu</span>
+                </CardTitle>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Xu hướng tài chính 9 tháng gần nhất
+                </p>
+              </div>
+              <div className="flex space-x-2">
+                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Thu nhập TB: {formatCurrency(32600000)}</span>
+                <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Chi tiêu TB: {formatCurrency(24800000)}</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                {incomeExpenseChartData && <AreaChart data={incomeExpenseChartData} />}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Savings Growth */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUpIcon className="w-5 h-5 text-green-600" />
+                <span>Tăng Trưởng Tiết Kiệm</span>
+              </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Tích lũy theo thời gian
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="h-48">
+                {savingsChartData && <LineChart data={savingsChartData} />}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Portfolio Distribution */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2">
+                <PieChartIcon className="w-5 h-5 text-purple-600" />
+                <span>Phân Bổ Tài Sản</span>
+              </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Cơ cấu đầu tư hiện tại
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="h-48">
+                {portfolioChartData && <DoughnutChart data={portfolioChartData} />}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Weekly Spending & Top Categories */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Weekly Spending Pattern */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2">
+                <ActivityIcon className="w-5 h-5 text-orange-600" />
+                <span>Chi Tiêu Theo Tuần</span>
+              </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Thói quen chi tiêu hàng ngày
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="h-48">
+                {weeklySpendingChartData && <BarChart data={weeklySpendingChartData} />}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Top Spending Categories */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle>Danh Mục Chi Tiêu Hàng Đầu</CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Các khoản chi lớn nhất tháng này
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {topCategories.map((category, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white">{category.name}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{formatCurrency(category.amount)}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`flex items-center space-x-1 ${
+                            category.trend === 'up' ? 'text-red-600' : 'text-green-600'
+                        }`}>
+                          {category.trend === 'up' ? (
+                              <ArrowUpIcon className="w-3 h-3" />
+                          ) : (
+                              <ArrowDownIcon className="w-3 h-3" />
+                          )}
+                          <span className="text-sm font-medium">{category.change}</span>
+                        </div>
+                      </div>
+                    </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Enhanced Quick Actions */}
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle>Chi Tiêu Theo Danh Mục</CardTitle>
+            <CardTitle>Hành Động Nhanh</CardTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Phân tích chi tiêu tháng này
+              Các thao tác thường dùng
             </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {spendingByCategory.map((category, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: category.color }}
-                      ></div>
-                      <span className="font-medium text-gray-900 dark:text-white">{category.category}</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900 dark:text-white text-sm">
-                        {formatCurrency(category.amount)}
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {category.percentage}%
-                      </p>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button className="p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900 transition-all duration-300 group">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full group-hover:scale-110 transition-transform">
+                    <TrendingUpIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div 
-                      className="h-2 rounded-full transition-all duration-500 ease-out" 
-                      style={{ 
-                        width: `${category.percentage}%`,
-                        backgroundColor: category.color 
-                      }}
-                    ></div>
+                  <div className="text-center">
+                    <p className="font-semibold text-gray-900 dark:text-white">Thêm Thu Nhập</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Ghi nhận khoản thu mới</p>
                   </div>
                 </div>
-              ))}
+              </button>
+
+              <button className="p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-900 transition-all duration-300 group">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-3 bg-red-100 dark:bg-red-900 rounded-full group-hover:scale-110 transition-transform">
+                    <CreditCardIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-gray-900 dark:text-white">Thêm Chi Tiêu</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Ghi nhận khoản chi mới</p>
+                  </div>
+                </div>
+              </button>
+
+              <button className="p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900 transition-all duration-300 group">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full group-hover:scale-110 transition-transform">
+                    <TargetIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-gray-900 dark:text-white">Lập Mục Tiêu</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Đặt mục tiêu tiết kiệm</p>
+                  </div>
+                </div>
+              </button>
             </div>
           </CardContent>
         </Card>
+
+        {/* Recent Transactions & Spending Categories */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Transactions */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <div>
+                <CardTitle>Giao Dịch Gần Đây</CardTitle>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  5 giao dịch mới nhất
+                </p>
+              </div>
+              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                Xem tất cả
+              </button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {recentTransactions.map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-full ${
+                            transaction.type === 'income'
+                                ? 'bg-green-100 dark:bg-green-900'
+                                : 'bg-red-100 dark:bg-red-900'
+                        }`}>
+                          {transaction.type === 'income' ? (
+                              <ArrowUpIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                          ) : (
+                              <ArrowDownIcon className="w-4 h-4 text-red-600 dark:text-red-400" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white text-sm">{transaction.description}</p>
+                          <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-400">
+                            <span>{transaction.category}</span>
+                            <span>•</span>
+                            <span>{transaction.account}</span>
+                            <span>•</span>
+                            <span>{formatDate(transaction.date)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <p className={`font-bold text-sm ${
+                          transaction.type === 'income'
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                      </p>
+                    </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Enhanced Spending by Category */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle>Chi Tiêu Theo Danh Mục</CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Phân tích chi tiêu tháng này
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {spendingByCategory.map((category, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: category.color }}
+                          ></div>
+                          <span className="font-medium text-gray-900 dark:text-white">{category.category}</span>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                            {formatCurrency(category.amount)}
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            {category.percentage}%
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div
+                            className="h-2 rounded-full transition-all duration-500 ease-out"
+                            style={{
+                              width: `${category.percentage}%`,
+                              backgroundColor: category.color
+                            }}
+                        ></div>
+                      </div>
+                    </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
   );
 };
 
