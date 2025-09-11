@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '../modules/auth/contexts/AuthContext.jsx'
 import { useTheme } from '../shared/contexts/ThemeContext.jsx'
 import { Button } from './ui/button'
@@ -18,12 +18,15 @@ import {
   UserIcon, 
   SettingsIcon, 
   LogOutIcon,
-  KeyIcon
+  KeyIcon,
+  MinusIcon
 } from 'lucide-react'
+import { AddExpense } from '../modules/wallets'
 
 const Header = () => {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const [showAddExpense, setShowAddExpense] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -33,9 +36,24 @@ const Header = () => {
     }
   }
 
+  const handleAddExpenseSuccess = () => {
+    setShowAddExpense(false)
+    // Could add a toast notification here
+  }
+
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
       <div className="flex items-center space-x-4">
+        {/* Quick Add Expense Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAddExpense(true)}
+          className="flex items-center gap-2"
+        >
+          <MinusIcon className="w-4 h-4" />
+          <span className="hidden sm:inline">Thêm chi tiêu</span>
+        </Button>
       </div>
 
       <div className="flex items-center space-x-4">
@@ -120,6 +138,13 @@ const Header = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Add Expense Modal */}
+      <AddExpense
+        isOpen={showAddExpense}
+        onClose={() => setShowAddExpense(false)}
+        onSuccess={handleAddExpenseSuccess}
+      />
     </header>
   )
 }
