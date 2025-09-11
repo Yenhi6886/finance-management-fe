@@ -505,5 +505,353 @@ export const walletService = {
         status: 500
       }
     }
+  },
+
+  // Thêm khoản chi tiêu
+  addExpense: async (expenseData) => {
+    // Validate input
+    if (!expenseData.walletId) {
+      return {
+        success: false,
+        message: "Wallet ID không hợp lệ",
+        status: 400
+      }
+    }
+
+    if (!expenseData.amount || expenseData.amount <= 0) {
+      return {
+        success: false,
+        message: "Số tiền phải lớn hơn 0",
+        status: 400
+      }
+    }
+
+    if (!expenseData.category) {
+      return {
+        success: false,
+        message: "Vui lòng chọn danh mục chi tiêu",
+        status: 400
+      }
+    }
+
+    // Mock API call - thay thế bằng API call thực tế
+    // const response = await apiService.post('/api/expenses', expenseData)
+    
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Check if wallet exists and has enough balance
+      const wallets = {
+        '1': { name: 'Ví Tiền Mặt', balance: 2500000 },
+        '2': { name: 'Tài Khoản Ngân Hàng', balance: 15750000 },
+        '3': { name: 'Ví Đầu Tư', balance: 1250.50 }
+      }
+
+      const wallet = wallets[expenseData.walletId]
+
+      if (!wallet) {
+        return {
+          success: false,
+          message: "Ví không tồn tại",
+          status: 404
+        }
+      }
+
+      if (wallet.balance < expenseData.amount) {
+        return {
+          success: false,
+          message: "Số dư trong ví không đủ",
+          status: 400
+        }
+      }
+
+      const newBalance = wallet.balance - expenseData.amount
+      wallets[expenseData.walletId].balance = newBalance
+
+      const expenseId = `EXP${Date.now()}`
+
+      return {
+        success: true,
+        message: "Thêm khoản chi thành công!",
+        data: {
+          expenseId: expenseId,
+          newBalance: newBalance,
+          amount: expenseData.amount,
+          category: expenseData.category,
+          note: expenseData.note || "",
+          timestamp: expenseData.datetime || new Date().toISOString(),
+          walletName: wallet.name
+        },
+        status: 200
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: "Có lỗi xảy ra khi thêm khoản chi",
+        status: 500
+      }
+    }
+  },
+
+  // Lấy danh sách chi tiêu
+  getExpenses: async (filters = {}) => {
+    // Mock API call
+    // const response = await apiService.get('/api/expenses', { params: filters })
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      const mockExpenses = [
+        {
+          id: 'EXP1',
+          walletId: '1',
+          walletName: 'Ví Tiền Mặt',
+          amount: 150000,
+          category: 'food',
+          categoryName: 'Ăn uống',
+          note: 'Ăn trưa với đồng nghiệp',
+          datetime: '2024-09-10T12:30:00Z',
+          createdAt: '2024-09-10T12:30:00Z'
+        },
+        {
+          id: 'EXP2',
+          walletId: '2',
+          walletName: 'Tài Khoản Ngân Hàng',
+          amount: 500000,
+          category: 'shopping',
+          categoryName: 'Mua sắm',
+          note: 'Mua quần áo mùa đông',
+          datetime: '2024-09-09T15:45:00Z',
+          createdAt: '2024-09-09T15:45:00Z'
+        },
+        {
+          id: 'EXP3',
+          walletId: '1',
+          walletName: 'Ví Tiền Mặt',
+          amount: 80000,
+          category: 'transport',
+          categoryName: 'Di chuyển',
+          note: 'Xăng xe tháng 9',
+          datetime: '2024-09-08T08:20:00Z',
+          createdAt: '2024-09-08T08:20:00Z'
+        },
+        {
+          id: 'EXP4',
+          walletId: '3',
+          walletName: 'Ví Đầu Tư',
+          amount: 200000,
+          category: 'utilities',
+          categoryName: 'Hóa đơn',
+          note: 'Tiền điện tháng 8',
+          datetime: '2024-09-07T10:15:00Z',
+          createdAt: '2024-09-07T10:15:00Z'
+        },
+        {
+          id: 'EXP5',
+          walletId: '2',
+          walletName: 'Tài Khoản Ngân Hàng',
+          amount: 300000,
+          category: 'entertainment',
+          categoryName: 'Giải trí',
+          note: 'Xem phim cuối tuần',
+          datetime: '2024-09-06T19:30:00Z',
+          createdAt: '2024-09-06T19:30:00Z'
+        }
+      ]
+
+      let filteredExpenses = mockExpenses
+
+      // Apply filters
+      if (filters.walletId) {
+        filteredExpenses = filteredExpenses.filter(exp => exp.walletId === filters.walletId)
+      }
+      if (filters.category) {
+        filteredExpenses = filteredExpenses.filter(exp => exp.category === filters.category)
+      }
+      if (filters.startDate) {
+        filteredExpenses = filteredExpenses.filter(exp => new Date(exp.datetime) >= new Date(filters.startDate))
+      }
+      if (filters.endDate) {
+        filteredExpenses = filteredExpenses.filter(exp => new Date(exp.datetime) <= new Date(filters.endDate))
+      }
+
+      // Sort by datetime desc
+      filteredExpenses.sort((a, b) => new Date(b.datetime) - new Date(a.datetime))
+
+      // Apply limit
+      if (filters.limit) {
+        filteredExpenses = filteredExpenses.slice(0, filters.limit)
+      }
+
+      return {
+        success: true,
+        data: filteredExpenses,
+        total: filteredExpenses.length,
+        status: 200
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: "Có lỗi xảy ra khi lấy danh sách chi tiêu",
+        status: 500
+      }
+    }
+  },
+
+  // Cập nhật khoản chi tiêu
+  updateExpense: async (expenseId, expenseData) => {
+    // Validate input
+    if (!expenseId) {
+      return {
+        success: false,
+        message: "Expense ID không hợp lệ",
+        status: 400
+      }
+    }
+
+    if (!expenseData.amount || expenseData.amount <= 0) {
+      return {
+        success: false,
+        message: "Số tiền phải lớn hơn 0",
+        status: 400
+      }
+    }
+
+    if (!expenseData.category) {
+      return {
+        success: false,
+        message: "Vui lòng chọn danh mục chi tiêu",
+        status: 400
+      }
+    }
+
+    // Mock API call
+    // const response = await apiService.put(`/api/expenses/${expenseId}`, expenseData)
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800))
+
+      // Mock validation - check if expense exists
+      const mockExpenses = ['EXP1', 'EXP2', 'EXP3', 'EXP4', 'EXP5']
+      if (!mockExpenses.includes(expenseId)) {
+        return {
+          success: false,
+          message: "Khoản chi không tồn tại",
+          status: 404
+        }
+      }
+
+      return {
+        success: true,
+        message: "Cập nhật khoản chi thành công!",
+        data: {
+          expenseId: expenseId,
+          amount: expenseData.amount,
+          category: expenseData.category,
+          note: expenseData.note || "",
+          datetime: expenseData.datetime,
+          updatedAt: new Date().toISOString()
+        },
+        status: 200
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: "Có lỗi xảy ra khi cập nhật khoản chi",
+        status: 500
+      }
+    }
+  },
+
+  // Xóa khoản chi tiêu
+  deleteExpense: async (expenseId) => {
+    // Validate input
+    if (!expenseId) {
+      return {
+        success: false,
+        message: "Expense ID không hợp lệ",
+        status: 400
+      }
+    }
+
+    // Mock API call
+    // const response = await apiService.delete(`/api/expenses/${expenseId}`)
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600))
+
+      // Mock validation - check if expense exists
+      const mockExpenses = {
+        'EXP1': { walletId: '1', amount: 150000, walletName: 'Ví Tiền Mặt' },
+        'EXP2': { walletId: '2', amount: 500000, walletName: 'Tài Khoản Ngân Hàng' },
+        'EXP3': { walletId: '1', amount: 80000, walletName: 'Ví Tiền Mặt' },
+        'EXP4': { walletId: '3', amount: 200000, walletName: 'Ví Đầu Tư' },
+        'EXP5': { walletId: '2', amount: 300000, walletName: 'Tài Khoản Ngân Hàng' }
+      }
+
+      const expense = mockExpenses[expenseId]
+      if (!expense) {
+        return {
+          success: false,
+          message: "Khoản chi không tồn tại",
+          status: 404
+        }
+      }
+
+      // Mock refund to wallet
+      const wallets = {
+        '1': { name: 'Ví Tiền Mặt', balance: 2500000 },
+        '2': { name: 'Tài Khoản Ngân Hàng', balance: 15750000 },
+        '3': { name: 'Ví Đầu Tư', balance: 1250.50 }
+      }
+
+      const wallet = wallets[expense.walletId]
+      if (wallet) {
+        wallet.balance += expense.amount
+      }
+
+      return {
+        success: true,
+        message: "Xóa khoản chi thành công! Tiền đã được hoàn về ví.",
+        data: {
+          expenseId: expenseId,
+          refundAmount: expense.amount,
+          walletId: expense.walletId,
+          walletName: expense.walletName,
+          newWalletBalance: wallet ? wallet.balance : null
+        },
+        status: 200
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: "Có lỗi xảy ra khi xóa khoản chi",
+        status: 500
+      }
+    }
+  },
+
+  // Lấy danh mục chi tiêu
+  getExpenseCategories: async () => {
+    // Mock API call
+    // const response = await apiService.get('/api/expense-categories')
+    
+    return {
+      success: true,
+      data: [
+        { id: 'food', name: 'Ăn uống', icon: '🍽️' },
+        { id: 'transport', name: 'Di chuyển', icon: '🚗' },
+        { id: 'shopping', name: 'Mua sắm', icon: '🛒' },
+        { id: 'entertainment', name: 'Giải trí', icon: '🎮' },
+        { id: 'utilities', name: 'Hóa đơn', icon: '💡' },
+        { id: 'healthcare', name: 'Y tế', icon: '🏥' },
+        { id: 'education', name: 'Giáo dục', icon: '📚' },
+        { id: 'family', name: 'Gia đình', icon: '👨‍👩‍👧‍👦' },
+        { id: 'travel', name: 'Du lịch', icon: '✈️' },
+        { id: 'other', name: 'Khác', icon: '📝' }
+      ],
+      status: 200
+    }
   }
 }
