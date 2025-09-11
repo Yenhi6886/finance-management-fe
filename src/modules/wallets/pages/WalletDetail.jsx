@@ -199,7 +199,7 @@ const WalletDetail = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/wallets/${wallet.id}/add-money`)}
+                onClick={() => navigate(`/wallets/${wallet.id}/deposit`)}
                 className="h-8 px-3 text-xs"
               >
                 <PlusIcon className="w-3 h-3 mr-1.5" />
