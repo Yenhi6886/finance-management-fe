@@ -44,6 +44,17 @@ const DepositMoney = () => {
     fetchWalletDetails()
   }, [walletId, navigate])
 
+  // Auto clear success message after 5 seconds
+  useEffect(() => {
+    if (showSuccess) {
+      const timer = setTimeout(() => {
+        setShowSuccess(false)
+        setDepositResult(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [showSuccess])
+
   const validateForm = () => {
     const newErrors = {}
     
