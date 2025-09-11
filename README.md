@@ -611,6 +611,10 @@ npm install
 yarn install
 ```
 
+# loading
+
+npm install lottie-react
+
 3. **Tạo file environment**
 
 ```bash
