@@ -40,6 +40,8 @@ const ShareWallet = () => {
   const [loading, setLoading] = useState(false)
   const [sharedWallets, setSharedWallets] = useState([])
   const [walletShares, setWalletShares] = useState([]) // danh sách user được share của ví đang chọn
+  const [removingUserId, setRemovingUserId] = useState(null)
+  const [toast, setToast] = useState({ type: '', message: '' })
   const [activeTab, setActiveTab] = useState('share') // share, manage
 
   useEffect(() => {
@@ -75,6 +77,11 @@ const ShareWallet = () => {
       console.error('Error fetching wallet shares:', error)
       setWalletShares([])
     }
+  }
+
+  const showToast = (type, message) => {
+    setToast({ type, message })
+    setTimeout(() => setToast({ type: '', message: '' }), 2500)
   }
   // Tạo liên kết chia sẻ
   const generateShareLink = () => {
@@ -176,6 +183,17 @@ const ShareWallet = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
+        {toast.message && (
+          <div
+            className={`mb-4 rounded-lg px-4 py-3 text-sm ${
+              toast.type === 'success'
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}
+          >
+            {toast.message}
+          </div>
+        )}
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
@@ -518,31 +536,49 @@ const ShareWallet = () => {
                         <p className="text-sm text-gray-600 dark:text-gray-400">Chưa chia sẻ ví này cho ai.</p>
                       ) : (
                         <div className="space-y-3">
-                          {walletShares.map((s) => (
-                            <div key={s.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                              <div>
-                                <p className="text-sm text-gray-900 dark:text-white">{s.recipients?.[0] || s.sharedWithEmail}</p>
-                                <p className="text-xs text-gray-500">{getPermissionLabel(s.permissionLevel)}</p>
+                          {walletShares.map((s) => {
+                            const email = s.recipients?.[0] || s.sharedWithEmail
+                            const uid = s.sharedUserId || s.sharedWithUserId
+                            return (
+                              <div key={s.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <div className="min-w-0">
+                                  <p className="text-sm text-gray-900 dark:text-white truncate max-w-[220px]">{email}</p>
+                                  <div className="mt-1">
+                                    <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getPermissionColor(s.permissionLevel)}`}>
+                                      {getPermissionLabel(s.permissionLevel)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={!uid || removingUserId === uid}
+                                    onClick={async () => {
+                                      if (!uid) {
+                                        showToast('error', 'Không thể xoá: người dùng chưa đăng ký')
+                                        return
+                                      }
+                                      try {
+                                        setRemovingUserId(uid)
+                                        await walletService.removeWalletShareUser(selectedWallet, uid)
+                                        await fetchWalletShares(selectedWallet)
+                                        showToast('success', `Đã xoá chia sẻ của ${email}`)
+                                      } catch (e) {
+                                        console.error('Error removing share user:', e)
+                                        showToast('error', 'Xoá thất bại. Vui lòng thử lại.')
+                                      } finally {
+                                        setRemovingUserId(null)
+                                      }
+                                    }}
+                                    className={`h-8 text-xs ${removingUserId === uid ? 'opacity-60 cursor-not-allowed' : 'text-red-600'} border-red-200 hover:bg-red-50 dark:hover:bg-red-900`}
+                                  >
+                                    {removingUserId === uid ? 'Đang xoá...' : 'Xoá'}
+                                  </Button>
+                                </div>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={async () => {
-                                  try {
-                                    if (!s.sharedUserId && !s.sharedWithUserId) return
-                                    const uid = s.sharedUserId || s.sharedWithUserId
-                                    await walletService.removeWalletShareUser(selectedWallet, uid)
-                                    fetchWalletShares(selectedWallet)
-                                  } catch (e) {
-                                    console.error('Error removing share user:', e)
-                                  }
-                                }}
-                                className="h-8 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-900"
-                              >
-                                Xoá
-                              </Button>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
                     </div>
