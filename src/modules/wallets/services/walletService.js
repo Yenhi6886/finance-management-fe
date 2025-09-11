@@ -16,6 +16,7 @@ export const walletService = {
           description: 'Ví tiền mặt chính',
           status: 'active',
           isShared: false,
+          ownedByCurrentUser: true, // Ví của chính user
           permissions: ['full', 'transfer', 'add_money', 'share'],
           createdAt: '2024-01-15T08:00:00Z',
           updatedAt: '2024-09-07T12:30:00Z'
@@ -30,6 +31,7 @@ export const walletService = {
           description: 'Tài khoản Vietcombank',
           status: 'active',
           isShared: true,
+          ownedByCurrentUser: true, // Ví của chính user nhưng có share cho người khác
           permissions: ['full', 'transfer', 'add_money', 'share'],
           sharedWith: ['user2@example.com'],
           createdAt: '2024-01-20T09:15:00Z',
@@ -45,6 +47,7 @@ export const walletService = {
           description: 'Ví đầu tư cổ phiếu và crypto',
           status: 'active',
           isShared: false,
+          ownedByCurrentUser: true, // Ví của chính user
           permissions: ['full', 'transfer', 'add_money', 'share'],
           createdAt: '2024-02-01T14:20:00Z',
           updatedAt: '2024-09-06T16:20:00Z'
@@ -59,6 +62,7 @@ export const walletService = {
           description: 'Quỹ dự phòng khẩn cấp',
           status: 'archived',
           isShared: false,
+          ownedByCurrentUser: true, // Ví của chính user nhưng đã archived
           permissions: ['full'],
           createdAt: '2024-01-10T11:00:00Z',
           updatedAt: '2024-08-15T09:30:00Z'
@@ -73,7 +77,8 @@ export const walletService = {
           description: 'Ví chung của gia đình',
           status: 'active',
           isShared: true,
-          permissions: ['view'],
+          ownedByCurrentUser: false, // Ví được share từ người khác
+          permissions: ['view'], // Chỉ có quyền xem, không thể nạp tiền
           sharedBy: 'husband@example.com',
           createdAt: '2024-03-05T13:45:00Z',
           updatedAt: '2024-09-05T18:10:00Z'
