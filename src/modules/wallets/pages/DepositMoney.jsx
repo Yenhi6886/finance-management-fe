@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
@@ -99,6 +100,13 @@ const DepositMoney = () => {
         setShowSuccess(true)
         setAmount('')
         setNotes('')
+        
+        // Show success toast
+        toast.success('Nạp tiền thành công!', {
+          description: `Đã nạp ${formatCurrency(depositData.amount)} vào ví ${wallet.name}`,
+          duration: 4000
+        })
+        
         // Cập nhật balance của wallet
         setWallet(prev => ({
           ...prev,
@@ -108,11 +116,23 @@ const DepositMoney = () => {
         setErrors({ 
           submit: response.message || 'Có lỗi xảy ra khi nạp tiền'
         })
+        
+        // Show error toast
+        toast.error('Nạp tiền thất bại', {
+          description: response.message || 'Có lỗi xảy ra khi nạp tiền',
+          duration: 4000
+        })
       }
     } catch (error) {
       console.error('Error depositing money:', error)
       setErrors({ 
         submit: 'Có lỗi xảy ra khi nạp tiền. Vui lòng thử lại.'
+      })
+      
+      // Show error toast
+      toast.error('Lỗi hệ thống', {
+        description: 'Có lỗi xảy ra khi nạp tiền. Vui lòng thử lại.',
+        duration: 4000
       })
     } finally {
       setLoading(false)
