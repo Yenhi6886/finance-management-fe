@@ -1,224 +1,80 @@
-// import apiService from '../../shared/services/apiService'
+import apiService from '../../shared/services/apiService'
 
 export const walletService = {
   // Lấy danh sách tất cả ví
   getWallets: async () => {
-    // Mock data - thay thế bằng API call thực tế
-    return {
-      data: [
-        {
-          id: '1',
-          name: 'Ví Tiền Mặt',
-          icon: '💵',
-          currency: 'VND',
-          balance: 2500000,
-          initialAmount: 5000000,
-          description: 'Ví tiền mặt chính',
-          status: 'active',
-          isShared: false,
-          permissions: ['full', 'transfer', 'add_money', 'share'],
-          createdAt: '2024-01-15T08:00:00Z',
-          updatedAt: '2024-09-07T12:30:00Z'
-        },
-        {
-          id: '2',
-          name: 'Tài Khoản Ngân Hàng',
-          icon: '🏦',
-          currency: 'VND',
-          balance: 15750000,
-          initialAmount: 10000000,
-          description: 'Tài khoản Vietcombank',
-          status: 'active',
-          isShared: true,
-          permissions: ['full', 'transfer', 'add_money', 'share'],
-          sharedWith: ['user2@example.com'],
-          createdAt: '2024-01-20T09:15:00Z',
-          updatedAt: '2024-09-07T10:45:00Z'
-        },
-        {
-          id: '3',
-          name: 'Ví Đầu Tư',
-          icon: '📈',
-          currency: 'USD',
-          balance: 1250.50,
-          initialAmount: 1000,
-          description: 'Ví đầu tư cổ phiếu và crypto',
-          status: 'active',
-          isShared: false,
-          permissions: ['full', 'transfer', 'add_money', 'share'],
-          createdAt: '2024-02-01T14:20:00Z',
-          updatedAt: '2024-09-06T16:20:00Z'
-        },
-        {
-          id: '4',
-          name: 'Ví Tiết Kiệm',
-          icon: '🐷',
-          currency: 'VND',
-          balance: 8500000,
-          initialAmount: 5000000,
-          description: 'Quỹ dự phòng khẩn cấp',
-          status: 'archived',
-          isShared: false,
-          permissions: ['full'],
-          createdAt: '2024-01-10T11:00:00Z',
-          updatedAt: '2024-08-15T09:30:00Z'
-        },
-        {
-          id: '5',
-          name: 'Ví Gia Đình',
-          icon: '👨‍👩‍👧‍👦',
-          currency: 'VND',
-          balance: 3200000,
-          initialAmount: 2000000,
-          description: 'Ví chung của gia đình',
-          status: 'active',
-          isShared: true,
-          permissions: ['view'],
-          sharedBy: 'husband@example.com',
-          createdAt: '2024-03-05T13:45:00Z',
-          updatedAt: '2024-09-05T18:10:00Z'
-        }
-      ]
+    try {
+      const response = await apiService.get('/api/wallets')
+      return { data: response.data }
+    } catch (error) {
+      console.error('Error fetching wallets:', error)
+      throw error
     }
   },
 
   // Lấy thông tin chi tiết một ví
   getWalletById: async (id) => {
-    const wallets = await walletService.getWallets()
-    const wallet = wallets.data.find(w => w.id === id)
-    
-    if (!wallet) {
-      throw new Error('Wallet not found')
-    }
-
-    // Mock thêm thông tin chi tiết
-    return {
-      data: {
-        ...wallet,
-        transactions: [
-          {
-            id: 1,
-            type: 'income',
-            amount: 500000,
-            description: 'Lương tháng 9',
-            date: '2024-09-01T08:00:00Z',
-            category: 'salary'
-          },
-          {
-            id: 2,
-            type: 'expense',
-            amount: -150000,
-            description: 'Mua sắm siêu thị',
-            date: '2024-09-02T14:30:00Z',
-            category: 'groceries'
-          },
-          {
-            id: 3,
-            type: 'transfer',
-            amount: -200000,
-            description: 'Chuyển tiền cho mẹ',
-            date: '2024-09-03T10:15:00Z',
-            category: 'family',
-            toWallet: 'Ví Gia Đình'
-          },
-          {
-            id: 4,
-            type: 'income',
-            amount: 300000,
-            description: 'Bán đồ cũ',
-            date: '2024-09-04T16:45:00Z',
-            category: 'other'
-          },
-          {
-            id: 5,
-            type: 'expense',
-            amount: -85000,
-            description: 'Tiền điện tháng 8',
-            date: '2024-09-05T09:20:00Z',
-            category: 'utilities'
-          }
-        ],
-        monthlyStats: {
-          totalIncome: 800000,
-          totalExpense: 435000,
-          netIncome: 365000,
-          transactionCount: 25
-        }
-      }
+    try {
+      const response = await apiService.get(`/api/wallets/${id}`)
+      return { data: response.data }
+    } catch (error) {
+      console.error('Error fetching wallet:', error)
+      throw error
     }
   },
 
   // Tạo ví mới
   createWallet: async (walletData) => {
-    // Mock API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          data: {
-            id: Date.now(),
-            ...walletData,
-            balance: walletData.initialAmount || 0,
-            status: 'active',
-            isShared: false,
-            permissions: ['full', 'transfer', 'add_money', 'share'],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        })
-      }, 1000)
-    })
+    try {
+      const response = await apiService.post('/api/wallets', walletData)
+      return { data: response.data }
+    } catch (error) {
+      console.error('Error creating wallet:', error)
+      throw error
+    }
   },
 
   // Cập nhật thông tin ví
   updateWallet: async (id, walletData) => {
-    // Mock API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          data: {
-            id,
-            ...walletData,
-            updatedAt: new Date().toISOString()
-          }
-        })
-      }, 800)
-    })
+    try {
+      const response = await apiService.put(`/api/wallets/${id}`, walletData)
+      return { data: response.data }
+    } catch (error) {
+      console.error('Error updating wallet:', error)
+      throw error
+    }
   },
 
   // Xóa ví
   deleteWallet: async (id) => {
-    // Mock API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          data: {
-            success: true,
-            message: 'Ví đã được xóa thành công'
-          }
-        })
-      }, 500)
-    })
+    try {
+      await apiService.delete(`/api/wallets/${id}`)
+      return { data: { success: true, message: 'Ví đã được xóa thành công' } }
+    } catch (error) {
+      console.error('Error deleting wallet:', error)
+      throw error
+    }
   },
 
   // Lưu trữ ví
   archiveWallet: async (id) => {
-    // Mock API call
-    return {
-      data: {
-        success: true,
-        message: 'Ví đã được lưu trữ'
-      }
+    try {
+      const response = await apiService.put(`/api/wallets/${id}/archive`)
+      return { data: { success: true, message: 'Ví đã được lưu trữ' } }
+    } catch (error) {
+      console.error('Error archiving wallet:', error)
+      throw error
     }
   },
 
   // Hủy lưu trữ ví
   unarchiveWallet: async (id) => {
-    // Mock API call
-    return {
-      data: {
-        success: true,
-        message: 'Ví đã được khôi phục'
-      }
+    try {
+      const response = await apiService.put(`/api/wallets/${id}/unarchive`)
+      return { data: { success: true, message: 'Ví đã được khôi phục' } }
+    } catch (error) {
+      console.error('Error unarchiving wallet:', error)
+      throw error
     }
   },
 
@@ -256,73 +112,35 @@ export const walletService = {
 
   // Chia sẻ ví
   shareWallet: async (shareData) => {
-    // Mock API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          data: {
-            success: true,
-            shareId: 'SHARE' + Date.now(),
-            shareLink: `${window.location.origin}/shared-wallet/SHARE${Date.now()}`,
-            message: 'Chia sẻ ví thành công'
-          }
-        })
-      }, 1000)
-    })
+    try {
+      const response = await apiService.post('/api/wallet-shares', shareData)
+      return response.data
+    } catch (error) {
+      console.error('Error sharing wallet:', error)
+      throw error
+    }
   },
 
   // Lấy danh sách ví đã chia sẻ
   getSharedWallets: async () => {
-    // Mock data
-    return {
-      data: [
-        {
-          id: 'SHARE1',
-          wallet: {
-            id: '1',
-            name: 'Ví Tiền Mặt',
-            icon: '💵',
-            balance: 2500000,
-            currency: 'VND'
-          },
-          shareType: 'view',
-          recipients: ['user1@example.com', 'user2@example.com'],
-          createdAt: '2024-09-01T10:00:00Z',
-          expiryDate: '2024-12-01T10:00:00Z',
-          shareLink: 'https://app.com/shared-wallet/SHARE1'
-        },
-        {
-          id: 'SHARE2',
-          wallet: {
-            id: '2',
-            name: 'Tài Khoản Ngân Hàng',
-            icon: '🏦',
-            balance: 15750000,
-            currency: 'VND'
-          },
-          shareType: 'edit',
-          recipients: ['family@example.com'],
-          createdAt: '2024-08-15T14:30:00Z',
-          expiryDate: null,
-          shareLink: 'https://app.com/shared-wallet/SHARE2'
-        }
-      ]
+    try {
+      const response = await apiService.get('/api/wallet-shares/shared')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching shared wallets:', error)
+      throw error
     }
   },
 
   // Thu hồi quyền truy cập ví
   revokeWalletAccess: async (shareId) => {
-    // Mock API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          data: {
-            success: true,
-            message: 'Đã thu hồi quyền truy cập'
-          }
-        })
-      }, 500)
-    })
+    try {
+      const response = await apiService.delete(`/api/wallet-shares/${shareId}`)
+      return response.data
+    } catch (error) {
+      console.error('Error revoking wallet access:', error)
+      throw error
+    }
   },
 
   // Lấy lịch sử giao dịch

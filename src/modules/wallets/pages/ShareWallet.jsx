@@ -29,7 +29,7 @@ import { walletService } from '../services/walletService'
 const ShareWallet = () => {
   const [wallets, setWallets] = useState([])
   const [selectedWallet, setSelectedWallet] = useState('')
-  const [shareType, setShareType] = useState('view') // view, edit, full
+  const [shareType, setShareType] = useState('viewer') // viewer, editor, owner
   const [shareMethod, setShareMethod] = useState('link') // link, email, sms
   const [emailList, setEmailList] = useState('')
   const [phoneList, setPhoneList] = useState('')
@@ -49,11 +49,8 @@ const ShareWallet = () => {
   const fetchWallets = async () => {
     try {
       const response = await walletService.getWallets()
-      // Chỉ lấy các ví có quyền share
-      const shareableWallets = response.data.filter(wallet => 
-        wallet.permissions.includes('share') || wallet.permissions.includes('full')
-      )
-      setWallets(shareableWallets)
+      // 所有钱包都可以分享
+      setWallets(response.data)
     } catch (error) {
       console.error('Error fetching wallets:', error)
     }
@@ -83,13 +80,13 @@ const ShareWallet = () => {
     setLoading(true)
     try {
       const shareData = {
-        walletId: selectedWallet,
-        shareType,
+        walletId: parseInt(selectedWallet),
+        permissionLevel: shareType.toUpperCase(),
         shareMethod,
-        message: message.trim(),
-        expiryDate: expiryDate || null,
-        recipients: shareMethod === 'email' ? emailList.split(',').map(e => e.trim()) : 
-                   shareMethod === 'sms' ? phoneList.split(',').map(p => p.trim()) : []
+        message: message.trim() || null,
+        expiryDate: expiryDate ? new Date(expiryDate).toISOString() : null,
+        recipients: shareMethod === 'email' ? emailList.split(',').map(e => e.trim()).filter(e => e) : 
+                   shareMethod === 'sms' ? phoneList.split(',').map(p => p.trim()).filter(p => p) : []
       }
 
       const response = await walletService.shareWallet(shareData)
@@ -97,6 +94,8 @@ const ShareWallet = () => {
       if (shareMethod === 'link') {
         const link = generateShareLink()
         setShareLink(link)
+      } else if (response.shareLink) {
+        setShareLink(response.shareLink)
       }
 
       // Refresh shared wallets list
@@ -104,7 +103,7 @@ const ShareWallet = () => {
       
       // Reset form
       setSelectedWallet('')
-      setShareType('view')
+      setShareType('viewer')
       setEmailList('')
       setPhoneList('')
       setMessage('')
@@ -138,15 +137,23 @@ const ShareWallet = () => {
 
   const getPermissionColor = (type) => {
     const colors = {
+      VIEWER: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      EDITOR: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+      OWNER: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      // 兼容旧格式
       view: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       edit: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
       full: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
     }
-    return colors[type] || colors.view
+    return colors[type] || colors.VIEWER
   }
 
   const getPermissionLabel = (type) => {
     const labels = {
+      VIEWER: 'Chỉ xem',
+      EDITOR: 'Chỉnh sửa',
+      OWNER: 'Toàn quyền',
+      // 兼容旧格式
       view: 'Chỉ xem',
       edit: 'Chỉnh sửa',
       full: 'Toàn quyền'
@@ -237,7 +244,7 @@ const ShareWallet = () => {
                           <option value="">Chọn ví</option>
                           {wallets.map(wallet => (
                             <option key={wallet.id} value={wallet.id}>
-                              {wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}
+                              {wallet.name} - {formatCurrency(wallet.balance, wallet.currencyCode)}
                             </option>
                           ))}
                         </select>
@@ -251,19 +258,19 @@ const ShareWallet = () => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {[
                             {
-                              type: 'view',
+                              type: 'viewer',
                               icon: EyeIcon,
                               title: 'Chỉ Xem',
                               description: 'Người dùng chỉ có thể xem thông tin ví'
                             },
                             {
-                              type: 'edit',
+                              type: 'editor',
                               icon: SettingsIcon,
                               title: 'Chỉnh Sửa',
                               description: 'Có thể xem và chỉnh sửa thông tin ví'
                             },
                             {
-                              type: 'full',
+                              type: 'owner',
                               icon: ShieldIcon,
                               title: 'Toàn Quyền',
                               description: 'Có thể thực hiện mọi thao tác'
@@ -607,14 +614,14 @@ const ShareWallet = () => {
                             <div className="flex-1">
                               <div className="flex items-center space-x-4 mb-4">
                                 <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                                  <span className="text-white font-bold text-lg">{share.wallet.icon}</span>
+                                  <span className="text-white font-bold text-lg">{share.walletIcon || '💰'}</span>
                                 </div>
                                 <div>
                                   <h4 className="text-lg font-medium text-gray-900 dark:text-white">
-                                    {share.wallet.name}
+                                    {share.walletName}
                                   </h4>
                                   <p className="text-gray-600 dark:text-gray-400">
-                                    {formatCurrency(share.wallet.balance, share.wallet.currency)}
+                                    {formatCurrency(share.wallet?.balance || 0, share.wallet?.currencyCode || 'VND')}
                                   </p>
                                 </div>
                               </div>
@@ -623,8 +630,8 @@ const ShareWallet = () => {
                                 <div>
                                   <span className="text-gray-600 dark:text-gray-400 font-medium">Quyền truy cập:</span>
                                   <div className="mt-2">
-                                    <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${getPermissionColor(share.shareType)}`}>
-                                      {getPermissionLabel(share.shareType)}
+                                    <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${getPermissionColor(share.permissionLevel)}`}>
+                                      {getPermissionLabel(share.permissionLevel)}
                                     </span>
                                   </div>
                                 </div>
