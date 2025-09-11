@@ -48,8 +48,11 @@ const ResetPassword = () => {
 
     if (!password) {
       newErrors.password = { message: 'Mật khẩu là bắt buộc' };
-    } else if (!validationUtils.isValidPassword(password)) {
-      newErrors.password = { message: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ và số' };
+    } else {
+      const passwordErrors = validationUtils.validatePassword(password);
+      if (passwordErrors.length > 0) {
+        newErrors.password = { message: passwordErrors.join(', ') };
+      }
     }
 
     if (password !== confirmPassword) {
@@ -80,7 +83,7 @@ const ResetPassword = () => {
   };
 
   if (loading) {
-    return <Loading />;
+    return <LoadingScreen />;
   }
 
   if (!tokenIsValid) {

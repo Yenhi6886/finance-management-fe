@@ -43,6 +43,7 @@ function App() {
                 <Route path="/oauth2/callback" element={<OAuthCallback/>} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/activate" element={<ActivateAccount />} />
 
                 {/* Protected routes */}
