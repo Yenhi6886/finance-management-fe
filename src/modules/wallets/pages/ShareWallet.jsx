@@ -49,13 +49,13 @@ const ShareWallet = () => {
   const fetchWallets = async () => {
     try {
       const response = await walletService.getWallets()
-      // 所有钱包都可以分享
+      // Tất cả ví đều có thể chia sẻ
       setWallets(response.data)
     } catch (error) {
       console.error('Error fetching wallets:', error)
     }
   }
-
+  // lấy danh sách ví đã chia sẻ
   const fetchSharedWallets = async () => {
     try {
       const response = await walletService.getSharedWallets()
@@ -64,7 +64,7 @@ const ShareWallet = () => {
       console.error('Error fetching shared wallets:', error)
     }
   }
-
+  // Tạo liên kết chia sẻ
   const generateShareLink = () => {
     const wallet = wallets.find(w => w.id === selectedWallet)
     if (!wallet) return ''
@@ -73,7 +73,7 @@ const ShareWallet = () => {
     const shareId = `${wallet.id}-${Date.now()}`
     return `${baseUrl}/shared-wallet/${shareId}?type=${shareType}`
   }
-
+  // Xử lý chia sẻ ví
   const handleShare = async () => {
     if (!selectedWallet || !shareType) return
 
@@ -88,7 +88,7 @@ const ShareWallet = () => {
         recipients: shareMethod === 'email' ? emailList.split(',').map(e => e.trim()).filter(e => e) : 
                    shareMethod === 'sms' ? phoneList.split(',').map(p => p.trim()).filter(p => p) : []
       }
-
+      // Gọi API chia sẻ ví
       const response = await walletService.shareWallet(shareData)
       
       if (shareMethod === 'link') {
@@ -114,13 +114,13 @@ const ShareWallet = () => {
       setLoading(false)
     }
   }
-
+  // Sao chép vào clipboard
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
-
+  // Thu hồi quyền truy cập
   const revokeAccess = async (shareId) => {
     try {
       await walletService.revokeWalletAccess(shareId)
@@ -129,12 +129,12 @@ const ShareWallet = () => {
       console.error('Error revoking access:', error)
     }
   }
-
+  // Định dạng tiền tệ
   const formatCurrency = (amount, currency = 'VND') => {
     const formatted = new Intl.NumberFormat('vi-VN').format(amount)
     return currency === 'USD' ? `$${formatted}` : `${formatted} ₫`
   }
-
+  // Lấy màu theo loại quyền
   const getPermissionColor = (type) => {
     const colors = {
       VIEWER: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
@@ -147,7 +147,7 @@ const ShareWallet = () => {
     }
     return colors[type] || colors.VIEWER
   }
-
+  // Lấy nhãn theo loại quyền
   const getPermissionLabel = (type) => {
     const labels = {
       VIEWER: 'Chỉ xem',

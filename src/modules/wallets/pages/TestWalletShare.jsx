@@ -51,18 +51,18 @@ const TestWalletShare = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 p-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">测试钱包分享功能</h1>
+        <h1 className="text-3xl font-bold mb-8">Kiểm tra chức năng chia sẻ ví</h1>
         
         <div className="space-y-6">
           <div>
-            <Label htmlFor="walletSelect">选择钱包</Label>
+            <Label htmlFor="walletSelect">Chọn ví</Label>
             <select
               id="walletSelect"
               value={selectedWallet}
               onChange={(e) => setSelectedWallet(e.target.value)}
               className="w-full h-12 px-4 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="">选择钱包</option>
+              <option value="">Chọn ví</option>
               {wallets.map(wallet => (
                 <option key={wallet.id} value={wallet.id}>
                   {wallet.name} - {wallet.balance} {wallet.currencyCode}
@@ -72,11 +72,11 @@ const TestWalletShare = () => {
           </div>
 
           <div>
-            <Label htmlFor="email">邮箱地址</Label>
+            <Label htmlFor="email">Địa chỉ email</Label>
             <Input
               id="email"
               type="email"
-              placeholder="输入邮箱地址"
+              placeholder="Nhập địa chỉ email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="h-12 text-base"
@@ -84,10 +84,10 @@ const TestWalletShare = () => {
           </div>
 
           <div>
-            <Label htmlFor="message">消息（可选）</Label>
+            <Label htmlFor="message">Tin nhắn (tùy chọn)</Label>
             <Input
               id="message"
-              placeholder="输入分享消息"
+              placeholder="Nhập tin nhắn chia sẻ"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               className="h-12 text-base"
@@ -99,12 +99,12 @@ const TestWalletShare = () => {
             disabled={!selectedWallet || !email || loading}
             className="w-full h-12 text-base font-light bg-green-600 hover:bg-green-700 text-white rounded-lg border-0"
           >
-            {loading ? '分享中...' : '分享钱包'}
+            {loading ? 'Đang chia sẻ...' : 'Chia sẻ ví'}
           </Button>
 
           {result && (
             <div className="mt-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">结果：</h3>
+              <h3 className="text-lg font-semibold mb-2">Kết quả:</h3>
               <pre className="text-sm text-gray-700 dark:text-gray-300">
                 {JSON.stringify(result, null, 2)}
               </pre>
