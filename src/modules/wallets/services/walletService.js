@@ -143,6 +143,28 @@ export const walletService = {
     }
   },
 
+  // Lấy danh sách người được share của 1 ví
+  getWalletShares: async (walletId) => {
+    try {
+      const response = await apiService.get(`/api/wallets/${walletId}/shares`)
+      return { data: response.data }
+    } catch (error) {
+      console.error('Error fetching wallet shares:', error)
+      throw error
+    }
+  },
+
+  // Xoá 1 người dùng được share khỏi ví
+  removeWalletShareUser: async (walletId, userId) => {
+    try {
+      await apiService.delete(`/api/wallets/${walletId}/share/${userId}`)
+      return { data: { success: true } }
+    } catch (error) {
+      console.error('Error removing wallet share user:', error)
+      throw error
+    }
+  },
+
   // Lấy lịch sử giao dịch
   getTransactions: async (filters = {}) => {
     // Mock data cho lịch sử giao dịch

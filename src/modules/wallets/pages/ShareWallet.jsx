@@ -39,6 +39,7 @@ const ShareWallet = () => {
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
   const [sharedWallets, setSharedWallets] = useState([])
+  const [walletShares, setWalletShares] = useState([]) // danh sách user được share của ví đang chọn
   const [activeTab, setActiveTab] = useState('share') // share, manage
 
   useEffect(() => {
@@ -62,6 +63,17 @@ const ShareWallet = () => {
       setSharedWallets(response.data)
     } catch (error) {
       console.error('Error fetching shared wallets:', error)
+    }
+  }
+
+  const fetchWalletShares = async (walletId) => {
+    if (!walletId) return
+    try {
+      const res = await walletService.getWalletShares(walletId)
+      setWalletShares(res.data || [])
+    } catch (error) {
+      console.error('Error fetching wallet shares:', error)
+      setWalletShares([])
     }
   }
   // Tạo liên kết chia sẻ
@@ -238,7 +250,7 @@ const ShareWallet = () => {
                         <select
                           id="walletSelect"
                           value={selectedWallet}
-                          onChange={(e) => setSelectedWallet(e.target.value)}
+                          onChange={(e) => { setSelectedWallet(e.target.value); fetchWalletShares(e.target.value) }}
                           className="w-full h-12 px-4 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         >
                           <option value="">Chọn ví</option>
@@ -491,6 +503,51 @@ const ShareWallet = () => {
 
               {/* Sidebar */}
               <div className="space-y-6">
+                {/* Danh sách tài khoản được share của ví đã chọn */}
+                {selectedWallet && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div className="p-6">
+                      <div className="flex items-center space-x-3 mb-6">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                          <UsersIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Tài khoản được chia sẻ</h3>
+                      </div>
+
+                      {walletShares.length === 0 ? (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Chưa chia sẻ ví này cho ai.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {walletShares.map((s) => (
+                            <div key={s.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                              <div>
+                                <p className="text-sm text-gray-900 dark:text-white">{s.recipients?.[0] || s.sharedWithEmail}</p>
+                                <p className="text-xs text-gray-500">{getPermissionLabel(s.permissionLevel)}</p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  try {
+                                    if (!s.sharedUserId && !s.sharedWithUserId) return
+                                    const uid = s.sharedUserId || s.sharedWithUserId
+                                    await walletService.removeWalletShareUser(selectedWallet, uid)
+                                    fetchWalletShares(selectedWallet)
+                                  } catch (e) {
+                                    console.error('Error removing share user:', e)
+                                  }
+                                }}
+                                className="h-8 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-900"
+                              >
+                                Xoá
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 {/* Share Tips */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
                   <div className="p-6">
