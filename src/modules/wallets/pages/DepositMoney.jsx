@@ -27,6 +27,9 @@ const DepositMoney = () => {
   const [showSuccess, setShowSuccess] = useState(false)
   const [depositResult, setDepositResult] = useState(null)
 
+  // Preset amounts for quick selection
+  const presetAmounts = [50000, 100000, 200000, 500000, 1000000, 2000000]
+
   useEffect(() => {
     const fetchWalletDetails = async () => {
       try {
@@ -187,6 +190,23 @@ const DepositMoney = () => {
             <Label htmlFor="amount" className="text-sm font-medium">
               Số tiền muốn nạp <span className="text-red-500">*</span>
             </Label>
+            
+            {/* Preset Amount Buttons */}
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {presetAmounts.map((preset) => (
+                <Button
+                  key={preset}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAmount(preset.toString())}
+                  className="text-xs h-8"
+                >
+                  {formatCurrency(preset).replace('₫', '').trim()}
+                </Button>
+              ))}
+            </div>
+            
             <div className="relative">
               <DollarSignIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
