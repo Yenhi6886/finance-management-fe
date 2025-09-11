@@ -72,6 +72,23 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const loginGoogle = async (token) => {
+    try {
+      setLoading(true)
+      localStorage.setItem(appConfig.auth.tokenKey, token)
+      const response = await authService.getCurrentUserProfile()
+      updateUserContext(response.data.data)
+      setIsAuthenticated(true)
+      errorHandler.showSuccess('Đăng nhập thành công!')
+      return response.data
+    } catch (error) {
+      errorHandler.handleApiError(error, 'Đăng nhập thất bại')
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const register = async (userData) => {
     try {
       setLoading(true)
@@ -128,15 +145,64 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const forgotPassword = async (email) => {
+    try {
+      setLoading(true)
+      const response = await authService.forgotPassword(email)
+      
+      // Hiển thị thông báo success từ API response
+      if (response.data && response.data.message) {
+        errorHandler.showSuccess(response.data.message)
+      } else {
+        errorHandler.showSuccess('Link đặt lại mật khẩu đã được gửi đến email của bạn.')
+      }
+      
+      return response.data
+    } catch (error) {
+      // Xử lý lỗi theo yêu cầu API
+      if (error.response && error.response.data && error.response.data.message) {
+        // Hiển thị message từ API response cho các lỗi cụ thể
+        errorHandler.handleApiError(error)
+      } else {
+        errorHandler.handleApiError(error, 'Không thể gửi email đặt lại mật khẩu')
+      }
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const uploadAvatar = async (file) => {
+    try {
+      setLoading(true)
+      const response = await authService.uploadAvatar(file)
+      const updatedUser = response.data.data
+      
+      // Cập nhật user context với thông tin avatar mới
+      updateUserContext(updatedUser)
+      errorHandler.showSuccess('Ảnh đại diện đã được cập nhật!')
+      
+      return updatedUser
+    } catch (error) {
+      errorHandler.handleApiError(error, 'Cập nhật ảnh đại diện thất bại')
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const value = {
     user,
     loading,
     isAuthenticated,
     login,
+    loginGoogle,
     register,
     logout,
     updateProfile,
     deleteAccount,
+    forgotPassword,
+    uploadAvatar,
     updateUserContext, // <-- Thêm hàm mới vào value
   }
 

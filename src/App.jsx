@@ -8,6 +8,7 @@ import DashboardLayout from './components/DashboardLayout'
 import Login from './modules/auth/pages/Login'
 import Register from './modules/auth/pages/Register'
 import ForgotPassword from './modules/auth/pages/ForgotPassword'
+import ResetPassword from './modules/auth/pages/ResetPassword' // Import mới
 import ActivateAccount from './modules/auth/pages/ActivateAccount'
 
 // Main pages
@@ -28,6 +29,7 @@ import {
 
 // Error page
 import ErrorPage from './modules/error/ErrorPage'
+import OAuthCallback from './modules/auth/pages/oauth-callback'
 
 function App() {
   return (
@@ -38,8 +40,10 @@ function App() {
               <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />
+                <Route path="/oauth2/callback" element={<OAuthCallback/>} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/activate" element={<ActivateAccount />} />
 
                 {/* Protected routes */}
@@ -70,7 +74,7 @@ function App() {
               <Toaster
                   position="top-right"
                   toastOptions={{
-                    duration: 4000,
+                    duration: 2500,
                     style: {
                       background: 'hsl(var(--card))',
                       color: 'hsl(var(--card-foreground))',

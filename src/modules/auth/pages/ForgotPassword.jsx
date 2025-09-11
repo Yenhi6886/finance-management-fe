@@ -1,57 +1,75 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { validationUtils } from '../../../shared/utils/validationUtils.js'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Label } from '../../../components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../../components/ui/card'
-import { KeyIcon, ArrowLeftIcon } from 'lucide-react'
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { authService } from '../services/authService';
+import { validationUtils } from '../../../shared/utils/validationUtils';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../../components/ui/card';
+import { KeyIcon, ArrowLeftIcon, MailCheckIcon } from 'lucide-react';
+import { errorHandler } from '../../../shared/utils/errorHandler';
 
 const ForgotPassword = () => {
-  const navigate = useNavigate()
-  const { forgotPassword, loading } = useAuth()
-  
-  const [email, setEmail] = useState('')
-  const [errors, setErrors] = useState({})
-  const [submitted, setSubmitted] = useState(false)
+  const [email, setEmail] = useState('');
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleChange = (e) => {
-    setEmail(e.target.value)
-    
-    // Clear error when user starts typing
-    if (errors.email) {
-      setErrors({})
+  // Resend countdown logic
+  const [canResend, setCanResend] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+
+  useEffect(() => {
+    let timer;
+    if (submitted && !canResend) {
+      timer = setInterval(() => {
+        setCountdown((prevCountdown) => {
+          if (prevCountdown <= 1) {
+            clearInterval(timer);
+            setCanResend(true);
+            return 0;
+          }
+          return prevCountdown - 1;
+        });
+      }, 1000);
     }
-  }
+    return () => clearInterval(timer);
+  }, [submitted, canResend]);
 
-  const validateForm = () => {
-    const newErrors = {}
-
-    if (!email) {
-      newErrors.email = { message: 'Email là bắt buộc' }
-    } else if (!validationUtils.isValidEmail(email)) {
-      newErrors.email = { message: 'Email không hợp lệ' }
+  const handleRequest = useCallback(async () => {
+    if (!validationUtils.isValidEmail(email)) {
+      setErrors({ email: { message: 'Email không hợp lệ' } });
+      return;
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
+    setLoading(true);
+    setErrors({});
 
     try {
-      await forgotPassword(email)
-      setSubmitted(true)
+      await authService.forgotPassword(email);
+      setSubmitted(true);
+      setCanResend(false); // Disable resend button on new request
+      setCountdown(30); // Reset countdown
     } catch (error) {
-      // Error is handled in AuthContext
+      // Per requirement, always show a generic message.
+      // Specific errors can be logged or handled differently if needed.
+      setSubmitted(true);
     }
-  }
+    finally {
+      setLoading(false);
+    }
+  }, [email]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleRequest();
+  };
+
+  const handleResend = () => {
+    if (canResend) {
+      handleRequest();
+    }
+  };
 
   if (submitted) {
     return (
@@ -59,44 +77,39 @@ const ForgotPassword = () => {
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1 text-center">
             <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-              <KeyIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
+              <MailCheckIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
-            <CardTitle className="text-2xl font-bold">Email đã được gửi</CardTitle>
+            <CardTitle className="text-2xl font-bold">Kiểm tra email của bạn</CardTitle>
             <CardDescription>
-              Chúng tôi đã gửi link đặt lại mật khẩu đến email của bạn
+              Nếu email của bạn tồn tại trong hệ thống, một liên kết để đặt lại mật khẩu đã được gửi đến.
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-4 text-center">
             <p className="text-sm text-muted-foreground">
-              Vui lòng kiểm tra hộp thư của bạn và làm theo hướng dẫn để đặt lại mật khẩu.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Nếu bạn không nhận được email trong vòng 5 phút, vui lòng kiểm tra thư mục spam.
+              Vui lòng kiểm tra hộp thư (bao gồm cả thư mục spam) và làm theo hướng dẫn để hoàn tất việc đặt lại mật khẩu.
             </p>
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">
             <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={() => navigate('/login')}
-            >
-              <ArrowLeftIcon className="w-4 h-4 mr-2" />
-              Quay lại đăng nhập
-            </Button>
-            
-            <Button 
               variant="ghost" 
               className="w-full" 
-              onClick={() => setSubmitted(false)}
+              onClick={handleResend}
+              disabled={!canResend || loading}
             >
-              Gửi lại email
+              {canResend ? 'Gửi lại link' : `Gửi lại sau ${countdown}s`}
             </Button>
+            <Link to="/login" className="w-full">
+              <Button variant="outline" className="w-full">
+                <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                Quay lại đăng nhập
+              </Button>
+            </Link>
           </CardFooter>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -108,7 +121,7 @@ const ForgotPassword = () => {
           </div>
           <CardTitle className="text-2xl font-bold">Quên mật khẩu</CardTitle>
           <CardDescription>
-            Nhập email để nhận link đặt lại mật khẩu
+            Nhập email để nhận link đặt lại mật khẩu.
           </CardDescription>
         </CardHeader>
         
@@ -122,7 +135,10 @@ const ForgotPassword = () => {
                 type="email"
                 placeholder="Nhập địa chỉ email đã đăng ký"
                 value={email}
-                onChange={handleChange}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) setErrors({});
+                }}
                 className={errors.email ? 'border-red-500' : ''}
               />
               {errors.email && (
@@ -135,7 +151,7 @@ const ForgotPassword = () => {
               className="w-full" 
               disabled={loading}
             >
-              {loading ? 'Đang gửi...' : 'Gửi link đặt lại mật khẩu'}
+              {loading ? 'Đang gửi...' : 'Gửi link reset'}
             </Button>
           </form>
         </CardContent>
@@ -153,7 +169,7 @@ const ForgotPassword = () => {
         </CardFooter>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default ForgotPassword
+export default ForgotPassword;
