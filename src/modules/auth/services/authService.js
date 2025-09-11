@@ -22,11 +22,15 @@ export const authService = {
   },
 
   forgotPassword: async (email) => {
-    return apiClient.post('/auth/forgot-password', { email })
+    return apiClient.post('/auth/forgot-password', { email });
   },
 
-  resetPassword: async (data) => {
-    return apiClient.post('/auth/reset-password', data)
+  validateResetToken: async (token) => {
+    return apiClient.get(`/auth/validate-reset-token?token=${token}`);
+  },
+
+  resetPassword: async (token, newPassword) => {
+    return apiClient.post('/auth/reset-password', { token, newPassword });
   },
 
   getCurrentUserProfile: async () => {

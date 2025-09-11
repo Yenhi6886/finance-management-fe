@@ -8,6 +8,7 @@ import DashboardLayout from './components/DashboardLayout'
 import Login from './modules/auth/pages/Login'
 import Register from './modules/auth/pages/Register'
 import ForgotPassword from './modules/auth/pages/ForgotPassword'
+import ResetPassword from './modules/auth/pages/ResetPassword' // Import mới
 import ActivateAccount from './modules/auth/pages/ActivateAccount'
 
 // Main pages
