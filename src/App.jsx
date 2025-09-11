@@ -23,7 +23,8 @@ import {
   EditWallet,
   TransferMoney,
   ShareWallet,
-  AddMoney
+  AddMoney,
+  DepositMoney
 } from './modules/wallets'
 
 // Error page
@@ -63,6 +64,7 @@ function App() {
                   <Route path="wallets/share" element={<ShareWallet />} />
                   <Route path="wallets/:id" element={<WalletDetail />} />
                   <Route path="wallets/:id/edit" element={<EditWallet />} />
+                  <Route path="wallets/:walletId/deposit" element={<DepositMoney />} />
                 </Route>
 
                 {/* Error route */}
