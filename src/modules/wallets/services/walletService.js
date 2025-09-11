@@ -422,11 +422,36 @@ export const walletService = {
 
   // Nạp tiền vào ví
   depositMoney: async (walletId, depositData) => {
+    // Validate input
+    if (!walletId) {
+      return {
+        success: false,
+        message: "Wallet ID không hợp lệ",
+        status: 400
+      }
+    }
+
     // Validate amount
     if (!depositData.amount || depositData.amount <= 0) {
       return {
         success: false,
         message: "Số tiền phải lớn hơn 0",
+        status: 400
+      }
+    }
+
+    if (depositData.amount < 1000) {
+      return {
+        success: false,
+        message: "Số tiền tối thiểu là 1,000 ₫",
+        status: 400
+      }
+    }
+
+    if (depositData.amount > 100000000) {
+      return {
+        success: false,
+        message: "Số tiền tối đa là 100,000,000 ₫",
         status: 400
       }
     }
@@ -439,11 +464,13 @@ export const walletService = {
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Mock response based on wallet data
-      const wallet = {
+      const wallets = {
         '1': { name: 'Ví Tiền Mặt', balance: 2500000 },
         '2': { name: 'Tài Khoản Ngân Hàng', balance: 15750000 },
         '3': { name: 'Ví Đầu Tư', balance: 1250.50 }
-      }[walletId]
+      }
+
+      const wallet = wallets[walletId]
 
       if (!wallet) {
         return {
@@ -455,13 +482,19 @@ export const walletService = {
 
       const newBalance = wallet.balance + depositData.amount
 
+      // Update wallet balance in mock data (for demo purposes)
+      wallets[walletId].balance = newBalance
+
       return {
         success: true,
         message: "Nạp tiền thành công!",
         data: {
           newBalance: newBalance,
           note: depositData.notes || "",
-          message: "Nạp tiền thành công!"
+          message: "Nạp tiền thành công!",
+          transactionId: `TXN${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          amount: depositData.amount
         },
         status: 200
       }
