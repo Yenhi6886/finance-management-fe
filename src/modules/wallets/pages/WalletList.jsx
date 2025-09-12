@@ -10,7 +10,7 @@ import {
   ArchiveIcon,
   DollarSignIcon
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 
 const WalletList = () => {
@@ -18,6 +18,22 @@ const WalletList = () => {
   const [loading, setLoading] = useState(true)
   const [totalBalance, setTotalBalance] = useState(0)
   const navigate = useNavigate()
+  const location = useLocation()
+
+  useEffect(() => {
+    if (location.state?.message) {
+      if (location.state.type === 'success') {
+        toast.success(location.state.message)
+        // Làm mới dữ liệu khi có thông báo thành công
+        fetchWallets()
+      } else {
+        toast.error(location.state.message)
+      }
+      
+      // Xóa state để tránh hiển thị thông báo nhiều lần
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
 
   const fetchWallets = async () => {
     try {
@@ -132,10 +148,10 @@ const WalletList = () => {
                       {wallet.icon} {wallet.name}
                     </CardTitle>
                     <div className="flex space-x-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}`)}>
                         <EyeIcon className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}/edit`)}>
                         <EditIcon className="w-4 h-4" />
                       </Button>
                     </div>
