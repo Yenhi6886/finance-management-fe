@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
@@ -6,15 +6,17 @@ import { Label } from '../../../components/ui/label'
 import { walletService } from '../services/walletService'
 import { ArrowLeftIcon, CheckIcon, WalletIcon, DollarSignIcon } from 'lucide-react'
 import { toast } from 'sonner'
+import { WalletContext } from '../../../shared/contexts/WalletContext'
 
 const AddWallet = () => {
   const navigate = useNavigate()
+  const { refreshWallets } = useContext(WalletContext)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     icon: '💰',
     currency: 'VND',
-    initialBalance: '',
+    balance: '0',
     description: ''
   })
   const [errors, setErrors] = useState({})
@@ -32,59 +34,39 @@ const AddWallet = () => {
 
   const validateForm = () => {
     const newErrors = {}
+    const { name, icon, currency, balance, description } = formData
 
-    // Validation cho tên ví
-    if (!formData.name || !formData.name.trim()) {
+    if (!name.trim()) {
       newErrors.name = 'Tên ví là bắt buộc'
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Tên ví phải có ít nhất 2 ký tự'
-    } else if (formData.name.trim().length > 50) {
-      newErrors.name = 'Tên ví không được quá 50 ký tự'
-    } else if (!/^[a-zA-ZÀ-ỹ0-9\s\-_.]+$/.test(formData.name.trim())) {
-      newErrors.name = 'Tên ví chỉ được chứa chữ cái, số, khoảng trắng và các ký tự đặc biệt: - _ .'
+    } else if (name.trim().length > 100) {
+      newErrors.name = 'Tên ví không được quá 100 ký tự'
     }
 
-    // Validation cho icon ví
-    if (!formData.icon || formData.icon.trim() === '') {
+    if (!icon) {
       newErrors.icon = 'Vui lòng chọn icon cho ví'
-    } else if (!availableIcons.includes(formData.icon)) {
-      newErrors.icon = 'Icon không hợp lệ, vui lòng chọn từ danh sách có sẵn'
     }
 
-    // Validation cho loại tiền tệ
-    if (!formData.currency || formData.currency.trim() === '') {
+    if (!currency) {
       newErrors.currency = 'Vui lòng chọn loại tiền tệ'
-    } else {
-      const validCurrencies = currencies.map(c => c.code)
-      if (!validCurrencies.includes(formData.currency)) {
-        newErrors.currency = 'Loại tiền tệ không hợp lệ'
+    }
+
+    if (balance) {
+      const numericBalance = parseFloat(balance);
+      if (isNaN(numericBalance)) {
+        newErrors.balance = 'Số dư phải là một số hợp lệ.';
+      } else if (numericBalance < 0) {
+        newErrors.balance = 'Số dư không được là số âm.';
       }
     }
 
-    // Validation cho số tiền ban đầu
-    if (formData.initialBalance && formData.initialBalance !== '') {
-      const amount = parseFloat(String(formData.initialBalance).replace(/,/g, ''))
-      if (isNaN(amount)) {
-        newErrors.initialBalance = 'Số tiền phải là một số hợp lệ'
-      } else if (amount < 0) {
-        newErrors.initialBalance = 'Số tiền không được âm'
-      } else if (amount > 999999999999) {
-        newErrors.initialBalance = 'Số tiền quá lớn'
-      }
-    }
-
-    // Validation cho mô tả (optional)
-    if (formData.description) {
-      if (formData.description.length > 200) {
-        newErrors.description = 'Mô tả không được quá 200 ký tự'
-      } else if (formData.description.trim().length > 0 && formData.description.trim().length < 5) {
-        newErrors.description = 'Mô tả phải có ít nhất 5 ký tự nếu có nhập'
-      }
+    if (description && description.trim().length > 500) {
+      newErrors.description = 'Mô tả không được quá 500 ký tự'
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
+
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -95,18 +77,23 @@ const AddWallet = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!validateForm()) return
+    if (!validateForm()) {
+      toast.error('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.');
+      return;
+    }
 
     try {
       setLoading(true)
-      const balance = formData.initialBalance ? parseFloat(String(formData.initialBalance).replace(/,/g, '')) : 0
-
       const walletData = {
         ...formData,
-        initialBalance: balance
+        balance: parseFloat(formData.balance) || 0,
+        name: formData.name.trim(),
+        description: formData.description.trim()
       }
 
       await walletService.createWallet(walletData)
+      await refreshWallets() // Refresh wallet context to update navbar
+
       navigate('/wallets', {
         state: {
           message: 'Ví đã được tạo thành công!',
@@ -123,14 +110,31 @@ const AddWallet = () => {
     }
   }
 
-  const formatCurrency = (amount, currency = 'VND') => {
-    if (typeof amount !== 'number') {
-      amount = parseFloat(String(amount).replace(/,/g, '')) || 0;
+  const handleBalanceChange = (e) => {
+    const value = e.target.value;
+    const sanitizedValue = value.replace(/[.,]/g, '');
+
+    if (/^\d*$/.test(sanitizedValue)) {
+      handleInputChange('balance', sanitizedValue);
     }
-    if (currency === 'USD') {
-      return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
+  }
+
+  const formatDisplayCurrency = (amountStr) => {
+    if (!amountStr) return '0';
+    const amount = parseInt(amountStr, 10);
+    if (isNaN(amount)) return '0';
     return amount.toLocaleString('vi-VN');
+  }
+
+  const formatPreviewCurrency = (amountStr, currencyCode = 'VND') => {
+    const amount = parseInt(amountStr, 10) || 0;
+    const currencyInfo = currencies.find(c => c.code === currencyCode);
+    const symbol = currencyInfo ? currencyInfo.symbol : '';
+
+    if (currencyCode === 'USD') {
+      return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + symbol;
+    }
+    return amount.toLocaleString('vi-VN') + ' ' + symbol;
   }
 
   return (
@@ -176,6 +180,7 @@ const AddWallet = () => {
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       className={`mt-2 ${errors.name ? 'border-red-500' : ''}`}
+                      maxLength={100}
                   />
                   {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
                 </div>
@@ -202,19 +207,16 @@ const AddWallet = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="initialBalance">Số tiền ban đầu</Label>
+                    <Label htmlFor="balance">Số tiền ban đầu</Label>
                     <Input
-                        id="initialBalance"
+                        id="balance"
                         type="text"
                         placeholder="0"
-                        value={formData.initialBalance}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/[^0-9]/g, '')
-                          handleInputChange('initialBalance', value ? formatCurrency(value, formData.currency) : '')
-                        }}
-                        className={`mt-2 ${errors.initialBalance ? 'border-red-500' : ''}`}
+                        value={formatDisplayCurrency(formData.balance)}
+                        onChange={handleBalanceChange}
+                        className={`mt-2 ${errors.balance ? 'border-red-500' : ''}`}
                     />
-                    {errors.initialBalance && <p className="text-sm text-red-500 mt-1">{errors.initialBalance}</p>}
+                    {errors.balance && <p className="text-sm text-red-500 mt-1">{errors.balance}</p>}
                   </div>
 
                   <div>
@@ -241,7 +243,9 @@ const AddWallet = () => {
                       onChange={(e) => handleInputChange('description', e.target.value)}
                       rows={3}
                       className="w-full px-3 py-2 mt-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background resize-none"
+                      maxLength={500}
                   />
+                  {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description}</p>}
                 </div>
               </div>
             </div>
@@ -270,9 +274,9 @@ const AddWallet = () => {
                 <div className="flex items-center space-x-3">
                   <div className="text-3xl">{formData.icon}</div>
                   <div>
-                    <p className="font-semibold">{formData.name || 'Tên ví'}</p>
+                    <p className="font-semibold">{formData.name.trim() || 'Tên ví'}</p>
                     <p className="text-sm opacity-80">
-                      {formatCurrency(formData.initialBalance || 0, formData.currency)} {currencies.find(c => c.code === formData.currency)?.symbol}
+                      {formatPreviewCurrency(formData.balance, formData.currency)}
                     </p>
                   </div>
                 </div>
@@ -283,5 +287,4 @@ const AddWallet = () => {
       </div>
   )
 }
-
 export default AddWallet

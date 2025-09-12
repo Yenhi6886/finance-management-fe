@@ -14,18 +14,33 @@ export const WalletProvider = ({ children }) => {
       const response = await walletService.getWallets()
       const walletsData = response.data.data || []
       setWallets(walletsData)
-      
-      // Nếu chưa có ví hiện tại, chọn ví đầu tiên
-      if (!currentWallet && walletsData.length > 0) {
+
+      // Check if current wallet still exists after refresh
+      const savedWalletId = localStorage.getItem('currentWalletId')
+      if (savedWalletId && walletsData.length > 0) {
+        const savedWallet = walletsData.find(w => w.id === savedWalletId)
+        if (savedWallet) {
+          setCurrentWallet(savedWallet)
+        } else {
+          // Current wallet was deleted, select the first available wallet
+          setCurrentWallet(walletsData[0])
+          localStorage.setItem('currentWalletId', walletsData[0].id)
+        }
+      } else if (!currentWallet && walletsData.length > 0) {
+        // No current wallet selected, select the first one
         setCurrentWallet(walletsData[0])
         localStorage.setItem('currentWalletId', walletsData[0].id)
+      } else if (walletsData.length === 0) {
+        // No wallets available
+        setCurrentWallet(null)
+        localStorage.removeItem('currentWalletId')
       }
     } catch (error) {
       console.error('Error fetching wallets:', error)
     } finally {
       setLoading(false)
     }
-  }, [currentWallet])
+  }, [])
 
   const selectWallet = (wallet) => {
     setCurrentWallet(wallet)
@@ -34,35 +49,17 @@ export const WalletProvider = ({ children }) => {
 
   const getTotalBalance = () => {
     return wallets.reduce((total, wallet) => {
-      // Quy đổi tất cả về VND để tính tổng
-      const exchangeRate = 25400 // USD to VND
-      const balanceInVND = wallet.currency === 'USD' 
-        ? wallet.balance * exchangeRate 
-        : wallet.balance
+      const exchangeRate = 25400
+      const balanceInVND = wallet.currency === 'USD'
+          ? wallet.balance * exchangeRate
+          : wallet.balance
       return total + balanceInVND
     }, 0)
   }
 
   useEffect(() => {
     fetchWallets()
-    
-    // Khôi phục ví hiện tại từ localStorage
-    const savedWalletId = localStorage.getItem('currentWalletId')
-    if (savedWalletId) {
-      // Sẽ được set sau khi fetch wallets
-    }
   }, [fetchWallets])
-
-  useEffect(() => {
-    // Set current wallet từ localStorage sau khi có danh sách ví
-    const savedWalletId = localStorage.getItem('currentWalletId')
-    if (savedWalletId && wallets.length > 0) {
-      const savedWallet = wallets.find(w => w.id === savedWalletId)
-      if (savedWallet) {
-        setCurrentWallet(savedWallet)
-      }
-    }
-  }, [wallets])
 
   const value = {
     currentWallet,
@@ -75,8 +72,8 @@ export const WalletProvider = ({ children }) => {
   }
 
   return (
-    <WalletContext.Provider value={value}>
-      {children}
-    </WalletContext.Provider>
+      <WalletContext.Provider value={value}>
+        {children}
+      </WalletContext.Provider>
   )
 }

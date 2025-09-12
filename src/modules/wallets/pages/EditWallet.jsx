@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
@@ -6,10 +6,12 @@ import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import { walletService } from '../services/walletService'
 import { ArrowLeftIcon, SaveIcon, TrashIcon } from 'lucide-react'
+import { WalletContext } from '../../../shared/contexts/WalletContext'
 
 const EditWallet = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { refreshWallets } = useContext(WalletContext)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [wallet, setWallet] = useState(null)
@@ -114,7 +116,7 @@ const EditWallet = () => {
 
     // Validation thời gian thực
     const newErrors = { ...errors }
-    
+
     if (field === 'name') {
       if (!value || !value.trim()) {
         newErrors.name = 'Tên ví là bắt buộc'
@@ -128,7 +130,7 @@ const EditWallet = () => {
         delete newErrors.name
       }
     }
-    
+
     if (field === 'icon') {
       if (!value || value.trim() === '') {
         newErrors.icon = 'Vui lòng chọn icon cho ví'
@@ -138,7 +140,7 @@ const EditWallet = () => {
         delete newErrors.icon
       }
     }
-    
+
     if (field === 'currency') {
       if (!value || value.trim() === '') {
         newErrors.currency = 'Vui lòng chọn loại tiền tệ'
@@ -151,7 +153,7 @@ const EditWallet = () => {
         }
       }
     }
-    
+
     if (field === 'description') {
       if (value && value.length > 200) {
         newErrors.description = 'Mô tả không được quá 200 ký tự'
@@ -197,6 +199,7 @@ const EditWallet = () => {
     if (window.confirm('Bạn có chắc chắn muốn xóa ví này? Tất cả dữ liệu sẽ bị mất vĩnh viễn.')) {
       try {
         await walletService.deleteWallet(id)
+        await refreshWallets() // Refresh wallet context to update navbar
         navigate('/wallets', {
           state: {
             message: 'Ví đã được xóa thành công!',
