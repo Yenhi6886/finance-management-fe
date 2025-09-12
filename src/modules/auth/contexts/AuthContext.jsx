@@ -203,7 +203,7 @@ export const AuthProvider = ({ children }) => {
     deleteAccount,
     forgotPassword,
     uploadAvatar,
-    updateUserContext, // <-- Thêm hàm mới vào value
+    updateUserContext,
   }
 
   return (
