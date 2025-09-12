@@ -10,7 +10,8 @@ import {
   ArchiveIcon,
   DollarSignIcon,
   TrashIcon,
-  ArchiveRestoreIcon
+  ArchiveRestoreIcon,
+  Loader2
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -31,6 +32,7 @@ const WalletList = () => {
   const [activeWallets, setActiveWallets] = useState([])
   const [archivedWallets, setArchivedWallets] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isTogglingArchive, setIsTogglingArchive] = useState(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [walletToDelete, setWalletToDelete] = useState(null)
   const [view, setView] = useState('active')
@@ -58,11 +60,12 @@ const WalletList = () => {
   }, [])
 
   useEffect(() => {
-    // Reset flag when location changes (new navigation)
-    hasShownToastRef.current = false
-  }, [location.pathname, location.search])
+    // This is the main effect for loading data
+    fetchWallets()
+  }, [fetchWallets])
 
   useEffect(() => {
+    // This effect handles notifications from other pages
     if (location.state?.message && !hasShownToastRef.current) {
       if (location.state.type === 'success') {
         toast.success(location.state.message)
@@ -70,15 +73,17 @@ const WalletList = () => {
         toast.error(location.state.message)
       }
       hasShownToastRef.current = true
+
+      // After showing toast, refresh local data and global context
       fetchWallets()
-      // Clear the state immediately to prevent duplicate toasts
+      refreshWallets()
+
+      // Clean up the location state to prevent re-triggering
       window.history.replaceState({}, document.title)
     }
-  }, [location.state?.message, location.state?.type, fetchWallets])
+    // We only want this to run when location.state changes
+  }, [location.state, fetchWallets, refreshWallets])
 
-  useEffect(() => {
-    fetchWallets()
-  }, [fetchWallets])
 
   const totalBalance = useMemo(() => {
     return activeWallets.reduce((sum, wallet) => {
@@ -88,12 +93,8 @@ const WalletList = () => {
     }, 0)
   }, [activeWallets])
 
-  const walletsToDisplay = view === 'active' ? activeWallets : archivedWallets
-  const hasAnyWallets = activeWallets.length > 0 || archivedWallets.length > 0;
-
-
   const handleDeleteClick = (wallet) => {
-    if (wallet.isArchived) {
+    if (view === 'archived') {
       toast.info('Bạn cần khôi phục ví trước khi xóa.')
       return
     }
@@ -107,7 +108,7 @@ const WalletList = () => {
       await walletService.deleteWallet(walletToDelete.id)
       await refreshWallets()
       toast.success(`Ví "${walletToDelete.name}" đã được xóa thành công.`)
-      fetchWallets()
+      await fetchWallets()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi xóa ví.')
     } finally {
@@ -117,7 +118,8 @@ const WalletList = () => {
   }
 
   const handleArchiveToggle = async (wallet) => {
-    const isArchiving = !wallet.isArchived
+    setIsTogglingArchive(wallet.id)
+    const isArchiving = view === 'active'
     const action = isArchiving ? walletService.archiveWallet : walletService.unarchiveWallet
     const successMessage = isArchiving ? 'lưu trữ' : 'khôi phục'
 
@@ -128,6 +130,8 @@ const WalletList = () => {
       await refreshWallets()
     } catch (error) {
       toast.error(error.response?.data?.message || `Lỗi khi ${successMessage} ví.`)
+    } finally {
+      setIsTogglingArchive(null)
     }
   }
 
@@ -148,8 +152,16 @@ const WalletList = () => {
       'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
       'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
     ]
-    return colors[name.length % colors.length]
+    if (!name) return colors[0];
+    let hash = 0
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash % colors.length)]
   }
+
+  const walletsToDisplay = view === 'active' ? activeWallets : archivedWallets
+  const hasAnyWallets = activeWallets.length > 0 || archivedWallets.length > 0;
 
   if (loading) {
     return (
@@ -191,19 +203,23 @@ const WalletList = () => {
               Tổng quan các ví tiền và tài khoản của bạn
             </p>
           </div>
-          <div className="mt-3 sm:mt-0 flex space-x-2">
-            <Button
-                variant={view === 'archived' ? 'default' : 'outline'}
-                onClick={() => setView(view === 'active' ? 'archived' : 'active')}
-            >
-              {view === 'active' ? <ArchiveIcon className="w-4 h-4 mr-2" /> : <WalletIcon className="w-4 h-4 mr-2" />}
-              {view === 'active' ? `Ví Lưu Trữ (${archivedWallets.length})` : `Ví Hoạt Động (${activeWallets.length})`}
-            </Button>
+          <div className="mt-3 sm:mt-0">
             <Button onClick={() => navigate('/wallets/add')}>
               <PlusIcon className="w-4 h-4 mr-2" />
               Thêm Ví
             </Button>
           </div>
+        </div>
+
+        <div className="flex space-x-2 border-b">
+          <Button variant="ghost" className={`relative h-10 px-4 py-2 ${view === 'active' ? 'text-primary' : 'text-muted-foreground'}`} onClick={() => setView('active')}>
+            Ví Hoạt Động ({activeWallets.length})
+            {view === 'active' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"></div>}
+          </Button>
+          <Button variant="ghost" className={`relative h-10 px-4 py-2 ${view === 'archived' ? 'text-primary' : 'text-muted-foreground'}`} onClick={() => setView('archived')}>
+            Ví Lưu Trữ ({archivedWallets.length})
+            {view === 'archived' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"></div>}
+          </Button>
         </div>
 
         {view === 'active' && activeWallets.length > 0 && (
@@ -225,54 +241,55 @@ const WalletList = () => {
             </Card>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {walletsToDisplay.map((wallet) => (
-              <Card key={wallet.id} className={`hover:shadow-md transition-shadow ${wallet.isArchived ? 'opacity-60' : ''}`}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <CardTitle className={`text-base px-2 py-1 rounded-md inline-block ${getWalletColor(wallet.name)}`}>
-                      {wallet.icon} {wallet.name}
-                      {wallet.isArchived && <span className="text-xs ml-2">(Lưu trữ)</span>}
-                    </CardTitle>
-                    <div className="flex space-x-1">
-                      {!wallet.isArchived && (
-                          <>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}`)}><EyeIcon className="w-4 h-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}/edit`)}><EditIcon className="w-4 h-4" /></Button>
-                          </>
-                      )}
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleArchiveToggle(wallet)}>
-                        {wallet.isArchived ? <ArchiveRestoreIcon className="w-4 h-4 text-blue-500" /> : <ArchiveIcon className="w-4 h-4" />}
-                      </Button>
-                      <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={() => handleDeleteClick(wallet)}
-                          disabled={wallet.isArchived}
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Số dư</p>
-                  <p className="text-2xl font-bold">{formatCurrency(wallet.balance, wallet.currency)}</p>
-                  {wallet.description && <p className="text-sm text-muted-foreground mt-2 italic line-clamp-2">{wallet.description}</p>}
-                </CardContent>
-              </Card>
-          ))}
-        </div>
-
-        {walletsToDisplay.length === 0 && (
-            <Card className="p-12 text-center">
+        {walletsToDisplay.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {walletsToDisplay.map((wallet) => (
+                  <Card key={wallet.id} className={`hover:shadow-md transition-shadow ${view === 'archived' ? 'bg-muted/50' : ''}`}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <CardTitle className={`text-base px-2 py-1 rounded-md inline-block ${getWalletColor(wallet.name)}`}>
+                          {wallet.icon} {wallet.name}
+                        </CardTitle>
+                        <div className="flex space-x-1">
+                          {view === 'active' && (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}`)}><EyeIcon className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}/edit`)}><EditIcon className="w-4 h-4" /></Button>
+                              </>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleArchiveToggle(wallet)} disabled={isTogglingArchive === wallet.id}>
+                            {isTogglingArchive === wallet.id ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                                view === 'archived' ? <ArchiveRestoreIcon className="w-4 h-4 text-blue-500" /> : <ArchiveIcon className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={() => handleDeleteClick(wallet)}
+                              disabled={view === 'archived'}
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">Số dư</p>
+                      <p className="text-2xl font-bold">{formatCurrency(wallet.balance, wallet.currency)}</p>
+                      {wallet.description && <p className="text-sm text-muted-foreground mt-2 italic line-clamp-2">{wallet.description}</p>}
+                    </CardContent>
+                  </Card>
+              ))}
+            </div>
+        ) : (
+            <Card className="p-12 text-center mt-6">
               <WalletIcon className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {view === 'active' ? 'Chưa có ví nào' : 'Không có ví nào được lưu trữ'}
+                {view === 'active' ? 'Chưa có ví nào đang hoạt động' : 'Không có ví nào trong kho lưu trữ'}
               </h3>
-              <p className="text-muted-foreground mb-4">
-                {view === 'active' ? 'Bạn có thể xem các ví đã lưu trữ hoặc tạo một ví mới.' : 'Bạn có thể khôi phục các ví không còn sử dụng.'}
+              <p className="text-muted-foreground">
+                {view === 'active' ? 'Tạo một ví mới hoặc khôi phục ví từ kho lưu trữ.' : 'Bạn có thể khôi phục các ví không còn sử dụng từ đây.'}
               </p>
             </Card>
         )}

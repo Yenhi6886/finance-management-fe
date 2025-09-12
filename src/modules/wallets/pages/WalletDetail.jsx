@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { LineChart, BarChart } from '../../../components/charts/ChartComponents'
@@ -39,6 +39,7 @@ import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/aler
 const WalletDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { refreshWallets } = useContext(WalletContext)
   const [wallet, setWallet] = useState(null)
   const [transactions, setTransactions] = useState([])
@@ -160,9 +161,9 @@ const WalletDetail = () => {
           <div className="flex space-x-2">
             {!wallet.isArchived && (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/wallets/${wallet.id}/add-money`)} className="h-8 px-3 text-xs"><PlusIcon className="w-3 h-3 mr-1.5" />Nạp tiền</Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/wallets/add-money', { state: { from: location.pathname } })} className="h-8 px-3 text-xs"><PlusIcon className="w-3 h-3 mr-1.5" />Nạp tiền</Button>
                   <Button variant="outline" size="sm" onClick={() => navigate(`/wallets/${id}/edit`)} className="h-8 px-3 text-xs"><EditIcon className="w-3 h-3 mr-1.5" />Chỉnh sửa</Button>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/wallets/${id}/share`)} className="h-8 px-3 text-xs"><ShareIcon className="w-3 h-3 mr-1.5" />Chia sẻ</Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/wallets/share', { state: { from: location.pathname } })} className="h-8 px-3 text-xs"><ShareIcon className="w-3 h-3 mr-1.5" />Chia sẻ</Button>
                 </>
             )}
             <Button variant={wallet.isArchived ? "default" : "outline"} size="sm" onClick={handleArchiveToggle} className="h-8 px-3 text-xs">
