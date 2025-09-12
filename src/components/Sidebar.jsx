@@ -108,7 +108,7 @@ const Sidebar = () => {
               <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                 <WalletIcon className="w-5 h-5 text-white" />
               </div>
-              <span className="font-medium text-lg">FinanceApp</span>
+              <span className="font-medium text-lg">X Spend</span>
             </div>
           )}
           <button
