@@ -84,7 +84,6 @@ const WalletList = () => {
     // We only want this to run when location.state changes
   }, [location.state, fetchWallets, refreshWallets])
 
-
   const totalBalance = useMemo(() => {
     return activeWallets.reduce((sum, wallet) => {
       const exchangeRate = 25400
