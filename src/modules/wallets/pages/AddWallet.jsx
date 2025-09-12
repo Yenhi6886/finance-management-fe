@@ -33,18 +33,52 @@ const AddWallet = () => {
   const validateForm = () => {
     const newErrors = {}
 
-    if (!formData.name.trim()) {
+    // Validation cho tên ví
+    if (!formData.name || !formData.name.trim()) {
       newErrors.name = 'Tên ví là bắt buộc'
-    } else if (formData.name.length > 50) {
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Tên ví phải có ít nhất 2 ký tự'
+    } else if (formData.name.trim().length > 50) {
       newErrors.name = 'Tên ví không được quá 50 ký tự'
+    } else if (!/^[a-zA-ZÀ-ỹ0-9\s\-_.]+$/.test(formData.name.trim())) {
+      newErrors.name = 'Tên ví chỉ được chứa chữ cái, số, khoảng trắng và các ký tự đặc biệt: - _ .'
     }
 
+    // Validation cho icon ví
+    if (!formData.icon || formData.icon.trim() === '') {
+      newErrors.icon = 'Vui lòng chọn icon cho ví'
+    } else if (!availableIcons.includes(formData.icon)) {
+      newErrors.icon = 'Icon không hợp lệ, vui lòng chọn từ danh sách có sẵn'
+    }
+
+    // Validation cho loại tiền tệ
+    if (!formData.currency || formData.currency.trim() === '') {
+      newErrors.currency = 'Vui lòng chọn loại tiền tệ'
+    } else {
+      const validCurrencies = currencies.map(c => c.code)
+      if (!validCurrencies.includes(formData.currency)) {
+        newErrors.currency = 'Loại tiền tệ không hợp lệ'
+      }
+    }
+
+    // Validation cho số tiền ban đầu
     if (formData.initialBalance && formData.initialBalance !== '') {
       const amount = parseFloat(String(formData.initialBalance).replace(/,/g, ''))
       if (isNaN(amount)) {
         newErrors.initialBalance = 'Số tiền phải là một số hợp lệ'
       } else if (amount < 0) {
         newErrors.initialBalance = 'Số tiền không được âm'
+      } else if (amount > 999999999999) {
+        newErrors.initialBalance = 'Số tiền quá lớn'
+      }
+    }
+
+    // Validation cho mô tả (optional)
+    if (formData.description) {
+      if (formData.description.length > 200) {
+        newErrors.description = 'Mô tả không được quá 200 ký tự'
+      } else if (formData.description.trim().length > 0 && formData.description.trim().length < 5) {
+        newErrors.description = 'Mô tả phải có ít nhất 5 ký tự nếu có nhập'
       }
     }
 
@@ -73,8 +107,12 @@ const AddWallet = () => {
       }
 
       await walletService.createWallet(walletData)
-      toast.success('Ví đã được tạo thành công!')
-      navigate('/wallets')
+      navigate('/wallets', {
+        state: {
+          message: 'Ví đã được tạo thành công!',
+          type: 'success'
+        }
+      })
 
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Có lỗi xảy ra khi tạo ví. Vui lòng thử lại.'
