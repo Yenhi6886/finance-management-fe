@@ -15,12 +15,15 @@ export const validationUtils = {
       return errors
     }
     
-    if (password.length < 6) {
-      errors.push('Mật khẩu phải có ít nhất 6 ký tự')
+    if (password.length < 8) {
+      errors.push('Mật khẩu phải có ít nhất 8 ký tự')
     }
-    
-    if (password.length > 8) {
-      errors.push('Mật khẩu không được quá 8 ký tự')
+
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+
+    if (!hasLetter || !hasNumber) {
+      errors.push('Mật khẩu phải bao gồm cả chữ cái và chữ số');
     }
     
     return errors
