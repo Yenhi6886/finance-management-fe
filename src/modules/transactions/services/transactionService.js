@@ -16,7 +16,7 @@ export const transactionService = {
   getCategories: async () => {
     console.log('Calling real getCategories API');
     // Assuming a BE endpoint for categories, e.g., /categories/expense
-    return apiClient.get('/categories/expense');
+    return apiClient.get('/categories');
   },
   // Add other transaction related API calls here for future stories
 };
