@@ -1,34 +1,56 @@
 import apiService from '../../../shared/services/apiService'
 
 export const walletService = {
-  // Lấy danh sách tất cả ví
   getWallets: async () => {
     return apiService.get('/wallets')
   },
 
-  // Tạo ví mới
+  getArchivedWallets: async () => {
+    return apiService.get('/wallets/archived')
+  },
+
   createWallet: async (walletData) => {
     return apiService.post('/wallets', walletData)
   },
 
-  // Lấy thông tin chi tiết một ví
   getWalletById: async (id) => {
-    // This needs to be implemented with a real API call later
-    // Example: return apiService.get(`/wallets/${id}`)
-    throw new Error('getWalletById not implemented')
+    return apiService.get(`/wallets/${id}`)
   },
 
-  // Cập nhật thông tin ví
   updateWallet: async (id, walletData) => {
-    // This needs to be implemented with a real API call later
-    // Example: return apiService.put(`/wallets/${id}`, walletData)
-    throw new Error('updateWallet not implemented')
+    return apiService.put(`/wallets/${id}`, walletData)
   },
 
-  // Xóa ví
   deleteWallet: async (id) => {
-    // This needs to be implemented with a real API call later
-    // Example: return apiService.delete(`/wallets/${id}`)
-    throw new Error('deleteWallet not implemented')
+    return apiService.delete(`/wallets/${id}`)
   },
+
+  archiveWallet: async (id) => {
+    return apiService.patch(`/wallets/${id}/archive`)
+  },
+
+  unarchiveWallet: async (id) => {
+    return apiService.patch(`/wallets/${id}/unarchive`)
+  },
+
+  transferMoney: async (transferData) => {
+    return apiService.post('/wallets/transfer', transferData)
+  },
+
+  getTransactions: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return apiService.get(`/transactions${queryString ? `?${queryString}` : ''}`)
+  },
+
+  addMoney: async (walletId, data) => {
+    return apiService.post(`/wallets/${walletId}/add-money`, data)
+  },
+
+  shareWallet: async (shareData) => {
+    return apiService.post('/wallets/share', shareData)
+  },
+
+  getSharedWallets: async () => {
+    return apiService.get('/wallets/shared-with-me')
+  }
 }

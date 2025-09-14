@@ -1,176 +1,170 @@
-import apiClient from '../../../shared/services/apiService.js'
-
-const mockDashboardData = {
-  stats: {
-    totalBalance: 125000000,
-    monthlyIncome: 35000000,
-    monthlyExpense: 22000000,
-    totalAccounts: 4,
-    savingsGoalProgress: 68,
-    investmentReturn: 12.5,
-    monthlyGrowth: 8.2,
-    pendingTransactions: 3
-  },
-  recentTransactions: [
-    {
-      id: 1,
-      description: 'Lương tháng 9',
-      amount: 25000000,
-      type: 'income',
-      category: 'Lương',
-      date: '2024-09-01T08:00:00Z',
-      account: 'VCB - *1234'
-    },
-    {
-      id: 2,
-      description: 'Mua sắm Coopmart',
-      amount: 850000,
-      type: 'expense',
-      category: 'Mua sắm',
-      date: '2024-09-06T14:30:00Z',
-      account: 'VCB - *1234'
-    },
-    {
-      id: 3,
-      description: 'Tiền điện tháng 8',
-      amount: 1200000,
-      type: 'expense',
-      category: 'Hóa đơn',
-      date: '2024-09-05T10:15:00Z',
-      account: 'VCB - *1234'
-    },
-    {
-      id: 4,
-      description: 'Freelance project',
-      amount: 8000000,
-      type: 'income',
-      category: 'Freelance',
-      date: '2024-09-04T16:45:00Z',
-      account: 'Techcombank - *5678'
-    },
-    {
-      id: 5,
-      description: 'Ăn trưa',
-      amount: 150000,
-      type: 'expense',
-      category: 'Ăn uống',
-      date: '2024-09-06T12:00:00Z',
-      account: 'VCB - *1234'
-    }
-  ],
-  spendingByCategory: [
-    { category: 'Ăn uống', amount: 4500000, percentage: 32, color: '#22c55e' },
-    { category: 'Mua sắm', amount: 3200000, percentage: 23, color: '#f97316' },
-    { category: 'Hóa đơn', amount: 2800000, percentage: 20, color: '#eab308' },
-    { category: 'Giải trí', amount: 1800000, percentage: 13, color: '#06b6d4' },
-    { category: 'Khác', amount: 1700000, percentage: 12, color: '#8b5cf6' }
-  ],
-  incomeVsExpenses: {
-    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9'],
-    income: [28000000, 32000000, 29000000, 35000000, 31000000, 33000000, 36000000, 34000000, 35000000],
-    expenses: [22000000, 25000000, 24000000, 28000000, 26000000, 24000000, 27000000, 25000000, 22000000]
-  },
-  savingsOverTime: {
-    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9'],
-    data: [15000000, 22000000, 27000000, 34000000, 39000000, 48000000, 57000000, 66000000, 79000000]
-  },
-  portfolioDistribution: [
-    { label: 'Tiết kiệm', value: 45, color: '#22c55e' },
-    { label: 'Đầu tư', value: 30, color: '#f97316' },
-    { label: 'Tiền mặt', value: 20, color: '#eab308' },
-    { label: 'Crypto', value: 5, color: '#06b6d4' }
-  ],
-  weeklySpending: {
-    labels: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-    data: [450000, 320000, 280000, 380000, 420000, 650000, 890000]
-  },
-  topCategories: [
-    { name: 'Ăn uống', amount: 4500000, change: '+12%', trend: 'up' },
-    { name: 'Mua sắm', amount: 3200000, change: '-5%', trend: 'down' },
-    { name: 'Hóa đơn', amount: 2800000, change: '+2%', trend: 'up' },
-    { name: 'Giải trí', amount: 1800000, change: '+18%', trend: 'up' }
-  ]
-}
+// Simulating an API service with hardcoded data.
+const apiSimulator = (data) => {
+  return new Promise(resolve => {
+    // Simulate a short network delay
+    setTimeout(() => {
+      resolve({
+        data: {
+          data: data
+        }
+      });
+    }, 500);
+  });
+};
 
 export const dashboardService = {
   getStats: async () => {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    return {
-      data: {
-        data: mockDashboardData.stats
-      }
-    }
+    const stats = {
+      totalBalance: 125730000,
+      monthlyIncome: 35000000,
+      monthlyExpense: 21500000,
+      totalAccounts: 4,
+      savingsGoalProgress: 68,
+      investmentReturn: 4.7,
+      monthlyGrowth: 1.5,
+      pendingTransactions: 3,
+    };
+    return apiSimulator(stats);
   },
 
-  getRecentTransactions: async (limit = 10) => {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return {
-      data: {
-        data: mockDashboardData.recentTransactions.slice(0, limit)
-      }
-    }
+  getRecentTransactions: async (limit = 5) => {
+    const transactions = [{
+      id: 1,
+      description: 'Lương tháng 9',
+      category: 'Thu nhập',
+      account: 'Vietcombank',
+      date: '2025-09-05T10:00:00Z',
+      type: 'income',
+      amount: 35000000
+    }, {
+      id: 2,
+      description: 'Tiền nhà & dịch vụ',
+      category: 'Nhà cửa',
+      account: 'Vietcombank',
+      date: '2025-09-05T11:30:00Z',
+      type: 'expense',
+      amount: 8500000
+    }, {
+      id: 3,
+      description: 'Ăn tối nhà hàng',
+      category: 'Ăn uống',
+      account: 'Thẻ tín dụng',
+      date: '2025-09-08T19:45:00Z',
+      type: 'expense',
+      amount: 1200000
+    }, {
+      id: 4,
+      description: 'Đầu tư chứng khoán FPT',
+      category: 'Đầu tư',
+      account: 'VNDirect',
+      date: '2025-09-09T14:00:00Z',
+      type: 'expense',
+      amount: 10000000
+    }, {
+      id: 5,
+      description: 'Thanh toán tiền điện',
+      category: 'Hóa đơn',
+      account: 'Momo',
+      date: '2025-09-10T09:15:00Z',
+      type: 'expense',
+      amount: 850000
+    }, ];
+    return apiSimulator(transactions.slice(0, limit));
   },
 
-  getFinancialSummary: async (period = 'month') => {
-    await new Promise(resolve => setTimeout(resolve, 400))
-    return {
-      data: {
-        data: mockDashboardData.incomeVsExpenses
-      }
-    }
+  getSpendingByCategory: async () => {
+    const spending = [{
+      category: 'Ăn uống',
+      amount: 6800000,
+      percentage: 31.6,
+      color: '#3b82f6'
+    }, {
+      category: 'Nhà cửa',
+      amount: 8500000,
+      percentage: 39.5,
+      color: '#10b981'
+    }, {
+      category: 'Di chuyển',
+      amount: 2100000,
+      percentage: 9.8,
+      color: '#f97316'
+    }, {
+      category: 'Giải trí',
+      amount: 2500000,
+      percentage: 11.6,
+      color: '#a855f7'
+    }, {
+      category: 'Khác',
+      amount: 1600000,
+      percentage: 7.5,
+      color: '#64748b'
+    }, ];
+    return apiSimulator(spending);
   },
 
-  getSpendingByCategory: async (period = 'month') => {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return {
-      data: {
-        data: mockDashboardData.spendingByCategory
-      }
-    }
-  },
-
-  getIncomeVsExpenses: async (period = 'year') => {
-    await new Promise(resolve => setTimeout(resolve, 400))
-    return {
-      data: {
-        data: mockDashboardData.incomeVsExpenses
-      }
-    }
+  getIncomeVsExpenses: async () => {
+    const data = {
+      labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9'],
+      income: [30, 32, 31, 35, 34, 36, 33, 37, 35].map(x => x * 1000000),
+      expenses: [20, 22, 25, 23, 26, 24, 27, 25, 21.5].map(x => x * 1000000),
+    };
+    return apiSimulator(data);
   },
 
   getSavingsOverTime: async () => {
-    await new Promise(resolve => setTimeout(resolve, 400))
-    return {
-      data: {
-        data: mockDashboardData.savingsOverTime
-      }
-    }
+    const data = {
+      labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9'],
+      data: [10, 20, 26, 38, 46, 58, 64, 76, 90].map(x => x * 1000000),
+    };
+    return apiSimulator(data);
   },
 
   getPortfolioDistribution: async () => {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return {
-      data: {
-        data: mockDashboardData.portfolioDistribution
-      }
-    }
+    const data = [{
+      label: 'Cổ phiếu',
+      value: 50,
+      color: '#3b82f6'
+    }, {
+      label: 'Trái phiếu',
+      value: 25,
+      color: '#10b981'
+    }, {
+      label: 'Tiền mặt',
+      value: 15,
+      color: '#f97316'
+    }, {
+      label: 'Vàng',
+      value: 10,
+      color: '#a855f7'
+    }, ];
+    return apiSimulator(data);
   },
 
   getWeeklySpending: async () => {
-    await new Promise(resolve => setTimeout(resolve, 350))
-    return {
-      data: {
-        data: mockDashboardData.weeklySpending
-      }
-    }
+    const data = {
+      labels: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'],
+      data: [500000, 750000, 600000, 800000, 1500000, 2500000, 1800000],
+    };
+    return apiSimulator(data);
   },
 
   getTopCategories: async () => {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return {
-      data: {
-        data: mockDashboardData.topCategories
-      }
-    }
-  }
-}
+    const data = [{
+      name: 'Nhà cửa',
+      amount: 8500000,
+      trend: 'up',
+      change: '+2.1%'
+    }, {
+      name: 'Ăn uống',
+      amount: 6800000,
+      trend: 'down',
+      change: '-5.4%'
+    }, {
+      name: 'Giải trí',
+      amount: 2500000,
+      trend: 'up',
+      change: '+10.2%'
+    }, ];
+    return apiSimulator(data);
+  },
+};

@@ -3,6 +3,7 @@ import { useAuth } from '../modules/auth/contexts/AuthContext.jsx'
 import { useTheme } from '../shared/contexts/ThemeContext.jsx'
 import { Button } from './ui/button'
 import { Avatar } from './ui/avatar'
+import WalletSelector from './WalletSelector'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,7 @@ const Header = () => {
   return (
       <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
         <div className="flex items-center space-x-4">
+          <WalletSelector />
         </div>
 
         <div className="flex items-center space-x-4">
