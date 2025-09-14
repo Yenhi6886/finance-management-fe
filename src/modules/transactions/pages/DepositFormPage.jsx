@@ -16,6 +16,7 @@ const formSchema = z.object({
     (val) => Number(val), // Convert to number first
     z.number().min(1, { message: "Số tiền nạp phải lớn hơn 0." })
   ),
+  description: z.string().optional(),
 });
 
 const DepositFormPage = () => {
@@ -28,6 +29,7 @@ const DepositFormPage = () => {
     defaultValues: {
       walletId: '',
       amount: '',
+      description: '',
     },
   });
 
@@ -43,6 +45,8 @@ const DepositFormPage = () => {
           setWallets(response.data.data);
           if (response.data.data.length > 0) {
             setValue('walletId', response.data.data[0].id.toString()); // Select first wallet by default
+          } else {
+            errorHandler.showInfo('Bạn chưa có ví nào. Vui lòng tạo ví mới trước khi nạp tiền.');
           }
         } else {
           errorHandler.showError(response.data.message || 'Không thể tải danh sách ví.');
@@ -62,6 +66,7 @@ const DepositFormPage = () => {
       const payload = {
         walletId: parseInt(values.walletId),
         amount: values.amount,
+        description: values.description,
       };
       const response = await transactionService.deposit(payload); // Using mocked service
       if (response.data.success) {
@@ -119,6 +124,17 @@ const DepositFormPage = () => {
                   className={errors.amount && "border-red-500"}
                 />
                 {errors.amount && <p className="text-red-500 text-sm">{errors.amount.message}</p>}
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="description">Mô tả (Tùy chọn)</Label>
+                <textarea
+                  id="description"
+                  placeholder="Ghi chú về khoản nạp tiền này..."
+                  {...register('description')}
+                  rows={3}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
               </div>
             </div>
             <CardFooter className="flex justify-center p-0 pt-4">
