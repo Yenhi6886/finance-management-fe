@@ -9,5 +9,14 @@ export const transactionService = {
     console.log('Calling real getWallets API');
     return apiClient.get('/wallets');
   },
+  addExpense: async (expenseData) => {
+    console.log('Calling real addExpense API with data:', expenseData);
+    return apiClient.post('/transactions/expense', expenseData);
+  },
+  getCategories: async () => {
+    console.log('Calling real getCategories API');
+    // Assuming a BE endpoint for categories, e.g., /categories/expense
+    return apiClient.get('/categories/expense');
+  },
   // Add other transaction related API calls here for future stories
 };

@@ -21,7 +21,7 @@ import { Calendar } from '@/components/ui/calendar'; // Assuming Calendar is ava
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { errorHandler } from '@/shared/utils/errorHandler';
-// import { transactionService } from '../services/transactionService'; // Will be uncommented later
+import { transactionService } from '../services/transactionService';
 
 const formSchema = z.object({
   walletId: z.string().min(1, { message: "Vui lòng chọn ví." }),
@@ -38,7 +38,7 @@ const formSchema = z.object({
 
 const AddExpensePopup = ({ isOpen, onClose, onExpenseAdded }) => {
   const [wallets, setWallets] = useState([]);
-  const [categories, setCategories] = useState([]); // Placeholder for categories
+  const [categories, setCategories] = useState([]);
   const [loadingWallets, setLoadingWallets] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -63,31 +63,25 @@ const AddExpensePopup = ({ isOpen, onClose, onExpenseAdded }) => {
     const fetchData = async () => {
       try {
         setLoadingWallets(true);
-        // const walletResponse = await transactionService.getWallets(); // Uncomment later
-        // if (walletResponse.data.success) {
-        //   setWallets(walletResponse.data.data);
-        //   if (walletResponse.data.data.length > 0) {
-        //     setValue('walletId', walletResponse.data.data[0].id.toString());
-        //   }
-        // }
-        // else {
-        //   errorHandler.showError(walletResponse.data.message || 'Không thể tải danh sách ví.');
-        // }
+        const walletResponse = await transactionService.getWallets();
+        if (walletResponse.data.success) {
+          setWallets(walletResponse.data.data);
+          if (walletResponse.data.data.length > 0) {
+            setValue('walletId', walletResponse.data.data[0].id.toString());
+          }
+        } else {
+          errorHandler.showError(walletResponse.data.message || 'Không thể tải danh sách ví.');
+        }
 
-        // Mock data for now
-        setWallets([
-          { id: 1, name: 'Ví chính', balance: 1000000, currency: 'VND' },
-          { id: 2, name: 'Ví tiết kiệm', balance: 5000000, currency: 'VND' },
-        ]);
-        setCategories([
-          { id: 1, name: 'Ăn uống' },
-          { id: 2, name: 'Di chuyển' },
-          { id: 3, name: 'Giải trí' },
-          { id: 4, name: 'Hóa đơn' },
-          { id: 5, name: 'Mua sắm' },
-        ]);
-        setValue('walletId', '1'); // Select first mock wallet
-        setValue('categoryId', '1'); // Select first mock category
+        const categoryResponse = await transactionService.getCategories();
+        if (categoryResponse.data.success) {
+          setCategories(categoryResponse.data.data);
+          if (categoryResponse.data.data.length > 0) {
+            setValue('categoryId', categoryResponse.data.data[0].id.toString());
+          }
+        } else {
+          errorHandler.showError(categoryResponse.data.message || 'Không thể tải danh sách danh mục.');
+        }
 
       } catch (error) {
         errorHandler.handleApiError(error, 'Lỗi khi tải dữ liệu.');
@@ -109,20 +103,15 @@ const AddExpensePopup = ({ isOpen, onClose, onExpenseAdded }) => {
         transactionDate: format(values.transactionDate, 'yyyy-MM-dd\'T\'HH:mm:ss'), // Format for BE
       };
       console.log('Payload for expense:', payload);
-      // const response = await transactionService.addExpense(payload); // Uncomment later
-      // if (response.data.success) {
-      //   errorHandler.showSuccess(response.data.message || 'Thêm khoản chi thành công!');
-      //   reset(); // Clear form
-      //   onClose();
-      //   if (onExpenseAdded) onExpenseAdded();
-      // }
-      // else {
-      //   errorHandler.showError(response.data.message || 'Thêm khoản chi thất bại.');
-      // }
-      errorHandler.showSuccess('Thêm khoản chi thành công (mock)!'); // Mock success
-      reset();
-      onClose();
-      if (onExpenseAdded) onExpenseAdded();
+      const response = await transactionService.addExpense(payload);
+      if (response.data.success) {
+        errorHandler.showSuccess(response.data.message || 'Thêm khoản chi thành công!');
+        reset(); // Clear form
+        onClose();
+        if (onExpenseAdded) onExpenseAdded();
+      } else {
+        errorHandler.showError(response.data.message || 'Thêm khoản chi thất bại.');
+      }
 
     } catch (error) {
       errorHandler.handleApiError(error, 'Đã xảy ra lỗi khi thêm khoản chi.');
@@ -251,6 +240,7 @@ const AddExpensePopup = ({ isOpen, onClose, onExpenseAdded }) => {
       </DialogContent>
     </Dialog>
   );
+
 };
 
 export default AddExpensePopup;
