@@ -6,24 +6,43 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { transactionService } from '../services/transactionService'; // Import service
 import { errorHandler } from '@/shared/utils/errorHandler'; // Import error handler
-import { useAuth } from '@/modules/auth/contexts/AuthContext'; // Assuming useAuth might be needed for user info
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const formSchema = z.object({
+  walletId: z.string().min(1, { message: "Vui lòng chọn ví." }),
+  amount: z.preprocess(
+    (val) => Number(val), // Convert to number first
+    z.number().min(1, { message: "Số tiền nạp phải lớn hơn 0." })
+  ),
+});
 
 const DepositFormPage = () => {
-  const [amount, setAmount] = useState('');
-  const [selectedWallet, setSelectedWallet] = useState('');
   const [wallets, setWallets] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const { user } = useAuth(); // Example of using auth context if needed
+  const [loadingWallets, setLoadingWallets] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      walletId: '',
+      amount: '',
+    },
+  });
+
+  const { handleSubmit, register, setValue, formState: { errors }, watch } = form;
+  const selectedWalletId = watch('walletId');
 
   useEffect(() => {
     const fetchWallets = async () => {
       try {
-        setLoading(true);
+        setLoadingWallets(true);
         const response = await transactionService.getWallets(); // Using mocked service
         if (response.data.success) {
           setWallets(response.data.data);
           if (response.data.data.length > 0) {
-            setSelectedWallet(response.data.data[0].id.toString()); // Select first wallet by default
+            setValue('walletId', response.data.data[0].id.toString()); // Select first wallet by default
           }
         } else {
           errorHandler.showError(response.data.message || 'Không thể tải danh sách ví.');
@@ -31,36 +50,23 @@ const DepositFormPage = () => {
       } catch (error) {
         errorHandler.handleApiError(error, 'Lỗi khi tải danh sách ví.');
       } finally {
-        setLoading(false);
+        setLoadingWallets(false);
       }
     };
     fetchWallets();
-  }, []);
+  }, [setValue]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (loading) return;
-
-    // Basic validation (more comprehensive validation in Part 3)
-    if (!amount || parseFloat(amount) <= 0) {
-      errorHandler.showError('Số tiền nạp phải lớn hơn 0.');
-      return;
-    }
-    if (!selectedWallet) {
-      errorHandler.showError('Vui lòng chọn ví.');
-      return;
-    }
-
-    setLoading(true);
+  const onSubmit = async (values) => {
+    setSubmitting(true);
     try {
       const payload = {
-        walletId: parseInt(selectedWallet),
-        amount: parseFloat(amount),
+        walletId: parseInt(values.walletId),
+        amount: values.amount,
       };
       const response = await transactionService.deposit(payload); // Using mocked service
       if (response.data.success) {
         errorHandler.showSuccess(response.data.message || 'Nạp tiền thành công!');
-        setAmount(''); // Clear form
+        form.reset(); // Clear form after successful submission
         // Optionally refresh wallet list or update balance in context
       } else {
         errorHandler.showError(response.data.message || 'Nạp tiền thất bại.');
@@ -68,7 +74,7 @@ const DepositFormPage = () => {
     } catch (error) {
       errorHandler.handleApiError(error, 'Đã xảy ra lỗi trong quá trình nạp tiền.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -79,22 +85,29 @@ const DepositFormPage = () => {
           <CardTitle className="text-center">Nạp tiền vào ví</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid w-full items-center gap-4">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="wallet">Chọn ví</Label>
-                <Select onValueChange={setSelectedWallet} value={selectedWallet}>
-                  <SelectTrigger id="wallet">
+                <Select onValueChange={(value) => setValue('walletId', value)} value={selectedWalletId}>
+                  <SelectTrigger id="wallet" className={errors.walletId && "border-red-500"}>
                     <SelectValue placeholder="Chọn ví" />
                   </SelectTrigger>
                   <SelectContent>
-                    {wallets.map((wallet) => (
-                      <SelectItem key={wallet.id} value={wallet.id.toString()}>
-                        {wallet.name} ({wallet.balance} {wallet.currency})
-                      </SelectItem>
-                    ))}
+                    {loadingWallets ? (
+                      <SelectItem value="loading" disabled>Đang tải ví...</SelectItem>
+                    ) : wallets.length === 0 ? (
+                      <SelectItem value="no-wallets" disabled>Không có ví nào</SelectItem>
+                    ) : (
+                      wallets.map((wallet) => (
+                        <SelectItem key={wallet.id} value={wallet.id.toString()}>
+                          {wallet.name} ({wallet.balance} {wallet.currency})
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
+                {errors.walletId && <p className="text-red-500 text-sm">{errors.walletId.message}</p>}
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="amount">Số tiền nạp</Label>
@@ -102,16 +115,19 @@ const DepositFormPage = () => {
                   id="amount"
                   type="number"
                   placeholder="Nhập số tiền"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  {...register('amount')}
+                  className={errors.amount && "border-red-500"}
                 />
+                {errors.amount && <p className="text-red-500 text-sm">{errors.amount.message}</p>}
               </div>
             </div>
+            <CardFooter className="flex justify-center p-0 pt-4">
+              <Button type="submit" className="w-full" disabled={submitting || loadingWallets}>
+                {submitting ? 'Đang nạp...' : 'Nạp tiền'}
+              </Button>
+            </CardFooter>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button onClick={handleSubmit} className="w-full">Nạp tiền</Button>
-        </CardFooter>
       </Card>
     </div>
   );
