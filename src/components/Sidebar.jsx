@@ -63,7 +63,7 @@ const Sidebar = () => {
         },
         {
           title: 'Nạp Tiền',
-          href: '/wallets/add-money',
+          href: '/transactions/deposit',
           icon: DollarSignIcon,
         },
         {

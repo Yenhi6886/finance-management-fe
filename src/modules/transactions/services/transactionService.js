@@ -1,4 +1,4 @@
-import apiClient from '../../shared/services/apiService';
+import apiClient from '../../../shared/services/apiService';
 
 export const transactionService = {
   deposit: async (depositData) => {
