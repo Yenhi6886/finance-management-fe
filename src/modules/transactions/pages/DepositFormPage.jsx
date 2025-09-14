@@ -37,10 +37,39 @@ const DepositFormPage = () => {
     fetchWallets();
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // This part will be implemented in Part 2/3
-    errorHandler.showInfo('Chức năng nạp tiền sẽ được xử lý ở Part tiếp theo.');
+    if (loading) return;
+
+    // Basic validation (more comprehensive validation in Part 3)
+    if (!amount || parseFloat(amount) <= 0) {
+      errorHandler.showError('Số tiền nạp phải lớn hơn 0.');
+      return;
+    }
+    if (!selectedWallet) {
+      errorHandler.showError('Vui lòng chọn ví.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        walletId: parseInt(selectedWallet),
+        amount: parseFloat(amount),
+      };
+      const response = await transactionService.deposit(payload); // Using mocked service
+      if (response.data.success) {
+        errorHandler.showSuccess(response.data.message || 'Nạp tiền thành công!');
+        setAmount(''); // Clear form
+        // Optionally refresh wallet list or update balance in context
+      } else {
+        errorHandler.showError(response.data.message || 'Nạp tiền thất bại.');
+      }
+    } catch (error) {
+      errorHandler.handleApiError(error, 'Đã xảy ra lỗi trong quá trình nạp tiền.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
