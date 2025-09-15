@@ -161,7 +161,7 @@ const WalletDetail = () => {
           <div className="flex space-x-2">
             {!wallet.isArchived && (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => navigate('/wallets/add-money', { state: { from: location.pathname } })} className="h-8 px-3 text-xs"><PlusIcon className="w-3 h-3 mr-1.5" />Nạp tiền</Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/transactions/deposit', { state: { from: location.pathname } })} className="h-8 px-3 text-xs"><PlusIcon className="w-3 h-3 mr-1.5" />Nạp tiền</Button>
                   <Button variant="outline" size="sm" onClick={() => navigate(`/wallets/${id}/edit`)} className="h-8 px-3 text-xs"><EditIcon className="w-3 h-3 mr-1.5" />Chỉnh sửa</Button>
                   <Button variant="outline" size="sm" onClick={() => navigate('/wallets/share', { state: { from: location.pathname } })} className="h-8 px-3 text-xs"><ShareIcon className="w-3 h-3 mr-1.5" />Chia sẻ</Button>
                 </>

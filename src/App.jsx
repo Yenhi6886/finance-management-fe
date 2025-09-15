@@ -28,6 +28,9 @@ import {
   AddMoney
 } from './modules/wallets'
 
+// Transaction pages
+import DepositFormPage from './modules/transactions/pages/DepositFormPage'
+
 // Error page
 import ErrorPage from './modules/error/ErrorPage'
 import OAuthCallback from './modules/auth/pages/oauth-callback'
@@ -67,6 +70,9 @@ function App() {
                   <Route path="wallets/share" element={<ShareWallet />} />
                   <Route path="wallets/:id" element={<WalletDetail />} />
                   <Route path="wallets/:id/edit" element={<EditWallet />} />
+
+                  {/* Transaction routes */}
+                  <Route path="transactions/deposit" element={<DepositFormPage />} />
                 </Route>
 
                 {/* Error route */}

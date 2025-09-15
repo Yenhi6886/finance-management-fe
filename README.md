@@ -17,7 +17,56 @@
 
 ## 🎯 Tổng quan
 
+
 Finance Management System là ứng dụng web quản lý tài chính cá nhân được xây dựng với React và các công nghệ hiện đại. Hệ thống cung cấp đầy đủ các tính năng quản lý ví, giao dịch, báo cáo và phân tích tài chính.
+=======
+
+## 🔑 Luồng đăng nhập Google (OAuth2)
+
+### 1. Người dùng nhấn nút "Đăng nhập với Google"
+
+- Tại trang đăng nhập (`src/modules/auth/pages/Login.jsx`), người dùng bấm nút:
+  ```jsx
+  <a href="http://localhost:8080/oauth2/authorize/google">
+    <Button type="button" className="w-full">Đăng nhập với Google</Button>
+  </a>
+  ```
+- Ứng dụng chuyển hướng sang Google để xác thực.
+
+### 2. Google xác thực và chuyển hướng về ứng dụng
+
+- Sau khi xác thực thành công, Google chuyển hướng về backend, backend xử lý và redirect về FE với `token` trên URL (ví dụ: `/oauth-callback?token=...`).
+
+### 3. FE nhận token và hoàn tất đăng nhập
+
+- Trang `src/modules/auth/pages/oauth-callback.jsx` sẽ lấy token từ URL:
+  ```js
+  const token = searchParams.get("token");
+  loginGoogle(token);
+  navigate("/dashboard");
+  ```
+- Hàm `loginGoogle` (trong `AuthContext.jsx`) sẽ:
+  - Lưu token vào localStorage
+  - Gọi API lấy thông tin user (`/user/profile`)
+  - Cập nhật context đăng nhập
+
+### 4. Backend xử lý
+
+- Backend nhận mã xác thực từ Google, xác thực và tạo tài khoản nếu chưa có, trả về JWT token cho FE.
+
+### 5. Tóm tắt luồng
+
+1. FE → Google (qua backend) → xác thực
+2. Google → Backend → trả token cho FE
+3. FE nhận token, lưu và lấy profile
+4. Đăng nhập thành công, chuyển hướng dashboard
+
+> **Lưu ý:** Cần cấu hình biến môi trường `VITE_GOOGLE_CLIENT_ID` trong file `.env`.
+
+---
+
+## 🚀 Tính năng đã hoàn thành
+
 
 ### ✨ Đặc điểm nổi bật
 
