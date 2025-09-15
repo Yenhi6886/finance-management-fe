@@ -37,6 +37,7 @@ const ShareWallet = () => {
   const [selectedWallet, setSelectedWallet] = useState('')
   const [shareType, setShareType] = useState('viewer') // viewer, editor, owner
   const [shareMethod, setShareMethod] = useState('email') // link, email, sms
+  const [shareLinkData, setShareLinkData] = useState(null)
   const [emailList, setEmailList] = useState('')
   const [phoneList, setPhoneList] = useState('')
   const [message, setMessage] = useState('')
@@ -128,6 +129,11 @@ const ShareWallet = () => {
       return
     }
 
+    if (shareMethod === 'link') {
+      await handleCreateShareLink()
+      return
+    }
+
     // For now, only support email sharing as per backend API
     if (shareMethod !== 'email') {
       toast.error('Hiện tại chỉ hỗ trợ chia sẻ qua email')
@@ -213,6 +219,70 @@ const ShareWallet = () => {
         errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.'
       } else {
         // Other error
+        errorMessage = error.message || 'Có lỗi không xác định xảy ra.'
+      }
+      
+      toast.error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreateShareLink = async () => {
+    setLoading(true)
+    try {
+      const shareData = {
+        walletId: parseInt(selectedWallet),
+        permissionLevel: mapPermissionToBackend(shareType),
+        message: message.trim() || null,
+        expiryDate: expiryDate ? new Date(expiryDate).toISOString() : null
+      }
+
+      console.log('Creating share link with data:', shareData)
+      const response = await walletService.createShareLink(shareData)
+      console.log('Share link response:', response)
+      
+      if (!response || !response.data) {
+        throw new Error('Không nhận được phản hồi từ máy chủ')
+      }
+      
+      const shareLinkData = response.data.data
+      setShareLinkData(shareLinkData)
+      
+      // Generate full share link
+      const baseUrl = window.location.origin
+      const fullShareLink = `${baseUrl}/shared-wallet/${shareLinkData.shareToken}`
+      setShareLink(fullShareLink)
+      
+      // Refresh shared wallets list
+      await fetchSharedWallets()
+      
+      toast.success('Tạo link chia sẻ thành công!')
+    } catch (error) {
+      console.error('Error creating share link:', error)
+      
+      let errorMessage = 'Có lỗi xảy ra khi tạo link chia sẻ'
+      
+      if (error.response) {
+        const status = error.response.status
+        const data = error.response.data
+        
+        if (status === 400) {
+          errorMessage = data?.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.'
+        } else if (status === 401) {
+          errorMessage = 'Bạn cần đăng nhập để thực hiện thao tác này.'
+        } else if (status === 403) {
+          errorMessage = 'Bạn không có quyền chia sẻ ví này.'
+        } else if (status === 404) {
+          errorMessage = 'Không tìm thấy ví được chọn.'
+        } else if (status === 500) {
+          errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau.'
+        } else {
+          errorMessage = data?.message || `Lỗi ${status}: ${data?.error || 'Không xác định'}`
+        }
+      } else if (error.request) {
+        errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.'
+      } else {
         errorMessage = error.message || 'Có lỗi không xác định xảy ra.'
       }
       
@@ -475,41 +545,116 @@ const ShareWallet = () => {
                         </div>
                       </div>
 
-                      {/* Share Method - Only Email for now */}
+                      {/* Share Method */}
                       <div className="space-y-2">
                         <Label className="text-base font-medium">Phương thức chia sẻ</Label>
-                        <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                          <MailIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                          <span className="text-blue-800 dark:text-blue-200 font-medium">Email</span>
-                          <span className="text-sm text-blue-600 dark:text-blue-400">(Phương thức duy nhất hiện tại)</span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div
+                            onClick={() => setShareMethod('email')}
+                            className={`border rounded-lg p-4 cursor-pointer transition-all hover:scale-102 ${
+                              shareMethod === 'email'
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className={`p-3 rounded-lg ${
+                                shareMethod === 'email' 
+                                  ? 'bg-blue-100 dark:bg-blue-800'
+                                  : 'bg-gray-100 dark:bg-gray-700'
+                              }`}>
+                                <MailIcon className={`w-6 h-6 ${
+                                  shareMethod === 'email' 
+                                    ? 'text-blue-600 dark:text-blue-400'
+                                    : 'text-gray-600 dark:text-gray-400'
+                                }`} />
+                              </div>
+                              <div>
+                                <span className="font-semibold text-gray-900 dark:text-white text-lg">
+                                  Email
+                                </span>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  Gửi lời mời qua email
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div
+                            onClick={() => setShareMethod('link')}
+                            className={`border rounded-lg p-4 cursor-pointer transition-all hover:scale-102 ${
+                              shareMethod === 'link'
+                                ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className={`p-3 rounded-lg ${
+                                shareMethod === 'link' 
+                                  ? 'bg-green-100 dark:bg-green-800'
+                                  : 'bg-gray-100 dark:bg-gray-700'
+                              }`}>
+                                <LinkIcon className={`w-6 h-6 ${
+                                  shareMethod === 'link' 
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : 'text-gray-600 dark:text-gray-400'
+                                }`} />
+                              </div>
+                              <div>
+                                <span className="font-semibold text-gray-900 dark:text-white text-lg">
+                                  Link Chia Sẻ
+                                </span>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  Tạo link để chia sẻ
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Email Recipient */}
-                      <div className="space-y-2">
-                        <Label htmlFor="emailList" className="text-base font-medium">
-                          Email người nhận <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="emailList"
-                          placeholder="user@example.com"
-                          value={emailList}
-                          onChange={(e) => {
-                            setEmailList(e.target.value)
-                            setEmailError('')
-                          }}
-                          className={`h-12 text-base ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-                        />
-                        {emailError && (
-                          <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
-                            <AlertCircleIcon className="w-4 h-4 mr-1" />
-                            {emailError}
+                      {/* Email Recipient - Only show for email method */}
+                      {shareMethod === 'email' && (
+                        <div className="space-y-2">
+                          <Label htmlFor="emailList" className="text-base font-medium">
+                            Email người nhận <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="emailList"
+                            placeholder="user@example.com"
+                            value={emailList}
+                            onChange={(e) => {
+                              setEmailList(e.target.value)
+                              setEmailError('')
+                            }}
+                            className={`h-12 text-base ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                          />
+                          {emailError && (
+                            <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+                              <AlertCircleIcon className="w-4 h-4 mr-1" />
+                              {emailError}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Nhập email của người bạn muốn chia sẻ ví. Hiện tại chỉ hỗ trợ một email mỗi lần.
                           </p>
-                        )}
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Nhập email của người bạn muốn chia sẻ ví. Hiện tại chỉ hỗ trợ một email mỗi lần.
-                        </p>
-                      </div>
+                        </div>
+                      )}
+
+                      {/* Link Share Info */}
+                      {shareMethod === 'link' && (
+                        <div className="space-y-2">
+                          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <LinkIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+                              <span className="text-green-800 dark:text-green-200 font-medium">Link Chia Sẻ</span>
+                            </div>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Tạo link chia sẻ để gửi cho bất kỳ ai. Link sẽ có thể truy cập được cho đến khi bạn thu hồi hoặc hết hạn.
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
 
                       {/* Message */}
@@ -549,18 +694,27 @@ const ShareWallet = () => {
                       <div className="pt-6">
                         <Button
                           onClick={handleShare}
-                          disabled={!selectedWallet || !shareType || loading || !emailList.trim()}
+                          disabled={!selectedWallet || !shareType || loading || (shareMethod === 'email' && !emailList.trim())}
                           className="w-full h-12 text-base font-light bg-green-600 hover:bg-green-700 text-white rounded-lg border-0 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {loading ? (
                             <>
                               <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              Đang chia sẻ...
+                              {shareMethod === 'link' ? 'Đang tạo link...' : 'Đang chia sẻ...'}
                             </>
                           ) : (
                             <>
-                              <ShareIcon className="w-5 h-5 mr-2" />
-                              Chia Sẻ Ví
+                              {shareMethod === 'link' ? (
+                                <>
+                                  <LinkIcon className="w-5 h-5 mr-2" />
+                                  Tạo Link Chia Sẻ
+                                </>
+                              ) : (
+                                <>
+                                  <ShareIcon className="w-5 h-5 mr-2" />
+                                  Chia Sẻ Ví
+                                </>
+                              )}
                             </>
                           )}
                         </Button>
@@ -570,7 +724,7 @@ const ShareWallet = () => {
                 </div>
 
                 {/* Share Link Result */}
-                {shareLink && (
+                {shareLink && shareLinkData && (
                   <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
                     <div className="p-8">
                       <div className="flex items-center space-x-3 mb-6">
@@ -578,6 +732,32 @@ const ShareWallet = () => {
                           <LinkIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
                         </div>
                         <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Liên Kết Chia Sẻ</h3>
+                      </div>
+
+                      {/* Share Link Info */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div className="space-y-2">
+                          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Ví:</span>
+                          <p className="text-gray-900 dark:text-white font-medium">{shareLinkData.wallet?.name || shareLinkData.walletName}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Quyền truy cập:</span>
+                          <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${getPermissionColor(shareLinkData.permissionLevel)}`}>
+                            {getPermissionLabel(shareLinkData.permissionLevel)}
+                          </span>
+                        </div>
+                        {shareLinkData.expiresAt && (
+                          <div className="space-y-2">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Hết hạn:</span>
+                            <p className="text-gray-900 dark:text-white">{new Date(shareLinkData.expiresAt).toLocaleDateString('vi-VN')}</p>
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Trạng thái:</span>
+                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            Hoạt động
+                          </span>
+                        </div>
                       </div>
 
                       <div className="space-y-4">

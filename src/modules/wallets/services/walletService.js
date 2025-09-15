@@ -50,6 +50,14 @@ export const walletService = {
     return apiService.post('/wallet-shares', shareData)
   },
 
+  createShareLink: async (shareData) => {
+    return apiService.post('/wallet-shares/create-link', shareData)
+  },
+
+  getShareLinkInfo: async (shareToken) => {
+    return apiService.get(`/wallet-shares/link/${shareToken}`)
+  },
+
   getSharedWallets: async () => {
     return apiService.get('/wallet-shares/shared-with-me')
   },
