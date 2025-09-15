@@ -18,8 +18,12 @@ import {
   ShareIcon,
   DollarSignIcon,
   ListIcon,
-  EditIcon
+  EditIcon,
+  LanguagesIcon,
+  BadgeDollarSignIcon,
+  SunMoonIcon
 } from 'lucide-react'
+import { hr } from 'date-fns/locale'
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false)
@@ -92,6 +96,25 @@ const Sidebar = () => {
       title: 'Cài Đặt',
       href: '/settings',
       icon: SettingsIcon,
+      hasSubmenu: true,
+      submenu: [
+        {
+          title: 'Ngôn ngữ',
+          href: '/settings/language',
+          icon: LanguagesIcon
+        },
+        {
+          title: 'Tỉ Giá',
+          href: '/settings/exchange-rate',
+          icon: BadgeDollarSignIcon,
+
+        },
+        {
+          title: 'Sáng tối',
+          href: '/settings/theme',
+          icon: SunMoonIcon,
+        }
+      ]
     },
   ]
 
