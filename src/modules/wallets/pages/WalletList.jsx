@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { walletService } from '../services/walletService'
@@ -39,23 +39,99 @@ const WalletList = () => {
   const hasShownToastRef = useRef(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const [totalBalanceVND, setTotalBalanceVND] = useState(0)
+  const [totalBalanceUSD, setTotalBalanceUSD] = useState(0)
+  const [balanceLoading, setBalanceLoading] = useState(false)
+  const [totalWallets, setTotalWallets] = useState(0)
+
+
+
+  
 
   const fetchWallets = useCallback(async () => {
     try {
       setLoading(true)
-      const [activeResponse, archivedResponse] = await Promise.all([
+      setBalanceLoading(true)
+      
+      // Gọi API song song
+      const results = await Promise.allSettled([
         walletService.getWallets(),
-        walletService.getArchivedWallets()
+        walletService.getArchivedWallets(),
+        walletService.getTotalBalanceVND(),
+        walletService.getTotalBalanceUSD()
       ])
-      setActiveWallets(activeResponse.data.data || [])
-      setArchivedWallets(archivedResponse.data.data || [])
+      
+      // Xử lý danh sách ví active
+      if (results[0].status === 'fulfilled') {
+        const wallets = results[0].value.data.data || []
+        setActiveWallets(wallets)
+        setTotalWallets(wallets.length)
+      } else {
+        console.error('Error fetching active wallets:', results[0].reason)
+        setActiveWallets([])
+        setTotalWallets(0)
+      }
+      
+      // Xử lý danh sách ví archived
+      if (results[1].status === 'fulfilled') {
+        setArchivedWallets(results[1].value.data.data || [])
+      } else {
+        console.error('Error fetching archived wallets:', results[1].reason)
+        setArchivedWallets([])
+      }
+      
+      // Xử lý tổng số dư VND từ API
+      if (results[2].status === 'fulfilled') {
+        const response = results[2].value
+        
+        // Chỉ lấy totalBalanceVND từ response
+        if (response.data && response.data.data && typeof response.data.data.totalBalanceVND === 'number') {
+          setTotalBalanceVND(response.data.data.totalBalanceVND)
+          console.log('SUCCESS: VND Balance from API:', response.data.data.totalBalanceVND)
+        } else {
+          console.log('FALLBACK: API không trả về totalBalanceVND hợp lệ')
+          // Fallback: tính từ danh sách ví
+          const activeWallets = results[0].status === 'fulfilled' ? (results[0].value.data.data || []) : []
+          const calculatedVND = activeWallets.reduce((total, wallet) => {
+            return total + (wallet.currency === 'VND' ? wallet.balance : 0)
+          }, 0)
+          setTotalBalanceVND(calculatedVND)
+          console.log('FALLBACK: Calculated VND:', calculatedVND)
+        }
+      } else {
+        console.log('ERROR: VND API failed:', results[2].reason)
+        // Fallback: tính từ danh sách ví
+        const activeWallets = results[0].status === 'fulfilled' ? (results[0].value.data.data || []) : []
+        const calculatedVND = activeWallets.reduce((total, wallet) => {
+          return total + (wallet.currency === 'VND' ? wallet.balance : 0)
+        }, 0)
+        setTotalBalanceVND(calculatedVND)
+        console.log('FALLBACK after error: Calculated VND:', calculatedVND)
+      } 
+      
+      // Xử lý tổng số dư USD (backup hoặc nếu không có trong summary)
+      if (results[3].status === 'fulfilled' && results[3].value.data && results[3].value.data.data) {
+        const usdData = results[3].value.data.data
+        setTotalBalanceUSD(usdData.totalBalanceUSD || 0)
+      } else {
+        // Fallback: tính từ danh sách ví
+        const activeWallets = results[0].status === 'fulfilled' ? (results[0].value.data.data || []) : []
+        const calculatedUSD = activeWallets.reduce((total, wallet) => {
+          return total + (wallet.currency === 'USD' ? wallet.balance : 0)
+        }, 0)
+        setTotalBalanceUSD(calculatedUSD)
+      }
+      
     } catch (error) {
       console.error('Error fetching wallets:', error)
       toast.error('Không thể tải danh sách ví.')
       setActiveWallets([])
       setArchivedWallets([])
+      setTotalBalanceVND(0)
+      setTotalBalanceUSD(0)
     } finally {
       setLoading(false)
+      setBalanceLoading(false)
     }
   }, [])
 
@@ -83,14 +159,6 @@ const WalletList = () => {
     }
     // We only want this to run when location.state changes
   }, [location.state, fetchWallets, refreshWallets])
-
-  const totalBalance = useMemo(() => {
-    return activeWallets.reduce((sum, wallet) => {
-      const exchangeRate = 25400
-      const balanceInVND = wallet.currency === 'USD' ? wallet.balance * exchangeRate : wallet.balance
-      return sum + Number(balanceInVND)
-    }, 0)
-  }, [activeWallets])
 
   const handleDeleteClick = (wallet) => {
     if (view === 'archived') {
@@ -222,19 +290,116 @@ const WalletList = () => {
         </div>
 
         {view === 'active' && activeWallets.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Tổng số dư VND */}
+              <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-700 dark:text-green-300 text-sm font-medium">Tổng Số Dư VND</p>
+                      <p className="text-2xl font-bold text-green-800 dark:text-green-200 mt-1">
+                        {balanceLoading ? (
+                          <span className="inline-block animate-pulse bg-green-300 dark:bg-green-700 h-8 w-32 rounded"></span>
+                        ) : (
+                          formatCurrency(totalBalanceVND, 'VND')
+                        )}
+                      </p>
+                      <p className="text-green-600 dark:text-green-400 text-xs mt-2">
+                        Tiền Việt Nam
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-green-200 dark:bg-green-800/50 flex items-center justify-center">
+                      <DollarSignIcon className="w-6 h-6 text-green-700 dark:text-green-300" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tổng số dư USD */}
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-700 dark:text-blue-300 text-sm font-medium">Tổng Số Dư USD</p>
+                      <p className="text-2xl font-bold text-blue-800 dark:text-blue-200 mt-1">
+                        {balanceLoading ? (
+                          <span className="inline-block animate-pulse bg-blue-300 dark:bg-blue-700 h-8 w-32 rounded"></span>
+                        ) : (
+                          formatCurrency(totalBalanceUSD, 'USD')
+                        )}
+                      </p>
+                      <p className="text-blue-600 dark:text-blue-400 text-xs mt-2">
+                        Đô la Mỹ
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-blue-200 dark:bg-blue-800/50 flex items-center justify-center">
+                      <DollarSignIcon className="w-6 h-6 text-blue-700 dark:text-blue-300" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Thông tin tổng quan ví */}
+              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-700 dark:text-purple-300 text-sm font-medium">Tổng Ví</p>
+                      <p className="text-2xl font-bold text-purple-800 dark:text-purple-200 mt-1">
+                        {balanceLoading ? (
+                          <span className="inline-block animate-pulse bg-purple-300 dark:bg-purple-700 h-8 w-16 rounded"></span>
+                        ) : (
+                          totalWallets || activeWallets.length
+                        )}
+                      </p>
+                      <p className="text-purple-600 dark:text-purple-400 text-xs mt-2">
+                        Tổng số ví
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-purple-200 dark:bg-purple-800/50 flex items-center justify-center">
+                      <WalletIcon className="w-6 h-6 text-purple-700 dark:text-purple-300" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+        )}
+
+        {/* Thông tin chi tiết tỷ giá và phân tích */}
+        {view === 'active' && activeWallets.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Đã ẩn phần phân tích theo loại tiền tệ */}
+              
+              {/* Tỷ giá ước tính */}
+              {totalBalanceUSD > 0 && (
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>💡 Tỷ giá ước tính: 1 USD ≈ 25,400 VND</span>
+                    </div>
+                    <div className="mt-2 text-sm">
+                      <span className="font-medium">USD quy đổi:</span>
+                      <span className="ml-2 font-bold text-green-600">
+                        ~{formatCurrency(totalBalanceUSD * 25400, 'VND')}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+        )}
+
+        {/* Thông tin tỷ giá đơn giản */}
+        {view === 'active' && activeWallets.length > 0 && totalBalanceUSD > 0 && (
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm">Tổng Số Dư</p>
-                    <p className="text-3xl font-bold">{formatCurrency(totalBalance)}</p>
-                    <p className="text-muted-foreground text-sm mt-1">
-                      {activeWallets.length} ví đang hoạt động
-                    </p>
-                  </div>
-                  <div>
-                    <DollarSignIcon className="w-12 h-12 text-muted-foreground/30" />
-                  </div>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>
+                    💡 Tỷ giá ước tính: 1 USD ≈ 25,400 VND
+                  </span>
+                  <span>
+                    Tương đương: ~{formatCurrency(totalBalanceUSD * 25400, 'VND')}
+                  </span>
                 </div>
               </CardContent>
             </Card>
