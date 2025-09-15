@@ -59,8 +59,18 @@ export const walletService = {
   },
 
   getSharedWallets: async () => {
-    return apiService.get('/wallet-shares/shared-with-me')
+
+    return apiService.get('/wallets/shared-with-me')
   },
+
+  getTotalBalanceVND: async () => {
+    console.log('Calling VND API: /wallets/total-balance')
+    return apiService.get('/wallets/total-balance')
+  },
+  getTotalBalanceUSD: async () => {
+    return apiService.get('/wallets/total-balance-usd')
+
+
 
   getSharedWalletsByMe: async () => {
     return apiService.get('/wallet-shares/shared-by-me')
@@ -76,5 +86,6 @@ export const walletService = {
 
   getWalletShareInfo: async (walletId) => {
     return apiService.get(`/wallet-shares/wallet/${walletId}`)
+
   }
 }
