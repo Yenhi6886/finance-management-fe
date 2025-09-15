@@ -47,10 +47,19 @@ export const walletService = {
   },
 
   shareWallet: async (shareData) => {
-    return apiService.post('/wallets/share', shareData)
+    return apiService.post('/wallet-shares', shareData)
+  },
+
+  createShareLink: async (shareData) => {
+    return apiService.post('/wallet-shares/create-link', shareData)
+  },
+
+  getShareLinkInfo: async (shareToken) => {
+    return apiService.get(`/wallet-shares/link/${shareToken}`)
   },
 
   getSharedWallets: async () => {
+
     return apiService.get('/wallets/shared-with-me')
   },
 
@@ -60,5 +69,23 @@ export const walletService = {
   },
   getTotalBalanceUSD: async () => {
     return apiService.get('/wallets/total-balance-usd')
+
+
+
+  getSharedWalletsByMe: async () => {
+    return apiService.get('/wallet-shares/shared-by-me')
+  },
+
+  revokeWalletAccess: async (shareId) => {
+    return apiService.delete(`/wallet-shares/${shareId}`)
+  },
+
+  updateSharePermission: async (shareId, permission) => {
+    return apiService.patch(`/wallet-shares/${shareId}`, { permission })
+  },
+
+  getWalletShareInfo: async (walletId) => {
+    return apiService.get(`/wallet-shares/wallet/${walletId}`)
+
   }
 }
