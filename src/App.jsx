@@ -35,6 +35,11 @@ import DepositFormPage from './modules/transactions/pages/DepositFormPage'
 import ErrorPage from './modules/error/ErrorPage'
 import OAuthCallback from './modules/auth/pages/oauth-callback'
 
+// Settings pages
+import Language from './modules/settings/pages/Language'
+import ExchangeRate from './modules/settings/pages/ExchangeRate'
+import Theme from './modules/settings/pages/Theme'
+
 function App() {
   return (
       <ThemeProvider>
@@ -70,9 +75,14 @@ function App() {
                   <Route path="wallets/share" element={<ShareWallet />} />
                   <Route path="wallets/:id" element={<WalletDetail />} />
                   <Route path="wallets/:id/edit" element={<EditWallet />} />
-
                   {/* Transaction routes */}
                   <Route path="transactions/deposit" element={<DepositFormPage />} />
+
+                  {/* Settings routes */}
+                  <Route path="settings/language" element={<Language />} />
+                  <Route path="settings/exchange-rate" element={<ExchangeRate />} />
+                  <Route path="settings/theme" element={<Theme />} />
+
                 </Route>
 
                 {/* Error route */}
