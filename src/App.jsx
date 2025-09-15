@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'sonner'
 import { AuthProvider } from './modules/auth/contexts/AuthContext'
 import { ThemeProvider } from './shared/contexts/ThemeContext'
+import { WalletProvider } from './shared/contexts/WalletContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import DashboardLayout from './components/DashboardLayout'
 // Auth pages
@@ -35,8 +36,9 @@ function App() {
   return (
       <ThemeProvider>
         <AuthProvider>
-          <Router>
-            <div className="min-h-screen bg-background text-foreground">
+          <WalletProvider>
+            <Router>
+              <div className="min-h-screen bg-background text-foreground">
               <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />
@@ -84,6 +86,7 @@ function App() {
               />
             </div>
           </Router>
+          </WalletProvider>
         </AuthProvider>
       </ThemeProvider>
   )

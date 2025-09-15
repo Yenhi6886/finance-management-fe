@@ -149,14 +149,14 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true)
       const response = await authService.forgotPassword(email)
-      
+
       // Hiển thị thông báo success từ API response
       if (response.data && response.data.message) {
         errorHandler.showSuccess(response.data.message)
       } else {
         errorHandler.showSuccess('Link đặt lại mật khẩu đã được gửi đến email của bạn.')
       }
-      
+
       return response.data
     } catch (error) {
       // Xử lý lỗi theo yêu cầu API
@@ -177,11 +177,11 @@ export const AuthProvider = ({ children }) => {
       setLoading(true)
       const response = await authService.uploadAvatar(file)
       const updatedUser = response.data.data
-      
+
       // Cập nhật user context với thông tin avatar mới
       updateUserContext(updatedUser)
       errorHandler.showSuccess('Ảnh đại diện đã được cập nhật!')
-      
+
       return updatedUser
     } catch (error) {
       errorHandler.handleApiError(error, 'Cập nhật ảnh đại diện thất bại')
@@ -203,7 +203,7 @@ export const AuthProvider = ({ children }) => {
     deleteAccount,
     forgotPassword,
     uploadAvatar,
-    updateUserContext, // <-- Thêm hàm mới vào value
+    updateUserContext,
   }
 
   return (

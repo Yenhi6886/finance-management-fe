@@ -15,16 +15,16 @@ import {
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
 
 ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    ArcElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
 )
 
 // Line Chart Component
@@ -150,7 +150,7 @@ export const DoughnutChart = ({ data, options = {} }) => {
                 const value = dataset.data[i]
                 const total = dataset.data.reduce((sum, val) => sum + val, 0)
                 const percentage = ((value / total) * 100).toFixed(1)
-                
+
                 return {
                   text: `${label} (${percentage}%)`,
                   fillStyle: dataset.backgroundColor[i],

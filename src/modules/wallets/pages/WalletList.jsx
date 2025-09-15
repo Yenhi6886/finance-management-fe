@@ -1,400 +1,352 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext, useMemo, useCallback, useRef } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { walletService } from '../services/walletService'
-import { 
-  PlusIcon, 
-  WalletIcon, 
-  EyeIcon, 
-  EditIcon, 
-  TrashIcon, 
-  ShareIcon,
+import {
+  PlusIcon,
+  WalletIcon,
+  EyeIcon,
+  EditIcon,
   ArchiveIcon,
-  ArrowRightLeftIcon,
-  CrownIcon,
-  UsersIcon,
+  DollarSignIcon,
+  TrashIcon,
   ArchiveRestoreIcon,
-  DollarSignIcon
+  Loader2,
+  ShareIcon,
+  UsersIcon
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '../../../components/ui/alert-dialog'
+import { WalletContext } from '../../../shared/contexts/WalletContext'
 
 const WalletList = () => {
-  const [wallets, setWallets] = useState([])
+  const { refreshWallets } = useContext(WalletContext)
+  const [activeWallets, setActiveWallets] = useState([])
+  const [archivedWallets, setArchivedWallets] = useState([])
   const [loading, setLoading] = useState(true)
-  const [totalBalance, setTotalBalance] = useState(0)
-  const [showArchived, setShowArchived] = useState(false)
+  const [isTogglingArchive, setIsTogglingArchive] = useState(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [walletToDelete, setWalletToDelete] = useState(null)
+  const [view, setView] = useState('active')
+  const [walletShareInfo, setWalletShareInfo] = useState({})
+  const hasShownToastRef = useRef(false)
   const navigate = useNavigate()
+  const location = useLocation()
 
-  useEffect(() => {
-    fetchWallets()
-  }, [])
-
-  const fetchWallets = async () => {
+  const fetchWallets = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await walletService.getWallets()
-      const walletsData = response.data || []
-      setWallets(walletsData)
+      const [activeResponse, archivedResponse] = await Promise.all([
+        walletService.getWallets(),
+        walletService.getArchivedWallets()
+      ])
+      setActiveWallets(activeResponse.data.data || [])
+      setArchivedWallets(archivedResponse.data.data || [])
       
-      // Tính tổng số dư (chỉ ví không bị lưu trữ)
-      const total = walletsData
-        .filter(wallet => wallet.status === 'active')
-        .reduce((sum, wallet) => {
-          // Convert USD to VND for calculation (rate: 1 USD = 24000 VND)
-          const balanceInVND = wallet.currency === 'USD' ? wallet.balance * 24000 : wallet.balance
-          return sum + balanceInVND
-        }, 0)
-      setTotalBalance(total)
+      // Fetch share info for each wallet
+      const shareInfoPromises = (activeResponse.data.data || []).map(async (wallet) => {
+        try {
+          const shareResponse = await walletService.getWalletShareInfo(wallet.id)
+          return { walletId: wallet.id, shareInfo: shareResponse.data }
+        } catch (error) {
+          return { walletId: wallet.id, shareInfo: null }
+        }
+      })
+      
+      const shareInfoResults = await Promise.all(shareInfoPromises)
+      const shareInfoMap = {}
+      shareInfoResults.forEach(({ walletId, shareInfo }) => {
+        shareInfoMap[walletId] = shareInfo
+      })
+      setWalletShareInfo(shareInfoMap)
     } catch (error) {
       console.error('Error fetching wallets:', error)
-      setWallets([]) // Set empty array on error
+      toast.error('Không thể tải danh sách ví.')
+      setActiveWallets([])
+      setArchivedWallets([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const handleDeleteWallet = async (walletId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa ví này? Tất cả dữ liệu sẽ bị mất vĩnh viễn.')) {
-      try {
-        await walletService.deleteWallet(walletId)
-        await fetchWallets()
-      } catch (error) {
-        console.error('Error deleting wallet:', error)
+  useEffect(() => {
+    // This is the main effect for loading data
+    fetchWallets()
+  }, [fetchWallets])
+
+  useEffect(() => {
+    // This effect handles notifications from other pages
+    if (location.state?.message && !hasShownToastRef.current) {
+      if (location.state.type === 'success') {
+        toast.success(location.state.message)
+      } else {
+        toast.error(location.state.message)
       }
+      hasShownToastRef.current = true
+
+      // After showing toast, refresh local data and global context
+      fetchWallets()
+      refreshWallets()
+
+      // Clean up the location state to prevent re-triggering
+      window.history.replaceState({}, document.title)
+    }
+    // We only want this to run when location.state changes
+  }, [location.state, fetchWallets, refreshWallets])
+
+  const totalBalance = useMemo(() => {
+    return activeWallets.reduce((sum, wallet) => {
+      const exchangeRate = 25400
+      const balanceInVND = wallet.currency === 'USD' ? wallet.balance * exchangeRate : wallet.balance
+      return sum + Number(balanceInVND)
+    }, 0)
+  }, [activeWallets])
+
+  const handleDeleteClick = (wallet) => {
+    if (view === 'archived') {
+      toast.info('Bạn cần khôi phục ví trước khi xóa.')
+      return
+    }
+    setWalletToDelete(wallet)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!walletToDelete) return
+    try {
+      await walletService.deleteWallet(walletToDelete.id)
+      await refreshWallets()
+      toast.success(`Ví "${walletToDelete.name}" đã được xóa thành công.`)
+      await fetchWallets()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi xóa ví.')
+    } finally {
+      setIsDeleteDialogOpen(false)
+      setWalletToDelete(null)
     }
   }
 
-  const handleArchiveWallet = async (walletId) => {
-    try {
-      await walletService.archiveWallet(walletId)
-      await fetchWallets()
-    } catch (error) {
-      console.error('Error archiving wallet:', error)
-    }
-  }
+  const handleArchiveToggle = async (wallet) => {
+    setIsTogglingArchive(wallet.id)
+    const isArchiving = view === 'active'
+    const action = isArchiving ? walletService.archiveWallet : walletService.unarchiveWallet
+    const successMessage = isArchiving ? 'lưu trữ' : 'khôi phục'
 
-  const handleUnarchiveWallet = async (walletId) => {
     try {
-      await walletService.unarchiveWallet(walletId)
+      await action(wallet.id)
+      toast.success(`Ví "${wallet.name}" đã được ${successMessage} thành công.`)
       await fetchWallets()
+      await refreshWallets()
     } catch (error) {
-      console.error('Error unarchiving wallet:', error)
+      toast.error(error.response?.data?.message || `Lỗi khi ${successMessage} ví.`)
+    } finally {
+      setIsTogglingArchive(null)
     }
   }
 
   const formatCurrency = (amount, currency = 'VND') => {
-    if (currency === 'USD') {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+    if (typeof amount !== 'number') {
+      amount = parseFloat(amount) || 0
     }
-    return `${amount.toLocaleString('vi-VN')} ₫`
+    return currency === 'USD'
+        ? `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+        : `${amount.toLocaleString('vi-VN')} ₫`
   }
 
   const getWalletColor = (name) => {
     const colors = [
-      'bg-blue-100 text-blue-700',
-      'bg-green-100 text-green-700',
-      'bg-purple-100 text-purple-700',
-      'bg-orange-100 text-orange-700',
-      'bg-green-100 text-green-700',
-      'bg-indigo-100 text-indigo-700',
-      'bg-teal-100 text-teal-700',
-      'bg-red-100 text-red-700'
+      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+      'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+      'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+      'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
     ]
-    const index = name.length % colors.length
-    return colors[index]
+    if (!name) return colors[0];
+    let hash = 0
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash % colors.length)]
   }
 
-  const getPermissionBadge = (wallet) => {
-    if (wallet.permissions.includes('full') && !wallet.isShared) {
-      return "Chủ sở hữu"
-    }
-    if (wallet.permissions.includes('full') && wallet.isShared) {
-      return "Chia sẻ - Chủ sở hữu"
-    }
-    if (wallet.permissions.includes('view') && !wallet.permissions.includes('full')) {
-      return "Chỉ xem"
-    }
-    return null
-  }
-
-  const filteredWallets = (wallets || []).filter(wallet => 
-    showArchived ? wallet.status === 'archived' : wallet.status === 'active'
-  )
+  const walletsToDisplay = view === 'active' ? activeWallets : archivedWallets
+  const hasAnyWallets = activeWallets.length > 0 || archivedWallets.length > 0;
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-48 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            ))}
+        <div className="space-y-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-muted rounded w-1/4"></div>
+            <div className="h-24 bg-muted rounded"></div>
           </div>
         </div>
-      </div>
+    )
+  }
+
+  if (!hasAnyWallets) {
+    return (
+        <div className="text-center">
+          <Card className="p-12 text-center">
+            <WalletIcon className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+            <h3 className="text-2xl font-semibold mb-2">
+              Chào mừng bạn đến với X Spend
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Tạo ví đầu tiên để bắt đầu quản lý tài chính của bạn.
+            </p>
+            <Button onClick={() => navigate('/wallets/add')}>
+              <PlusIcon className="w-4 h-4 mr-2" />
+              Tạo Ví Đầu Tiên
+            </Button>
+          </Card>
+        </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-            Quản Lý Ví
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Quản lý các ví tiền và tài khoản của bạn
-          </p>
-        </div>
-        <div className="mt-3 sm:mt-0 flex space-x-2">
-          <Button
-            onClick={() => setShowArchived(!showArchived)}
-            variant="ghost"
-            size="sm"
-            className="h-10 px-4 text-sm font-light bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-md border-0"
-          >
-            {showArchived ? (
-              <>
-                <WalletIcon className="w-4 h-4 mr-1" />
-                Ví Đang Dùng
-              </>
-            ) : (
-              <>
-                <ArchiveIcon className="w-4 h-4 mr-1" />
-                Ví Lưu Trữ
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={() => navigate('/wallets/transfer')}
-            variant="ghost"
-            size="sm"
-            className="h-10 px-4 text-sm font-light bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 rounded-md border-0"
-          >
-            <ArrowRightLeftIcon className="w-4 h-4 mr-1" />
-            Chuyển Tiền
-          </Button>
-          <Button
-            onClick={() => navigate('/wallets/add')}
-            variant="ghost"
-            size="sm"
-            className="h-10 px-4 text-sm font-light bg-green-600 hover:bg-green-700 text-white rounded-md border-0"
-          >
-            <PlusIcon className="w-4 h-4 mr-1" />
-            Thêm Ví
-          </Button>
-        </div>
-      </div>
-
-      {/* Tổng quan */}
-      {!showArchived && (
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 text-gray-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-600 text-sm">Tổng Số Dư Tất Cả Ví</p>
-                <p className="text-3xl font-bold text-gray-900">{formatCurrency(totalBalance)}</p>
-                <p className="text-green-600 text-sm mt-1">
-                  {wallets.filter(w => w.status === 'active').length} ví đang hoạt động
-                </p>
-              </div>
-              <div className="text-right">
-                <DollarSignIcon className="w-12 h-12 text-green-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Danh sách ví */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredWallets.map((wallet) => (
-          <Card 
-            key={wallet.id} 
-            className={`h-96 flex flex-col hover:shadow-lg transition-all duration-300 ${
-              wallet.status === 'archived' ? 'opacity-75' : ''
-            }`}
-          >
-            <CardHeader className="pb-3 flex-shrink-0">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className={`text-lg px-3 py-1 rounded-md inline-block ${getWalletColor(wallet.name)}`}>
-                    {wallet.name}
-                  </CardTitle>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    {wallet.currency} • {wallet.status === 'archived' ? 'Đã lưu trữ' : 'Đang hoạt động'}
-                  </p>
-                  {getPermissionBadge(wallet) && (
-                    <p className="text-xs mt-1">
-                      <span className={`${
-                        wallet.permissions.includes('full') && !wallet.isShared 
-                          ? 'text-yellow-500' 
-                          : wallet.permissions.includes('full') && wallet.isShared 
-                            ? 'text-blue-500' 
-                            : 'text-gray-500'
-                      }`}>
-                        {getPermissionBadge(wallet)}
-                      </span>
-                    </p>
-                  )}
-                </div>
-                <div className="flex space-x-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 rounded-md border-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    onClick={() => navigate(`/wallets/${wallet.id}`)}
-                  >
-                    <EyeIcon className="w-3 h-3" />
-                  </Button>
-                  {wallet.permissions.includes('full') && wallet.status === 'active' && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 rounded-md border-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-                        onClick={() => navigate(`/wallets/${wallet.id}/edit`)}
-                      >
-                        <EditIcon className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 rounded-md border-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-                        onClick={() => navigate(`/wallets/${wallet.id}/share`)}
-                      >
-                        <ShareIcon className="w-3 h-3" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0 flex-1 flex flex-col min-h-0">
-              <div className="space-y-3 flex-1 min-h-0 overflow-hidden">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Số dư hiện tại</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {formatCurrency(wallet.balance, wallet.currency)}
-                  </p>
-                </div>
-                
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Số tiền ban đầu:</span>
-                  <span className="font-medium">
-                    {formatCurrency(wallet.initialAmount, wallet.currency)}
-                  </span>
-                </div>
-
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Thay đổi:</span>
-                  <span className={`font-medium ${
-                    wallet.balance >= wallet.initialAmount 
-                      ? 'text-green-600' 
-                      : 'text-red-600'
-                  }`}>
-                    {wallet.balance >= wallet.initialAmount ? '+' : ''}
-                    {formatCurrency(wallet.balance - wallet.initialAmount, wallet.currency)}
-                  </span>
-                </div>
-
-                {wallet.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 italic line-clamp-2">
-                    {wallet.description}
-                  </p>
-                )}
-
-                {wallet.isShared && wallet.permissions === 'viewer' && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded text-sm">
-                    <p className="text-blue-700 dark:text-blue-300">
-                      Được chia sẻ bởi: {wallet.sharedBy}
-                    </p>
-                  </div>
-                )}
-
-                {wallet.isShared && wallet.permissions.includes('full') && wallet.sharedWith && (
-                  <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded text-sm">
-                    <p className="text-green-700 dark:text-green-300">
-                      Đã chia sẻ với: {wallet.sharedWith.length} người
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Action buttons - Always at bottom */}
-              {wallet.permissions.includes('full') && (
-                <div className="pt-4 mt-auto border-t border-gray-100 dark:border-gray-700 flex space-x-2 flex-shrink-0">
-                  {wallet.status === 'archived' ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleUnarchiveWallet(wallet.id)}
-                      className="flex-[2] h-8 text-xs font-light text-white rounded-md border-0"
-                      style={{ backgroundColor: '#462E34' }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#3a2529'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#462E34'}
-                    >
-                      <ArchiveRestoreIcon className="w-3 h-3 mr-1" />
-                      Khôi phục
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleArchiveWallet(wallet.id)}
-                      className="flex-[2] h-8 text-xs font-light text-white rounded-md border-0"
-                      style={{ backgroundColor: '#462E34' }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#3a2529'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#462E34'}
-                    >
-                      <ArchiveIcon className="w-3 h-3 mr-1" />
-                      Lưu trữ
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteWallet(wallet.id)}
-                    className="flex-1 h-8 text-xs font-light rounded-md border-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900"
-                  >
-                    <TrashIcon className="w-3 h-3" />
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Empty state */}
-      {filteredWallets.length === 0 && (
-        <Card className="p-12 text-center">
-          <WalletIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            {showArchived ? 'Không có ví nào được lưu trữ' : 'Chưa có ví nào'}
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {showArchived 
-              ? 'Bạn chưa lưu trữ ví nào. Các ví đã lưu trữ sẽ hiển thị ở đây.'
-              : 'Tạo ví đầu tiên để bắt đầu quản lý tài chính của bạn.'
-            }
-          </p>
-          {!showArchived && (
-            <Button
-              onClick={() => navigate('/wallets/add')}
-              variant="ghost"
-              size="sm"
-              className="h-10 px-4 text-sm font-light bg-green-600 hover:bg-green-700 text-white rounded-md border-0"
-            >
-              <PlusIcon className="w-4 h-4 mr-1" />
-              Tạo Ví Đầu Tiên
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Quản Lý Ví</h1>
+            <p className="text-muted-foreground mt-1">
+              Tổng quan các ví tiền và tài khoản của bạn
+            </p>
+          </div>
+          <div className="mt-3 sm:mt-0">
+            <Button onClick={() => navigate('/wallets/add')}>
+              <PlusIcon className="w-4 h-4 mr-2" />
+              Thêm Ví
             </Button>
-          )}
-        </Card>
-      )}
-    </div>
+          </div>
+        </div>
+
+        <div className="flex space-x-2 border-b">
+          <Button variant="ghost" className={`relative h-10 px-4 py-2 ${view === 'active' ? 'text-primary' : 'text-muted-foreground'}`} onClick={() => setView('active')}>
+            Ví Hoạt Động ({activeWallets.length})
+            {view === 'active' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"></div>}
+          </Button>
+          <Button variant="ghost" className={`relative h-10 px-4 py-2 ${view === 'archived' ? 'text-primary' : 'text-muted-foreground'}`} onClick={() => setView('archived')}>
+            Ví Lưu Trữ ({archivedWallets.length})
+            {view === 'archived' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"></div>}
+          </Button>
+        </div>
+
+        {view === 'active' && activeWallets.length > 0 && (
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-sm">Tổng Số Dư</p>
+                    <p className="text-3xl font-bold">{formatCurrency(totalBalance)}</p>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      {activeWallets.length} ví đang hoạt động
+                    </p>
+                  </div>
+                  <div>
+                    <DollarSignIcon className="w-12 h-12 text-muted-foreground/30" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+        )}
+
+        {walletsToDisplay.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {walletsToDisplay.map((wallet) => (
+                  <Card key={wallet.id} className={`hover:shadow-md transition-shadow ${view === 'archived' ? 'bg-muted/50' : ''}`}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <CardTitle className={`text-base px-2 py-1 rounded-md inline-block ${getWalletColor(wallet.name)}`}>
+                          {wallet.icon} {wallet.name}
+                        </CardTitle>
+                        <div className="flex space-x-1">
+                          {view === 'active' && (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}`)} title="Xem chi tiết"><EyeIcon className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}/edit`)} title="Chỉnh sửa"><EditIcon className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/wallets/share')} title="Chia sẻ ví"><ShareIcon className="w-4 h-4" /></Button>
+                              </>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleArchiveToggle(wallet)} disabled={isTogglingArchive === wallet.id} title={view === 'archived' ? 'Khôi phục' : 'Lưu trữ'}>
+                            {isTogglingArchive === wallet.id ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                                view === 'archived' ? <ArchiveRestoreIcon className="w-4 h-4 text-blue-500" /> : <ArchiveIcon className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={() => handleDeleteClick(wallet)}
+                              disabled={view === 'archived'}
+                              title="Xóa ví"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">Số dư</p>
+                      <p className="text-2xl font-bold">{formatCurrency(wallet.balance, wallet.currency)}</p>
+                      {wallet.description && <p className="text-sm text-muted-foreground mt-2 italic line-clamp-2">{wallet.description}</p>}
+                      
+                      {/* Share Status */}
+                      {view === 'active' && walletShareInfo[wallet.id] && (
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <UsersIcon className="w-4 h-4 text-blue-500" />
+                              <span className="text-sm text-muted-foreground">Đã chia sẻ</span>
+                            </div>
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                              {walletShareInfo[wallet.id]?.sharedWith?.length || 0} người
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+              ))}
+            </div>
+        ) : (
+            <Card className="p-12 text-center mt-6">
+              <WalletIcon className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                {view === 'active' ? 'Chưa có ví nào đang hoạt động' : 'Không có ví nào trong kho lưu trữ'}
+              </h3>
+              <p className="text-muted-foreground">
+                {view === 'active' ? 'Tạo một ví mới hoặc khôi phục ví từ kho lưu trữ.' : 'Bạn có thể khôi phục các ví không còn sử dụng từ đây.'}
+              </p>
+            </Card>
+        )}
+
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Bạn có chắc chắn muốn xóa ví?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Hành động này không thể được hoàn tác. Thao tác này sẽ xóa vĩnh viễn ví
+                <span className="font-bold">&quot;{walletToDelete?.name}&quot;</span>
+                và tất cả dữ liệu liên quan.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Hủy</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">Xóa</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
   )
 }
 
