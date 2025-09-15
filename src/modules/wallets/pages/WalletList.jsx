@@ -11,7 +11,9 @@ import {
   DollarSignIcon,
   TrashIcon,
   ArchiveRestoreIcon,
-  Loader2
+  Loader2,
+  ShareIcon,
+  UsersIcon
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -36,6 +38,7 @@ const WalletList = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [walletToDelete, setWalletToDelete] = useState(null)
   const [view, setView] = useState('active')
+  const [walletShareInfo, setWalletShareInfo] = useState({})
   const hasShownToastRef = useRef(false)
   const navigate = useNavigate()
   const location = useLocation()
@@ -49,6 +52,23 @@ const WalletList = () => {
       ])
       setActiveWallets(activeResponse.data.data || [])
       setArchivedWallets(archivedResponse.data.data || [])
+      
+      // Fetch share info for each wallet
+      const shareInfoPromises = (activeResponse.data.data || []).map(async (wallet) => {
+        try {
+          const shareResponse = await walletService.getWalletShareInfo(wallet.id)
+          return { walletId: wallet.id, shareInfo: shareResponse.data }
+        } catch (error) {
+          return { walletId: wallet.id, shareInfo: null }
+        }
+      })
+      
+      const shareInfoResults = await Promise.all(shareInfoPromises)
+      const shareInfoMap = {}
+      shareInfoResults.forEach(({ walletId, shareInfo }) => {
+        shareInfoMap[walletId] = shareInfo
+      })
+      setWalletShareInfo(shareInfoMap)
     } catch (error) {
       console.error('Error fetching wallets:', error)
       toast.error('Không thể tải danh sách ví.')
@@ -252,11 +272,12 @@ const WalletList = () => {
                         <div className="flex space-x-1">
                           {view === 'active' && (
                               <>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}`)}><EyeIcon className="w-4 h-4" /></Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}/edit`)}><EditIcon className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}`)} title="Xem chi tiết"><EyeIcon className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/wallets/${wallet.id}/edit`)} title="Chỉnh sửa"><EditIcon className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/wallets/share')} title="Chia sẻ ví"><ShareIcon className="w-4 h-4" /></Button>
                               </>
                           )}
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleArchiveToggle(wallet)} disabled={isTogglingArchive === wallet.id}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleArchiveToggle(wallet)} disabled={isTogglingArchive === wallet.id} title={view === 'archived' ? 'Khôi phục' : 'Lưu trữ'}>
                             {isTogglingArchive === wallet.id ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                                 view === 'archived' ? <ArchiveRestoreIcon className="w-4 h-4 text-blue-500" /> : <ArchiveIcon className="w-4 h-4" />
                             )}
@@ -267,6 +288,7 @@ const WalletList = () => {
                               className="h-8 w-8 text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                               onClick={() => handleDeleteClick(wallet)}
                               disabled={view === 'archived'}
+                              title="Xóa ví"
                           >
                             <TrashIcon className="w-4 h-4" />
                           </Button>
@@ -277,6 +299,21 @@ const WalletList = () => {
                       <p className="text-sm text-muted-foreground">Số dư</p>
                       <p className="text-2xl font-bold">{formatCurrency(wallet.balance, wallet.currency)}</p>
                       {wallet.description && <p className="text-sm text-muted-foreground mt-2 italic line-clamp-2">{wallet.description}</p>}
+                      
+                      {/* Share Status */}
+                      {view === 'active' && walletShareInfo[wallet.id] && (
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <UsersIcon className="w-4 h-4 text-blue-500" />
+                              <span className="text-sm text-muted-foreground">Đã chia sẻ</span>
+                            </div>
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                              {walletShareInfo[wallet.id]?.sharedWith?.length || 0} người
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
               ))}
