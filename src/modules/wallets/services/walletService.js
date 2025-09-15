@@ -70,8 +70,7 @@ export const walletService = {
   getTotalBalanceUSD: async () => {
     return apiService.get('/wallets/total-balance-usd')
 
-
-
+  },
   getSharedWalletsByMe: async () => {
     return apiService.get('/wallet-shares/shared-by-me')
   },
