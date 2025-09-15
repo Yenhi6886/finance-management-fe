@@ -5,13 +5,10 @@ import { Label } from '../../../components/ui/label'
 import { 
   ArrowLeftIcon,
   ArrowRightIcon,
-  WalletIcon,
   DollarSignIcon,
   CheckCircleIcon,
   AlertCircleIcon,
   ArrowLeftRightIcon,
-  CreditCardIcon,
-  BanknoteIcon,
   ShieldCheckIcon,
   RefreshCwIcon,
   StarIcon,
@@ -40,29 +37,43 @@ const TransferMoney = () => {
   const fetchWallets = async () => {
     try {
       const response = await walletService.getWallets()
-      // Chỉ lấy các ví active và có quyền transfer
-      const activeWallets = response.data.filter(wallet => 
-        wallet.status === 'active' && 
-        (wallet.permissions.includes('transfer') || wallet.permissions.includes('full'))
-      )
+      
+      // Kiểm tra cấu trúc response từ backend
+      let walletData = []
+      if (response.data && response.data.data) {
+        // Nếu có wrapper ApiResponse
+        walletData = response.data.data
+      } else if (Array.isArray(response.data)) {
+        // Nếu data trực tiếp là array
+        walletData = response.data
+      }
+      
+      // Lọc chỉ lấy các ví active (không bị archive)
+      const activeWallets = Array.isArray(walletData) ? walletData.filter(wallet => 
+        !wallet.isArchived
+      ) : []
+      
       setWallets(activeWallets)
     } catch (error) {
       console.error('Error fetching wallets:', error)
+      console.error('Error response:', error.response?.data)
+      console.error('Error status:', error.response?.status)
     }
   }
 
   const fetchRecentTransfers = async () => {
     try {
       const response = await walletService.getTransactions({ type: 'transfer', limit: 5 })
-      setRecentTransfers(response.data)
+      const transfers = response.data.data || response.data
+      setRecentTransfers(transfers)
     } catch (error) {
       console.error('Error fetching recent transfers:', error)
     }
   }
 
   const calculateTransferFee = (fromWalletId, toWalletId, amount) => {
-    const from = wallets.find(w => w.id === fromWalletId)
-    const to = wallets.find(w => w.id === toWalletId)
+    const from = wallets.find(w => w.id.toString() === fromWalletId.toString())
+    const to = wallets.find(w => w.id.toString() === toWalletId.toString())
     
     if (!from || !to || !amount) return 0
     
@@ -72,9 +83,9 @@ const TransferMoney = () => {
     // Nếu khác loại tiền tệ
     if (from.currency !== to.currency) {
       fee = amount * 0.02 // 2% phí quy đổi
-    } else if (from.type !== to.type) {
-      // Khác loại ví (ví dụ: từ ví tiết kiệm sang ví thường)
-      fee = Math.min(amount * 0.005, 50000) // 0.5% tối đa 50k
+    } else {
+      // Phí chuyển cơ bản giữa các ví cùng loại tiền tệ
+      fee = Math.min(amount * 0.001, 10000) // 0.1% tối đa 10k
     }
     
     return Math.round(fee)
@@ -91,23 +102,25 @@ const TransferMoney = () => {
       newErrors.toWallet = 'Vui lòng chọn ví đích'
     }
     
-    if (fromWallet === toWallet) {
+    if (fromWallet && toWallet && fromWallet === toWallet) {
       newErrors.toWallet = 'Ví đích phải khác ví nguồn'
     }
     
-    if (!amount || parseFloat(amount) <= 0) {
-      newErrors.amount = 'Số tiền phải lớn hơn 0'
-    }
-    
-    if (amount && fromWallet) {
-      const wallet = wallets.find(w => w.id === fromWallet)
-      if (wallet && parseFloat(amount) + transferFee > wallet.balance) {
-        newErrors.amount = 'Số dư không đủ (bao gồm phí chuyển)'
+    // Validation cho amount
+    if (!amount || amount.trim() === '') {
+      newErrors.amount = 'Vui lòng nhập số tiền'
+    } else {
+      const amountValue = parseFloat(amount)
+      if (isNaN(amountValue) || amountValue <= 0) {
+        newErrors.amount = 'Số tiền phải lớn hơn 0'
+      } else if (amountValue < 1000) {
+        newErrors.amount = 'Số tiền tối thiểu là 1,000 ₫'
+      } else if (fromWallet) {
+        const wallet = wallets.find(w => w.id.toString() === fromWallet.toString())
+        if (wallet && amountValue + transferFee > parseFloat(wallet.balance)) {
+          newErrors.amount = 'Số dư không đủ (bao gồm phí chuyển)'
+        }
       }
-    }
-    
-    if (parseFloat(amount) < 1000) {
-      newErrors.amount = 'Số tiền tối thiểu là 1,000 ₫'
     }
 
     setErrors(newErrors)
@@ -116,6 +129,14 @@ const TransferMoney = () => {
 
   const handleAmountChange = (value) => {
     setAmount(value)
+    
+    // Clear amount error when user types
+    if (errors.amount) {
+      const newErrors = { ...errors }
+      delete newErrors.amount
+      setErrors(newErrors)
+    }
+    
     if (fromWallet && toWallet && value) {
       const fee = calculateTransferFee(fromWallet, toWallet, parseFloat(value))
       setTransferFee(fee)
@@ -125,6 +146,24 @@ const TransferMoney = () => {
   }
 
   const handleWalletChange = () => {
+    // Clear wallet errors when selection changes
+    const newErrors = { ...errors }
+    let hasChanges = false
+    
+    if (errors.fromWallet) {
+      delete newErrors.fromWallet
+      hasChanges = true
+    }
+    
+    if (errors.toWallet) {
+      delete newErrors.toWallet
+      hasChanges = true
+    }
+    
+    if (hasChanges) {
+      setErrors(newErrors)
+    }
+    
     if (fromWallet && toWallet && amount) {
       const fee = calculateTransferFee(fromWallet, toWallet, parseFloat(amount))
       setTransferFee(fee)
@@ -163,8 +202,8 @@ const TransferMoney = () => {
         transactionId: 'TXN' + Date.now(),
         amount: parseFloat(amount),
         fee: transferFee,
-        fromWalletName: wallets.find(w => w.id === fromWallet)?.name,
-        toWalletName: wallets.find(w => w.id === toWallet)?.name
+        fromWalletName: wallets.find(w => w.id.toString() === fromWallet.toString())?.name,
+        toWalletName: wallets.find(w => w.id.toString() === toWallet.toString())?.name
       })
       
       setShowConfirmation(false)
@@ -191,17 +230,19 @@ const TransferMoney = () => {
   }
 
   const formatCurrency = (amount, currency = 'VND') => {
+    if (!amount && amount !== 0) return '0 ₫'
     const formatted = new Intl.NumberFormat('vi-VN').format(amount)
-    return currency === 'USD' ? `$${formatted}` : `${formatted} ₫`
-  }
-
-  const getWalletIcon = (wallet) => {
-    const icons = {
-      savings: BanknoteIcon,
-      credit: CreditCardIcon,
-      cash: DollarSignIcon
+    
+    // Handle currency enum từ backend
+    switch(currency) {
+      case 'USD':
+        return `$${formatted}`
+      case 'EUR':
+        return `€${formatted}`
+      case 'VND':
+      default:
+        return `${formatted} ₫`
     }
-    return icons[wallet.type] || WalletIcon
   }
 
   // Success/Error Result Screen
@@ -280,8 +321,8 @@ const TransferMoney = () => {
 
   // Confirmation Modal
   if (showConfirmation) {
-    const fromWalletData = wallets.find(w => w.id === fromWallet)
-    const toWalletData = wallets.find(w => w.id === toWallet)
+    const fromWalletData = wallets.find(w => w.id.toString() === fromWallet.toString())
+    const toWalletData = wallets.find(w => w.id.toString() === toWallet.toString())
     
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -344,7 +385,7 @@ const TransferMoney = () => {
                   {note && (
                     <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Ghi chú:</p>
-                      <p className="text-gray-900 dark:text-white italic">"{note}"</p>
+                      <p className="text-gray-900 dark:text-white italic">&ldquo;{note}&rdquo;</p>
                     </div>
                   )}
                 </div>
@@ -418,6 +459,23 @@ const TransferMoney = () => {
                 </div>
 
                 <div className="space-y-6">
+                  {/* No wallets message */}
+                  {wallets.length === 0 && (
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                      <div className="flex items-center space-x-2">
+                        <AlertCircleIcon className="w-5 h-5 text-yellow-600" />
+                        <div>
+                          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                            Chưa có ví nào để chuyển tiền
+                          </p>
+                          <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                            Bạn cần tạo ít nhất 2 ví để thực hiện chuyển tiền
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Wallet Selection */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* From Wallet */}
@@ -438,6 +496,7 @@ const TransferMoney = () => {
                         {wallets.map(wallet => (
                           <option key={wallet.id} value={wallet.id}>
                             {wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}
+                            {wallet.sharedBy && ` (Chia sẻ bởi: ${wallet.sharedBy})`}
                           </option>
                         ))}
                       </select>
@@ -464,6 +523,7 @@ const TransferMoney = () => {
                         {wallets.filter(w => w.id !== fromWallet).map(wallet => (
                           <option key={wallet.id} value={wallet.id}>
                             {wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}
+                            {wallet.sharedBy && ` (Chia sẻ bởi: ${wallet.sharedBy})`}
                           </option>
                         ))}
                       </select>
@@ -582,12 +642,28 @@ const TransferMoney = () => {
                   <div className="pt-6">
                     <Button
                       onClick={handleTransfer}
-                      disabled={!fromWallet || !toWallet || !amount || Object.keys(errors).length > 0}
-                      className="w-full h-12 text-base font-light bg-green-600 hover:bg-green-700 text-white rounded-lg border-0"
+                      disabled={
+                        !fromWallet || 
+                        !toWallet || 
+                        !amount || 
+                        amount.trim() === '' ||
+                        Object.keys(errors).length > 0 ||
+                        wallets.length === 0
+                      }
+                      className="w-full h-12 text-base font-light bg-green-600 hover:bg-green-700 text-white rounded-lg border-0 disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
                       <ArrowLeftRightIcon className="w-5 h-5 mr-2" />
-                      Chuyển Tiền
+                      {wallets.length === 0 ? 'Không có ví' : 'Chuyển Tiền'}
                     </Button>
+                    
+                    {/* Help text when button is disabled */}
+                    {(!fromWallet || !toWallet || !amount || Object.keys(errors).length > 0) && wallets.length > 0 && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
+                        {!fromWallet || !toWallet ? 'Vui lòng chọn ví nguồn và ví đích' :
+                         !amount ? 'Vui lòng nhập số tiền' :
+                         Object.keys(errors).length > 0 ? 'Vui lòng sửa các lỗi trên' : ''}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
