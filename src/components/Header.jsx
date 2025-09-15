@@ -20,9 +20,10 @@ import {
   SettingsIcon,
   LogOutIcon,
   KeyIcon,
+  PlusIcon, // Import PlusIcon
 } from 'lucide-react'
 
-const Header = () => {
+const Header = ({ onAddWalletClick, onAddExpenseClick }) => {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
 
@@ -41,6 +42,15 @@ const Header = () => {
         </div>
 
         <div className="flex items-center space-x-4">
+          <Button
+              variant="ghost"
+              size="icon"
+              onClick={onAddExpenseClick} // New button to open AddExpensePopup
+              className="w-9 h-9"
+          >
+            <PlusIcon className="w-4 h-4" />
+          </Button>
+
           <Button
               variant="ghost"
               size="icon"
