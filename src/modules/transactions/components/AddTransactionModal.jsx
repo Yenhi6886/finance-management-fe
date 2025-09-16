@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader,DialogFooter } from '../../../components/ui/dialog';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
@@ -13,11 +13,11 @@ import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { cn } from '../../../lib/utils';
 
-const TransactionForm = ({ type, onFormSubmit }) => {
+const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
     const { wallets } = useWallet();
     const { settings } = useSettings();
     const [amount, setAmount] = useState('');
-    const [categoryId, setCategoryId] = useState('');
+    const [categoryId, setCategoryId] = useState(initialCategoryId || '');
     const [walletId, setWalletId] = useState('');
     const [description, setDescription] = useState('');
     const [date, setDate] = useState(new Date().toISOString().slice(0, 16));
@@ -36,6 +36,12 @@ const TransactionForm = ({ type, onFormSubmit }) => {
         };
         fetchCategories();
     }, []);
+
+    useEffect(() => {
+        if(initialCategoryId) {
+            setCategoryId(initialCategoryId);
+        }
+    }, [initialCategoryId]);
 
     const validate = () => {
         const newErrors = {};
@@ -118,7 +124,7 @@ const TransactionForm = ({ type, onFormSubmit }) => {
     );
 };
 
-const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded }) => {
+const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded, initialCategoryId }) => {
     const [activeTab, setActiveTab] = useState(initialType);
 
     useEffect(() => {
@@ -144,8 +150,8 @@ const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded 
                     </div>
                 </DialogHeader>
                 <div className="py-4">
-                    {activeTab === 'expense' && <TransactionForm type="expense" onFormSubmit={handleFormSubmit} />}
-                    {activeTab === 'income' && <TransactionForm type="income" onFormSubmit={handleFormSubmit} />}
+                    {activeTab === 'expense' && <TransactionForm type="expense" onFormSubmit={handleFormSubmit} initialCategoryId={initialCategoryId} />}
+                    {activeTab === 'income' && <TransactionForm type="income" onFormSubmit={handleFormSubmit} initialCategoryId={initialCategoryId} />}
                 </div>
             </DialogContent>
         </Dialog>

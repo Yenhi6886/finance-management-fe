@@ -6,10 +6,10 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { categoryService } from '../services/categoryService';
 import { toast } from 'sonner';
-import { PlusCircle, Trash2, Loader2, BadgePlus, Edit, MoreVertical, TrendingUp, TrendingDown } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, BadgePlus, Edit, MoreVertical, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../../../components/ui/dropdown-menu';
 import { cn } from '../../../lib/utils';
 
 const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => {
@@ -124,7 +124,7 @@ const ProgressBar = ({ value, max, variant = 'expense' }) => {
     );
 };
 
-const ManageCategories = () => {
+const ManageCategories = ({ onAddTransaction }) => {
     const [categories, setCategories] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -185,6 +185,8 @@ const ManageCategories = () => {
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onSelect={() => onAddTransaction(String(cat.id))}><ArrowRightLeft className="mr-2 h-4 w-4"/>Thêm Giao Dịch</DropdownMenuItem>
+                                            <DropdownMenuSeparator />
                                             <DropdownMenuItem onSelect={() => handleOpenModal(cat)}><Edit className="mr-2 h-4 w-4"/>Chỉnh sửa</DropdownMenuItem>
                                             <DropdownMenuItem className="text-red-600"><Trash2 className="mr-2 h-4 w-4"/>Xóa</DropdownMenuItem>
                                         </DropdownMenuContent>

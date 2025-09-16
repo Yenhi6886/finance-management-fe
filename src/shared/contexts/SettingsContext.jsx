@@ -1,24 +1,31 @@
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react'
 import { settingsService } from '../../modules/settings/services/settingsService'
 import { toast } from 'sonner'
+import { useAuth } from '../../modules/auth/contexts/AuthContext'
 
 export const SettingsContext = createContext()
 
 export const SettingsProvider = ({ children }) => {
+    const { isAuthenticated } = useAuth();
     const [settings, setSettings] = useState(null)
     const [loading, setLoading] = useState(true)
 
     const fetchSettings = useCallback(async () => {
+        if (!isAuthenticated) {
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
         try {
             const response = await settingsService.getSettings()
             setSettings(response.data.data)
         } catch (error) {
             console.error('Failed to load user settings:', error)
-            toast.error('Không thể tải cài đặt người dùng.')
+            // Không cần toast lỗi ở đây nữa vì nó không phải là lỗi người dùng cần biết
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [isAuthenticated])
 
     useEffect(() => {
         fetchSettings()

@@ -13,15 +13,25 @@ const Transactions = () => {
     const [activeTab, setActiveTab] = useState('transactions');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [initialModalType, setInitialModalType] = useState('expense');
+    const [initialCategoryId, setInitialCategoryId] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    const handleOpenModal = (type) => {
+    const handleOpenModal = (type, categoryId = null) => {
         setInitialModalType(type);
+        setInitialCategoryId(categoryId);
         setIsModalOpen(true);
     };
 
     const handleTransactionAdded = () => {
         setRefreshTrigger(prev => prev + 1);
+        if (activeTab === 'categories') {
+            // Logic to refresh categories if needed, or let ManageCategories handle it
+        }
+    };
+
+    const handleAddTransactionFromCategory = (categoryId) => {
+        // When adding from category, default to 'expense' but user can switch in modal
+        handleOpenModal('expense', categoryId);
     };
 
     return (
@@ -50,12 +60,13 @@ const Transactions = () => {
             </div>
 
             {activeTab === 'transactions' && <TransactionList onOpenModal={handleOpenModal} refreshTrigger={refreshTrigger} />}
-            {activeTab === 'categories' && <ManageCategories />}
+            {activeTab === 'categories' && <ManageCategories onAddTransaction={handleAddTransactionFromCategory} />}
 
             <AddTransactionModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 initialType={initialModalType}
+                initialCategoryId={initialCategoryId}
                 onTransactionAdded={handleTransactionAdded}
             />
         </div>

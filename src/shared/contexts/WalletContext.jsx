@@ -1,16 +1,24 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react'
 import { walletService } from '../../modules/wallets/services/walletService'
+import { useAuth } from '../../modules/auth/contexts/AuthContext'
 
 export const WalletContext = createContext()
 
 export const WalletProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [currentWallet, setCurrentWallet] = useState(null)
   const [wallets, setWallets] = useState([])
   const [loading, setLoading] = useState(true)
 
   const fetchWallets = useCallback(async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      setWallets([]);
+      setCurrentWallet(null);
+      return;
+    }
+    setLoading(true)
     try {
-      setLoading(true)
       const response = await walletService.getWallets()
       const walletsData = response.data.data || []
       setWallets(walletsData)
@@ -39,7 +47,7 @@ export const WalletProvider = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isAuthenticated])
 
   const selectWallet = (wallet) => {
     setCurrentWallet(wallet)
@@ -76,3 +84,11 @@ export const WalletProvider = ({ children }) => {
       </WalletContext.Provider>
   )
 }
+
+export const useWallet = () => {
+  const context = useContext(WalletContext);
+  if (!context) {
+    throw new Error('useWallet must be used within a WalletProvider');
+  }
+  return context;
+};
