@@ -8,6 +8,7 @@ import { cn } from '../../../lib/utils'
 import { Sun, Moon, Laptop, Palette, Languages, DollarSign, Check, Info, RefreshCw, Loader2, Calendar} from 'lucide-react'
 import { toast } from 'sonner'
 import { useSettings } from '../../../shared/contexts/SettingsContext'
+import { formatNumber, formatDate } from '../../../shared/utils/formattingUtils.js'
 
 const InterfaceSettings = () => {
     const { theme, setTheme } = useTheme()
@@ -191,10 +192,10 @@ const ExchangeRateSettings = () => {
                                 <RefreshCw className="w-4 h-4 text-green-500 cursor-pointer" onClick={refreshSettings}/>
                             </div>
                             <p className="text-3xl font-bold mt-2">
-                                {settings?.usdToVndRate ? Number(settings.usdToVndRate).toLocaleString('vi-VN') : 'N/A'}
+                                {settings?.usdToVndRate ? formatNumber(settings.usdToVndRate, settings) : 'N/A'}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                                Cập nhật lần cuối: {settings?.updatedAt ? new Date(settings.updatedAt).toLocaleString('vi-VN') : 'Chưa có'}
+                                Cập nhật lần cuối: {settings?.updatedAt ? formatDate(settings.updatedAt, settings) : 'Chưa có'}
                             </p>
                         </div>
                     </CardContent>

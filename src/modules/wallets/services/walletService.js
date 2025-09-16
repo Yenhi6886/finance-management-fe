@@ -46,6 +46,15 @@ export const walletService = {
     return apiService.get(`/transactions${queryString ? `?${queryString}` : ''}`)
   },
 
+  getWalletTransactions: async (walletId, params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return apiService.get(`/wallets/${walletId}/transactions${queryString ? `?${queryString}` : ''}`)
+  },
+
+  getBalanceHistory: async (walletId, period = '30d') => {
+    return apiService.get(`/wallets/${walletId}/balance-history?period=${period}`)
+  },
+
   addMoney: async (walletId, data) => {
     return apiService.post(`/wallets/${walletId}/add-money`, data)
   },

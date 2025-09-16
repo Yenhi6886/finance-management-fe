@@ -6,9 +6,12 @@ import AnimatedIcon from './ui/AnimatedIcon'
 import addWalletAnimation from '../assets/icons/addWallet.json'
 import { X, Check } from 'lucide-react'
 import { IconComponent } from '../shared/config/icons'
+import { useSettings } from '../shared/contexts/SettingsContext'
+import { formatCurrency } from '../shared/utils/formattingUtils.js'
 
 const WalletPanel = ({ isOpen, onClose }) => {
     const { wallets, currentWallet, selectWallet } = useWallet()
+    const { settings } = useSettings()
     const navigate = useNavigate()
 
     const handleSelectWallet = (wallet) => {
@@ -42,14 +45,14 @@ const WalletPanel = ({ isOpen, onClose }) => {
                 {currentWallet && (
                     <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Ví hiện tại</p>
-                        <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900 rounded-lg">
+                        <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/60 rounded-lg">
                             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xl">
                                 <IconComponent name={currentWallet.icon} className="w-5 h-5 text-green-600 dark:text-green-200" />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="font-medium text-green-800 dark:text-green-200 truncate">{currentWallet.name}</p>
                                 <p className="text-sm text-green-600 dark:text-green-400">
-                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentWallet.balance)}
+                                    {formatCurrency(currentWallet.balance, currentWallet.currency, settings)}
                                 </p>
                             </div>
                         </div>
@@ -70,7 +73,7 @@ const WalletPanel = ({ isOpen, onClose }) => {
                                 <div className="flex-1 min-w-0">
                                     <p className="font-medium text-gray-800 dark:text-gray-200 truncate">{wallet.name}</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(wallet.balance)}
+                                        {formatCurrency(wallet.balance, wallet.currency, settings)}
                                     </p>
                                 </div>
                                 {currentWallet?.id === wallet.id && (

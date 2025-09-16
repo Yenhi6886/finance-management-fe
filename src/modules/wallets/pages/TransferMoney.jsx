@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
@@ -20,6 +20,8 @@ import {
   WalletCards
 } from 'lucide-react'
 import { walletService } from '../services/walletService'
+import { useSettings } from '../../../shared/contexts/SettingsContext'
+import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
 
 const TransferFormSkeleton = () => (
     <div className="p-8">
@@ -79,6 +81,8 @@ const TransferMoney = () => {
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [transferResult, setTransferResult] = useState(null)
   const [recentTransfers, setRecentTransfers] = useState([])
+  const { settings } = useSettings()
+  const navigate = useNavigate()
 
   const fetchWallets = async () => {
     setPageStatus('loading')
@@ -97,7 +101,7 @@ const TransferMoney = () => {
 
   const fetchRecentTransfers = async () => {
     try {
-      const response = await walletService.getTransactions({ type: 'transfer', limit: 5 })
+      const response = await walletService.getTransactions({ type: 'TRANSFER', limit: 5 })
       setRecentTransfers(response.data.data || [])
     } catch (error) {
       console.error('Lỗi khi tải giao dịch gần đây:', error)
@@ -183,12 +187,6 @@ const TransferMoney = () => {
     }
   }
 
-  const formatCurrency = (amount, currency = 'VND') => {
-    if (isNaN(amount)) return ''
-    const formatted = new Intl.NumberFormat('vi-VN').format(amount)
-    return currency === 'USD' ? `$${formatted}` : `${formatted} ₫`
-  }
-
   const toWallets = useMemo(() => {
     if (!fromWallet) return wallets
     const fromWalletData = wallets.find(w => w.id.toString() === fromWallet)
@@ -245,7 +243,7 @@ const TransferMoney = () => {
                 <Label htmlFor="fromWallet">Từ ví <span className="text-red-500">*</span></Label>
                 <select id="fromWallet" value={fromWallet} onChange={(e) => { setFromWallet(e.target.value); setToWallet(''); }} className={`w-full h-12 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${errors.fromWallet ? 'border-red-500' : 'border-border'} bg-background`}>
                   <option value="">Chọn ví nguồn</option>
-                  {wallets.map(w => <option key={w.id} value={w.id}>{w.name} - {formatCurrency(w.balance, w.currency)}</option>)}
+                  {wallets.map(w => <option key={w.id} value={w.id}>{w.name} - {formatCurrency(w.balance, w.currency, settings)}</option>)}
                 </select>
                 {errors.fromWallet && <p className="text-sm text-red-500">{errors.fromWallet}</p>}
               </div>
@@ -253,7 +251,7 @@ const TransferMoney = () => {
                 <Label htmlFor="toWallet">Đến ví <span className="text-red-500">*</span></Label>
                 <select id="toWallet" value={toWallet} onChange={(e) => setToWallet(e.target.value)} disabled={!fromWallet} className={`w-full h-12 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${errors.toWallet ? 'border-red-500' : 'border-border'} bg-background disabled:bg-muted`}>
                   <option value="">Chọn ví đích</option>
-                  {toWallets.map(w => <option key={w.id} value={w.id}>{w.name} - {formatCurrency(w.balance, w.currency)}</option>)}
+                  {toWallets.map(w => <option key={w.id} value={w.id}>{w.name} - {formatCurrency(w.balance, w.currency, settings)}</option>)}
                 </select>
                 {errors.toWallet && <p className="text-sm text-red-500">{errors.toWallet}</p>}
                 {fromWallet && toWallets.length === 0 && <p className="text-sm text-yellow-600 mt-1">Không có ví đích hợp lệ (cần cùng loại tiền tệ).</p>}
@@ -280,11 +278,11 @@ const TransferMoney = () => {
         <div className="max-w-2xl w-full bg-card rounded-lg shadow-lg border border-border p-8">
           <div className="text-center">
             {transferResult.success ? (
-                <><div className="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircleIcon className="w-8 h-8 text-green-600 dark:text-green-400" /></div><h3 className="text-xl font-bold text-green-600 dark:text-green-400 mb-2">Chuyển Tiền Thành Công!</h3><p className="text-muted-foreground mb-6">Đã chuyển {formatCurrency(transferResult.amount)} từ {transferResult.fromWalletName} sang {transferResult.toWalletName}</p></>
+                <><div className="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircleIcon className="w-8 h-8 text-green-600 dark:text-green-400" /></div><h3 className="text-xl font-bold text-green-600 dark:text-green-400 mb-2">Chuyển Tiền Thành Công!</h3><p className="text-muted-foreground mb-6">Đã chuyển {formatCurrency(transferResult.amount, 'VND', settings)} từ {transferResult.fromWalletName} sang {transferResult.toWalletName}</p></>
             ) : (
                 <><div className="w-16 h-16 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4"><AlertCircleIcon className="w-8 h-8 text-red-600 dark:text-red-400" /></div><h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">Chuyển Tiền Thất Bại</h3><p className="text-muted-foreground mb-4">{transferResult.message}</p></>
             )}
-            <div className="flex space-x-3"><Button onClick={() => setTransferResult(null)} className="flex-1 h-12 rounded-lg">Chuyển Tiền Mới</Button><Button variant="outline" onClick={() => window.history.back()} className="flex-1 h-12 rounded-lg">Quay Lại</Button></div>
+            <div className="flex space-x-3"><Button onClick={() => setTransferResult(null)} className="flex-1 h-12 rounded-lg">Chuyển Tiền Mới</Button><Button variant="outline" onClick={() => navigate('/wallets')} className="flex-1 h-12 rounded-lg">Quay Lại</Button></div>
           </div>
         </div>
       </div>
@@ -301,8 +299,8 @@ const TransferMoney = () => {
               <h3 className="text-xl font-bold text-foreground mb-2">Xác Nhận Chuyển Tiền</h3>
               <p className="text-muted-foreground mb-6">Vui lòng kiểm tra thông tin trước khi xác nhận</p>
               <div className="bg-muted rounded-lg p-6 mb-6 space-y-4 text-left">
-                <div className="flex items-center justify-between"><div className="text-left"><p className="text-sm text-muted-foreground">Từ ví</p><p className="font-medium text-foreground">{fromWalletData?.name}</p><p className="text-sm text-muted-foreground">Số dư: {formatCurrency(fromWalletData?.balance, fromWalletData?.currency)}</p></div><ArrowRightIcon className="w-6 h-6 text-gray-400" /><div className="text-right"><p className="text-sm text-muted-foreground">Đến ví</p><p className="font-medium text-foreground">{toWalletData?.name}</p><p className="text-sm text-muted-foreground">Số dư: {formatCurrency(toWalletData?.balance, toWalletData?.currency)}</p></div></div>
-                <div className="border-t border-border pt-4 space-y-2"><div className="flex justify-between"><span className="font-medium text-foreground">Tổng cộng:</span><span className="font-bold text-green-600">{formatCurrency(parseFloat(amount))}</span></div></div>
+                <div className="flex items-center justify-between"><div className="text-left"><p className="text-sm text-muted-foreground">Từ ví</p><p className="font-medium text-foreground">{fromWalletData?.name}</p><p className="text-sm text-muted-foreground">Số dư: {formatCurrency(fromWalletData?.balance, fromWalletData?.currency, settings)}</p></div><ArrowRightIcon className="w-6 h-6 text-gray-400" /><div className="text-right"><p className="text-sm text-muted-foreground">Đến ví</p><p className="font-medium text-foreground">{toWalletData?.name}</p><p className="text-sm text-muted-foreground">Số dư: {formatCurrency(toWalletData?.balance, toWalletData?.currency, settings)}</p></div></div>
+                <div className="border-t border-border pt-4 space-y-2"><div className="flex justify-between"><span className="font-medium text-foreground">Tổng cộng:</span><span className="font-bold text-green-600">{formatCurrency(parseFloat(amount), 'VND', settings)}</span></div></div>
                 {description && <div className="border-t border-border pt-4 text-left"><p className="text-sm text-muted-foreground">Ghi chú:</p><p className="text-foreground italic">"{description}"</p></div>}
               </div>
               <div className="flex space-x-3">
@@ -323,7 +321,7 @@ const TransferMoney = () => {
             <p className="text-muted-foreground mt-2">Chuyển tiền nhanh chóng và an toàn giữa các ví của bạn</p></div>
           <div className="mt-4 sm:mt-0">
             <Button
-                onClick={() => window.history.back()}
+                onClick={() => navigate(-1)}
                 variant="ghost"
                 size="sm"
                 className="h-10 px-4 text-sm font-light bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-800/30 text-green-600 dark:text-green-400 rounded-md border-0"
@@ -352,12 +350,12 @@ const TransferMoney = () => {
                                   {t.fromWalletName} → {t.toWalletName}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {new Date(t.date).toLocaleDateString('vi-VN')}
+                                  {formatDate(t.date, settings)}
                                 </p>
                               </div>
                             </div>
                             <span className="font-bold text-sm text-red-600">
-                              -{formatCurrency(t.amount)}
+                              -{formatCurrency(t.amount, 'VND', settings)}
                             </span>
                           </div>
                       ))}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react'
+import React, { useState, useEffect, useContext, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
@@ -21,6 +21,11 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   FileText,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  BarChart,
+  PieChart,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -44,6 +49,9 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { cn } from '../../../lib/utils'
 import { IconComponent } from '../../../shared/config/icons'
+import { useSettings } from '../../../shared/contexts/SettingsContext'
+import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
+import BalanceTrendChart from '../components/BalanceTrendChart'
 
 const WalletDetail = () => {
   const { id } = useParams()
@@ -51,28 +59,65 @@ const WalletDetail = () => {
   const { refreshWallets } = useContext(WalletContext)
   const [wallet, setWallet] = useState(null)
   const [transactions, setTransactions] = useState([])
+  const [balanceHistory, setBalanceHistory] = useState([])
   const [monthlyStats, setMonthlyStats] = useState(null)
+
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+
   const [loading, setLoading] = useState(true)
+  const [transactionsLoading, setTransactionsLoading] = useState(false)
+  const [chartLoading, setChartLoading] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const { settings } = useSettings()
+
+  const fetchWalletDetails = useCallback(async () => {
+    try {
+      const response = await walletService.getWalletById(id)
+      const walletData = response.data.data
+      setWallet(walletData)
+      setMonthlyStats(walletData.monthlyStats || { totalIncome: 0, totalExpense: 0, netChange: 0 })
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Lỗi khi tải dữ liệu ví.")
+      navigate('/wallets')
+    }
+  }, [id, navigate])
+
+  const fetchTransactions = useCallback(async (currentPage) => {
+    setTransactionsLoading(true)
+    try {
+      const params = { page: currentPage, size: 5, sort: 'date,desc' }
+      const response = await walletService.getWalletTransactions(id, params)
+      setTransactions(response.data.data.content || [])
+      setTotalPages(response.data.data.totalPages)
+    } catch (error) {
+      toast.error("Lỗi khi tải lịch sử giao dịch.")
+    } finally {
+      setTransactionsLoading(false)
+    }
+  }, [id])
+
+  const fetchBalanceHistory = useCallback(async () => {
+    setChartLoading(true)
+    try {
+      const response = await walletService.getBalanceHistory(id)
+      setBalanceHistory(response.data.data || [])
+    } catch (error) {
+      toast.error("Lỗi khi tải dữ liệu biểu đồ.")
+    } finally {
+      setChartLoading(false)
+    }
+  }, [id])
 
   useEffect(() => {
-    const fetchWalletDetail = async () => {
-      try {
-        setLoading(true)
-        const response = await walletService.getWalletById(id)
-        const walletData = response.data.data
-        setWallet(walletData)
-        setTransactions(walletData.transactions || [])
-        setMonthlyStats(walletData.monthlyStats || { totalIncome: 0, totalExpense: 0, netChange: 0 })
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Lỗi khi tải dữ liệu ví.")
-        navigate('/wallets')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchWalletDetail()
-  }, [id, navigate])
+    setLoading(true)
+    Promise.all([
+      fetchWalletDetails(),
+      fetchTransactions(page),
+      fetchBalanceHistory()
+    ]).finally(() => setLoading(false))
+  }, [fetchWalletDetails, fetchTransactions, fetchBalanceHistory, page])
+
 
   const handleConfirmDelete = async () => {
     if (!wallet) return
@@ -103,17 +148,10 @@ const WalletDetail = () => {
     }
   }
 
-  const formatCurrency = (amount, currency = 'VND') => {
-    if (typeof amount !== 'number') amount = parseFloat(amount) || 0
-    return currency === 'USD'
-        ? `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-        : `${amount.toLocaleString('vi-VN')} ₫`
-  }
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      day: '2-digit', month: '2-digit', year: 'numeric'
-    })
+  const handlePageChange = (newPage) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      setPage(newPage)
+    }
   }
 
   if (loading) {
@@ -186,7 +224,7 @@ const WalletDetail = () => {
           <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white flex flex-col justify-between p-6">
             <div>
               <p className="text-green-100 text-sm">Số Dư Hiện Tại</p>
-              <p className="text-4xl font-bold tracking-tight">{formatCurrency(wallet.balance, wallet.currency)}</p>
+              <p className="text-4xl font-bold tracking-tight">{formatCurrency(wallet.balance, wallet.currency, settings)}</p>
               <p className="text-green-200 text-sm mt-2 italic">{wallet.description || 'Không có mô tả'}</p>
             </div>
           </Card>
@@ -195,14 +233,14 @@ const WalletDetail = () => {
               <div className="p-3 bg-green-100 rounded-lg mr-4"><TrendingUp className="w-6 h-6 text-green-600" /></div>
               <div>
                 <p className="text-muted-foreground text-sm">Thu Nhập Tháng</p>
-                <p className="text-xl font-bold text-green-600">{formatCurrency(monthlyStats?.totalIncome || 0, wallet.currency)}</p>
+                <p className="text-xl font-bold text-green-600">{formatCurrency(monthlyStats?.totalIncome || 0, wallet.currency, settings)}</p>
               </div>
             </Card>
             <Card className="flex items-center p-4">
               <div className="p-3 bg-red-100 rounded-lg mr-4"><TrendingDown className="w-6 h-6 text-red-600" /></div>
               <div>
                 <p className="text-muted-foreground text-sm">Chi Tiêu Tháng</p>
-                <p className="text-xl font-bold text-red-600">{formatCurrency(monthlyStats?.totalExpense || 0, wallet.currency)}</p>
+                <p className="text-xl font-bold text-red-600">{formatCurrency(monthlyStats?.totalExpense || 0, wallet.currency, settings)}</p>
               </div>
             </Card>
             <Card className="flex items-center p-4">
@@ -210,7 +248,7 @@ const WalletDetail = () => {
               <div>
                 <p className="text-muted-foreground text-sm">Thay Đổi Ròng</p>
                 <p className={cn("text-xl font-bold", (monthlyStats?.netChange || 0) >= 0 ? 'text-green-600' : 'text-red-600')}>
-                  {(monthlyStats?.netChange || 0) >= 0 ? '+' : ''}{formatCurrency(monthlyStats?.netChange || 0, wallet.currency)}
+                  {(monthlyStats?.netChange || 0) >= 0 ? '+' : ''}{formatCurrency(monthlyStats?.netChange || 0, wallet.currency, settings)}
                 </p>
               </div>
             </Card>
@@ -218,8 +256,30 @@ const WalletDetail = () => {
         </div>
 
         <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-6", wallet.isArchived && 'opacity-60 pointer-events-none')}>
-          <Card><CardHeader><CardTitle>Xu Hướng Số Dư</CardTitle></CardHeader><CardContent><div className="h-64 flex items-center justify-center text-muted-foreground">Chưa có dữ liệu biểu đồ</div></CardContent></Card>
-          <Card><CardHeader><CardTitle>Chi Tiêu Theo Danh Mục</CardTitle></CardHeader><CardContent><div className="h-64 flex items-center justify-center text-muted-foreground">Chưa có dữ liệu biểu đồ</div></CardContent></Card>
+          <Card>
+            <CardHeader><CardTitle>Xu Hướng Số Dư</CardTitle></CardHeader>
+            <CardContent>
+              {chartLoading ? (
+                  <div className="h-64 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
+              ) : balanceHistory.length > 0 ? (
+                  <BalanceTrendChart data={balanceHistory} currency={wallet.currency} />
+              ) : (
+                  <div className="h-64 flex flex-col items-center justify-center text-center text-muted-foreground">
+                    <BarChart className="w-12 h-12 mb-2"/>
+                    <p>Chưa có đủ dữ liệu để vẽ biểu đồ.</p>
+                  </div>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Chi Tiêu Theo Danh Mục</CardTitle></CardHeader>
+            <CardContent>
+              <div className="h-64 flex flex-col items-center justify-center text-center text-muted-foreground">
+                <PieChart className="w-12 h-12 mb-2"/>
+                <p>Tính năng này sẽ sớm được cập nhật.</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className={cn(wallet.isArchived && 'opacity-60 pointer-events-none')}>
@@ -231,23 +291,42 @@ const WalletDetail = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {transactions.length > 0 ? (
-                <div className="divide-y">
-                  {transactions.map((tx) => (
-                      <div key={tx.id} className="flex items-center justify-between py-4">
-                        <div className="flex items-center gap-4">
-                          {tx.type === 'income' ? <ArrowUpCircle className="w-8 h-8 text-green-500" /> : <ArrowDownCircle className="w-8 h-8 text-red-500" />}
-                          <div>
-                            <p className="font-semibold">{tx.description}</p>
-                            <p className="text-sm text-muted-foreground">{tx.category} • {formatDate(tx.date)}</p>
+            {transactionsLoading ? (
+                <div className="text-center py-16"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground mx-auto" /></div>
+            ) : transactions.length > 0 ? (
+                <>
+                  <div className="divide-y">
+                    {transactions.map((tx) => (
+                        <div key={tx.id} className="flex items-center justify-between py-4">
+                          <div className="flex items-center gap-4">
+                            {tx.type === 'INCOME' ? <ArrowUpCircle className="w-8 h-8 text-green-500" /> : <ArrowDownCircle className="w-8 h-8 text-red-500" />}
+                            <div>
+                              <p className="font-semibold">{tx.description}</p>
+                              <p className="text-sm text-muted-foreground">{tx.category || 'Chưa phân loại'} • {formatDate(tx.date, settings)}</p>
+                            </div>
                           </div>
+                          <p className={cn("text-lg font-bold", tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600')}>
+                            {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount, wallet.currency, settings)}
+                          </p>
                         </div>
-                        <p className={cn("text-lg font-bold", tx.type === 'income' ? 'text-green-600' : 'text-red-600')}>
-                          {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount, wallet.currency)}
-                        </p>
+                    ))}
+                  </div>
+                  {totalPages > 1 && (
+                      <div className="flex items-center justify-center pt-6 space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(page - 1)} disabled={page === 0}>
+                          <ChevronLeft className="h-4 w-4" />
+                          <span>Trước</span>
+                        </Button>
+                        <span className="text-sm font-medium">
+                          Trang {page + 1} / {totalPages}
+                        </span>
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(page + 1)} disabled={page === totalPages - 1}>
+                          <span>Sau</span>
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
                       </div>
-                  ))}
-                </div>
+                  )}
+                </>
             ) : (
                 <div className="text-center py-16">
                   <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />

@@ -41,6 +41,7 @@ import { useSettings } from '../../../shared/contexts/SettingsContext'
 import AnimatedIcon from '../../../components/ui/AnimatedIcon'
 import { cn } from '../../../lib/utils'
 import { IconComponent } from '../../../shared/config/icons'
+import { formatCurrency, formatNumber } from '../../../shared/utils/formattingUtils.js'
 
 import addWalletAnimation from '../../../assets/icons/addwalletgreen.json'
 import transferAnimation from '../../../assets/icons/transfer.json'
@@ -146,7 +147,6 @@ const WalletList = () => {
   }, [location.state, fetchWalletsData, refreshWallets])
 
   const exchangeRate = useMemo(() => parseFloat(settings?.usdToVndRate) || 25400, [settings])
-  const currencyFormat = useMemo(() => settings?.currencyFormat || 'dot_separator', [settings])
 
   const totalBalance = useMemo(() => {
     return activeWallets.reduce((sum, wallet) => {
@@ -196,14 +196,6 @@ const WalletList = () => {
       setIsTogglingArchive(null)
     }
   }
-
-  const formatCurrency = useCallback((amount, currency = 'VND') => {
-    if (typeof amount !== 'number') amount = parseFloat(amount) || 0;
-    const locale = currencyFormat === 'dot_separator' ? 'vi-VN' : 'de-DE';
-    return currency === 'USD'
-        ? `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        : `${amount.toLocaleString(locale)} ₫`;
-  }, [currencyFormat]);
 
   const walletsToDisplay = view === 'active' ? activeWallets : archivedWallets
 
@@ -268,9 +260,9 @@ const WalletList = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">Tổng số dư các ví đang hoạt động</p>
-                <p className="text-3xl font-bold tracking-tight">{formatCurrency(totalBalance)}</p>
+                <p className="text-3xl font-bold tracking-tight">{formatCurrency(totalBalance, 'VND', settings)}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  ~ {formatCurrency(totalBalance / exchangeRate, 'USD')}
+                  ~ {formatCurrency(totalBalance / exchangeRate, 'USD', settings)}
                 </p>
               </CardContent>
             </Card>
@@ -292,7 +284,7 @@ const WalletList = () => {
                   <span className="text-muted-foreground flex items-center gap-1.5">
                     <DollarSign className="w-4 h-4" /> Tỷ giá USD/VND (tham khảo)
                   </span>
-                  <span className="font-semibold">{exchangeRate.toLocaleString(currencyFormat === 'dot_separator' ? 'vi-VN' : 'de-DE')}</span>
+                  <span className="font-semibold">{formatNumber(exchangeRate, settings)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -401,7 +393,7 @@ const WalletList = () => {
 
                           <div className="flex-grow space-y-1">
                             <p className="text-sm text-muted-foreground">Số dư</p>
-                            <p className="text-3xl font-bold tracking-tight">{formatCurrency(wallet.balance, wallet.currency)}</p>
+                            <p className="text-3xl font-bold tracking-tight">{formatCurrency(wallet.balance, wallet.currency, settings)}</p>
                           </div>
 
                           {isShared && (
