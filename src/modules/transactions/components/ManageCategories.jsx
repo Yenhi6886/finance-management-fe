@@ -124,7 +124,7 @@ const ProgressBar = ({ value, max, variant = 'expense' }) => {
     );
 };
 
-const ManageCategories = ({ onAddTransaction }) => {
+const ManageCategories = ({ onAddTransaction, refreshTrigger }) => {
     const [categories, setCategories] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -145,7 +145,7 @@ const ManageCategories = ({ onAddTransaction }) => {
 
     useEffect(() => {
         fetchCategories();
-    }, []);
+    }, [refreshTrigger]);
 
     const handleOpenModal = (category = null) => {
         setSelectedCategory(category);
