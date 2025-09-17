@@ -97,3 +97,37 @@ body {
     @apply bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-medium py-2 px-4 rounded-md transition-colors;
   }
 }
+
+.embla {
+  --slide-spacing: 1.5rem; /* Tương đương gap-6 của grid */
+  --slide-padding: 1rem;
+}
+.embla__viewport {
+  overflow: hidden;
+  padding: var(--slide-padding);
+  margin: calc(var(--slide-padding) * -1);
+}
+.embla__container {
+  backface-visibility: hidden;
+  display: flex;
+  touch-action: pan-y;
+  margin-left: calc(var(--slide-spacing) * -1);
+}
+.embla__slide {
+  flex: 0 0 calc(100% / 3);
+  min-width: 0;
+  padding-left: var(--slide-spacing);
+  position: relative;
+}
+
+@media (max-width: 1024px) {
+  .embla__slide {
+    flex-basis: calc(100% / 2);
+  }
+}
+
+@media (max-width: 768px) {
+  .embla__slide {
+    flex-basis: 90%;
+  }
+}

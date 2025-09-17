@@ -6,5 +6,11 @@ export const transactionService = {
     },
     getTransactions: (params) => {
         return apiService.get('/transactions', { params });
+    },
+    updateTransaction: (id, transactionData) => {
+        return apiService.put(`/transactions/${id}`, transactionData);
+    },
+    deleteTransaction: (id) => {
+        return apiService.delete(`/transactions/${id}`);
     }
 };

@@ -1,0 +1,271 @@
+/Users/ngogiakhanh/Desktop/finance/finance-management-fe/src
+├── App.jsx
+├── assets
+│   ├── icons
+│   │   ├── add.json
+│   │   ├── addWallet.json
+│   │   ├── addwalletgreen.json
+│   │   ├── chart.json
+│   │   ├── credit.json
+│   │   ├── dashboard.json
+│   │   ├── list.json
+│   │   ├── listicon.json
+│   │   ├── listwallet.json
+│   │   ├── listwalletdark.json
+│   │   ├── money.json
+│   │   ├── notification.json
+│   │   ├── profile.json
+│   │   ├── setting.json
+│   │   ├── share.json
+│   │   ├── transfer.json
+│   │   ├── wallet.json
+│   │   └── walletdark.json
+│   └── logo.svg
+├── components
+│   ├── DashboardLayout.jsx
+│   ├── Header.jsx
+│   ├── Loading.jsx
+│   ├── NotificationPanel.jsx
+│   ├── ProtectedRoute.jsx
+│   ├── Sidebar.jsx
+│   ├── WalletPanel.jsx
+│   ├── WalletSelector.jsx
+│   ├── charts
+│   │   └── ChartComponents.jsx
+│   ├── icons
+│   └── ui
+│       ├── AnimatedIcon.jsx
+│       ├── alert-dialog.jsx
+│       ├── alert.jsx
+│       ├── avatar.jsx
+│       ├── button.jsx
+│       ├── card.jsx
+│       ├── dialog.jsx
+│       ├── dropdown-menu.jsx
+│       ├── input.jsx
+│       ├── label.jsx
+│       ├── popover.jsx
+│       ├── select.jsx
+│       └── tooltip.jsx
+├── debug
+│   ├── testWalletAPI.js
+│   └── testWalletValidation.js
+├── index.css
+├── lib
+│   └── utils.js
+├── main.jsx
+├── modules
+│   ├── auth
+│   │   ├── contexts
+│   │   │   └── AuthContext.jsx
+│   │   ├── index.js
+│   │   ├── pages
+│   │   │   ├── ActivateAccount.jsx
+│   │   │   ├── ForgotPassword.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── Register.jsx
+│   │   │   ├── ResetPassword.jsx
+│   │   │   └── oauth-callback.jsx
+│   │   └── services
+│   │       └── authService.js
+│   ├── dashboard
+│   │   ├── index.js
+│   │   ├── pages
+│   │   │   └── Dashboard.jsx
+│   │   └── services
+│   │       └── dashboardService.js
+│   ├── error
+│   │   └── ErrorPage.jsx
+│   ├── profile
+│   │   ├── index.js
+│   │   └── pages
+│   │       ├── ChangePassword.jsx
+│   │       └── Profile.jsx
+│   ├── reports
+│   │   ├── index.js
+│   │   └── pages
+│   │       └── Reports.jsx
+│   ├── settings
+│   │   ├── index.js
+│   │   ├── pages
+│   │   │   └── Settings.jsx
+│   │   └── services
+│   │       └── settingsService.js
+│   ├── transactions
+│   │   ├── components
+│   │   │   ├── AddTransactionModal.jsx
+│   │   │   ├── CategoryDetailView.jsx
+│   │   │   ├── EditTransactionModal.jsx
+│   │   │   └── ManageCategories.jsx
+│   │   ├── index.js
+│   │   ├── pages
+│   │   │   └── Transactions.jsx
+│   │   └── services
+│   │       ├── categoryService.js
+│   │       └── transactionService.js
+│   └── wallets
+│       ├── README.md
+│       ├── components
+│       │   └── BalanceTrendChart.jsx
+│       ├── index.js
+│       ├── pages
+│       │   ├── AddMoney.jsx
+│       │   ├── AddWallet.jsx
+│       │   ├── EditWallet.jsx
+│       │   ├── ShareWallet.jsx
+│       │   ├── TransferMoney.jsx
+│       │   ├── WalletDetail.jsx
+│       │   └── WalletList.jsx
+│       └── services
+│           └── walletService.js
+└── shared
+├── config
+│   ├── appConfig.js
+│   └── icons.js
+├── contexts
+│   ├── NotificationContext.jsx
+│   ├── SettingsContext.jsx
+│   ├── ThemeContext.jsx
+│   └── WalletContext.jsx
+├── hooks
+│   └── useWallet.js
+├── services
+│   ├── apiService.js
+│   └── notificationService.js
+└── utils
+├── errorHandler.js
+├── formattingUtils.js
+└── validationUtils.js
+
+
+
+
+backend:
+/Users/ngogiakhanh/Desktop/finance/finance-management-be/src
+├── main
+│   ├── java
+│   │   └── com
+│   │       └── example
+│   │           └── backend
+│   │               ├── BackendApplication.java
+│   │               ├── annotation
+│   │               │   └── RequireWalletPermission.java
+│   │               ├── aspect
+│   │               │   └── WalletPermissionAspect.java
+│   │               ├── config
+│   │               │   ├── AppProperties.java
+│   │               │   ├── ApplicationConfig.java
+│   │               │   ├── SecurityConfig.java
+│   │               │   └── WebConfig.java
+│   │               ├── controller
+│   │               │   ├── AuthController.java
+│   │               │   ├── CategoryController.java
+│   │               │   ├── DashboardController.java
+│   │               │   ├── NotificationController.java
+│   │               │   ├── SettingsController.java
+│   │               │   ├── TransactionController.java
+│   │               │   ├── UserController.java
+│   │               │   ├── WalletController.java
+│   │               │   ├── WalletPermissionController.java
+│   │               │   └── WalletShareController.java
+│   │               ├── dto
+│   │               │   ├── request
+│   │               │   │   ├── AddMoneyRequest.java
+│   │               │   │   ├── AssignPermissionRequest.java
+│   │               │   │   ├── CategoryRequest.java
+│   │               │   │   ├── ChangePasswordRequest.java
+│   │               │   │   ├── CreateWalletRequest.java
+│   │               │   │   ├── ForgotPasswordRequest.java
+│   │               │   │   ├── LoginRequest.java
+│   │               │   │   ├── RegisterRequest.java
+│   │               │   │   ├── ResetPasswordRequest.java
+│   │               │   │   ├── ShareWalletRequest.java
+│   │               │   │   ├── TransactionRequest.java
+│   │               │   │   ├── UpdateProfileRequest.java
+│   │               │   │   ├── UpdateSettingsRequest.java
+│   │               │   │   ├── UpdateWalletRequest.java
+│   │               │   │   └── WalletTransferRequest.java
+│   │               │   └── response
+│   │               │       ├── ApiResponse.java
+│   │               │       ├── AuthResponse.java
+│   │               │       ├── BalanceHistoryResponse.java
+│   │               │       ├── CategoryResponse.java
+│   │               │       ├── PermissionResponse.java
+│   │               │       ├── ShareWalletResponse.java
+│   │               │       ├── SharedWalletResponse.java
+│   │               │       ├── TransactionResponse.java
+│   │               │       ├── UserResponse.java
+│   │               │       ├── UserWalletPermissionsResponse.java
+│   │               │       ├── WalletResponse.java
+│   │               │       ├── WalletSummaryResponse.java
+│   │               │       └── WalletTransferResponse.java
+│   │               ├── entity
+│   │               │   ├── Category.java
+│   │               │   ├── Notification.java
+│   │               │   ├── Transaction.java
+│   │               │   ├── User.java
+│   │               │   ├── UserSettings.java
+│   │               │   ├── VerificationToken.java
+│   │               │   ├── Wallet.java
+│   │               │   ├── WalletPermission.java
+│   │               │   └── WalletShare.java
+│   │               ├── enums
+│   │               │   ├── AuthProvider.java
+│   │               │   ├── BudgetPeriod.java
+│   │               │   ├── Currency.java
+│   │               │   ├── PermissionType.java
+│   │               │   ├── TransactionType.java
+│   │               │   ├── UserStatus.java
+│   │               │   └── VerificationTokenType.java
+│   │               ├── exception
+│   │               │   ├── BadRequestException.java
+│   │               │   ├── GlobalExceptionHandler.java
+│   │               │   ├── InsufficientBalanceException.java
+│   │               │   ├── OAuth2AccountConflictException.java
+│   │               │   ├── ResourceNotFoundException.java
+│   │               │   └── WalletNotFoundException.java
+│   │               ├── mapper
+│   │               │   ├── UserMapper.java
+│   │               │   └── WalletMapper.java
+│   │               ├── repository
+│   │               │   ├── CategoryRepository.java
+│   │               │   ├── NotificationRepository.java
+│   │               │   ├── TransactionRepository.java
+│   │               │   ├── UserRepository.java
+│   │               │   ├── UserSettingsRepository.java
+│   │               │   ├── VerificationTokenRepository.java
+│   │               │   ├── WalletPermissionRepository.java
+│   │               │   ├── WalletRepository.java
+│   │               │   └── WalletShareRepository.java
+│   │               ├── security
+│   │               │   ├── CustomUserDetails.java
+│   │               │   ├── CustomUserDetailsService.java
+│   │               │   └── JwtAuthenticationFilter.java
+│   │               ├── service
+│   │               │   ├── CategoryService.java
+│   │               │   ├── EmailService.java
+│   │               │   ├── JwtBlacklistService.java
+│   │               │   ├── NotificationService.java
+│   │               │   ├── SettingsService.java
+│   │               │   ├── TransactionService.java
+│   │               │   ├── UserService.java
+│   │               │   ├── WalletPermissionService.java
+│   │               │   ├── WalletSelectionService.java
+│   │               │   ├── WalletService.java
+│   │               │   ├── WalletShareService.java
+│   │               │   ├── WalletTransferService.java
+│   │               │   └── filestorage
+│   │               │       └── FileStorageService.java
+│   │               └── util
+│   │                   ├── CookieUtils.java
+│   │                   ├── JwtUtil.java
+│   │                   └── PasswordGeneratorUtil.java
+│   └── resources
+│       └── application.properties
+└── test
+    └── java
+        └── com
+            └── example
+                └── backend
+                    └── BackendApplicationTests.java
+

@@ -45,6 +45,7 @@ const ShareWallet = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [successMessage, setSuccessMessage] = useState(null)
+  const [dateError, setDateError] = useState(null)
 
   const [sharedByMe, setSharedByMe] = useState([])
   const [sharedWithMe, setSharedWithMe] = useState([])
@@ -124,14 +125,44 @@ const ShareWallet = () => {
     setMessage('')
     setExpiryDate('')
     setPermissionLevel('VIEW')
+    setDateError(null)
     if (myWallets.length > 0) {
       setSelectedWallet(myWallets[0].id)
     }
   }
 
+  const validateDate = (date) => {
+    if (!date) return true // Empty date is allowed
+    
+    const selectedDate = new Date(date)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Reset time to compare only dates
+    
+    if (selectedDate < today) {
+      setDateError('Ngày hết hạn không được nhỏ hơn ngày hiện tại')
+      return false
+    }
+    
+    setDateError(null)
+    return true
+  }
+
+  const handleDateChange = (e) => {
+    const newDate = e.target.value
+    setExpiryDate(newDate)
+    validateDate(newDate)
+  }
+
   const handleShare = async () => {
     setError(null)
     setSuccessMessage(null)
+    setDateError(null)
+    
+    // Validate date before proceeding
+    if (expiryDate && !validateDate(expiryDate)) {
+      return
+    }
+    
     setLoading(true)
 
     const payload = {
@@ -162,7 +193,29 @@ const ShareWallet = () => {
         resetForm()
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Đã có lỗi xảy ra.')
+      // Handle specific error messages
+      let errorMessage = 'Đã có lỗi xảy ra.'
+      
+      if (err.response?.data?.message) {
+        const serverMessage = err.response.data.message
+        
+        // Handle common date-related errors
+        if (serverMessage.includes('LocalDateTime') || serverMessage.includes('parse')) {
+          errorMessage = 'Định dạng ngày không hợp lệ. Vui lòng chọn lại ngày hết hạn.'
+        } else if (serverMessage.includes('past') || serverMessage.includes('expired')) {
+          errorMessage = 'Ngày hết hạn phải là ngày trong tương lai.'
+        } else if (serverMessage.includes('email')) {
+          errorMessage = 'Email không hợp lệ hoặc không tồn tại.'
+        } else if (serverMessage.includes('permission')) {
+          errorMessage = 'Bạn không có quyền chia sẻ ví này.'
+        } else if (serverMessage.includes('wallet')) {
+          errorMessage = 'Ví được chọn không tồn tại hoặc đã bị xóa.'
+        } else {
+          errorMessage = serverMessage
+        }
+      }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -527,12 +580,21 @@ const ShareWallet = () => {
                             id="expiryDate"
                             type="date"
                             value={expiryDate}
-                            onChange={(e) => setExpiryDate(e.target.value)}
-                            className="mt-1"
+                            onChange={handleDateChange}
+                            min={new Date().toISOString().split('T')[0]}
+                            className={`mt-1 ${dateError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Để trống nếu không muốn đặt thời hạn
-                        </p>
+                        {dateError && (
+                          <p className="text-xs text-red-500 mt-1 flex items-center">
+                            <AlertCircleIcon className="w-3 h-3 mr-1" />
+                            {dateError}
+                          </p>
+                        )}
+                        {!dateError && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Để trống nếu không muốn đặt thời hạn
+                          </p>
+                        )}
                       </div>
 
                       <div className="pt-2">

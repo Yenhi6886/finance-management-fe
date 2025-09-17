@@ -2,32 +2,44 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { cn } from '../../../lib/utils';
-import { PlusCircle, FileText, ArrowUpCircle, ArrowDownCircle, Loader2, MinusCircle, WalletCards } from 'lucide-react';
+import { PlusCircle, FileText, ArrowUpCircle, ArrowDownCircle, Loader2, MinusCircle } from 'lucide-react';
 import { transactionService } from '../services/transactionService';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
+import { useWallet } from '../../../shared/hooks/useWallet';
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js';
 import AddTransactionModal from '../components/AddTransactionModal';
+import EditTransactionModal from '../components/EditTransactionModal';
 import ManageCategories from '../components/ManageCategories';
+import { toast } from 'sonner';
 
 const Transactions = () => {
     const [activeTab, setActiveTab] = useState('transactions');
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [initialModalType, setInitialModalType] = useState('expense');
     const [initialCategoryId, setInitialCategoryId] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const { refreshWallets } = useWallet();
 
-    const handleOpenModal = (type, categoryId = null) => {
+    const handleOpenAddModal = (type, categoryId = null) => {
         setInitialModalType(type);
         setInitialCategoryId(categoryId);
-        setIsModalOpen(true);
+        setIsAddModalOpen(true);
     };
 
-    const handleTransactionAdded = () => {
+    const handleOpenEditModal = (transaction) => {
+        setSelectedTransaction(transaction);
+        setIsEditModalOpen(true);
+    }
+
+    const handleDataRefresh = useCallback(async () => {
         setRefreshTrigger(prev => prev + 1);
-    };
+        await refreshWallets();
+    }, [refreshWallets]);
 
     const handleAddTransactionFromCategory = (categoryId) => {
-        handleOpenModal('expense', categoryId);
+        handleOpenAddModal('expense', categoryId);
     };
 
     return (
@@ -55,21 +67,28 @@ const Transactions = () => {
                 </nav>
             </div>
 
-            {activeTab === 'transactions' && <TransactionList onOpenModal={handleOpenModal} refreshTrigger={refreshTrigger} />}
-            {activeTab === 'categories' && <ManageCategories onAddTransaction={handleAddTransactionFromCategory} refreshTrigger={refreshTrigger} />}
+            {activeTab === 'transactions' && <TransactionList onOpenAddModal={handleOpenAddModal} onOpenEditModal={handleOpenEditModal} refreshTrigger={refreshTrigger} />}
+            {activeTab === 'categories' && <ManageCategories onAddTransaction={handleAddTransactionFromCategory} refreshTrigger={refreshTrigger} onTransactionClick={handleOpenEditModal} />}
 
             <AddTransactionModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
                 initialType={initialModalType}
                 initialCategoryId={initialCategoryId}
-                onTransactionAdded={handleTransactionAdded}
+                onTransactionAdded={handleDataRefresh}
+            />
+
+            <EditTransactionModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                transaction={selectedTransaction}
+                onTransactionUpdated={handleDataRefresh}
             />
         </div>
     );
 };
 
-const TransactionList = ({ onOpenModal, refreshTrigger }) => {
+const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) => {
     const { settings } = useSettings();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -110,15 +129,15 @@ const TransactionList = ({ onOpenModal, refreshTrigger }) => {
                             transactions.length > 0 ? (
                                 <div className="divide-y">
                                     {transactions.map((tx) => (
-                                        <div key={tx.id} className="flex items-center justify-between py-4">
+                                        <div key={tx.id} className="flex items-center justify-between py-4 cursor-pointer hover:bg-muted/50 -mx-6 px-6" onClick={() => onOpenEditModal(tx)}>
                                             <div className="flex items-center gap-4">
-                                                {tx.type === 'INCOME' ? <ArrowUpCircle className="w-8 h-8 text-green-500" /> : <ArrowDownCircle className="w-8 h-8 text-red-500" />}
+                                                {tx.type === 'INCOME' ? <ArrowUpCircle className="w-8 h-8 text-green-500 flex-shrink-0" /> : <ArrowDownCircle className="w-8 h-8 text-red-500 flex-shrink-0" />}
                                                 <div>
                                                     <p className="font-semibold">{tx.description || (tx.type === 'INCOME' ? 'Khoản thu nhập' : 'Khoản chi tiêu')}</p>
                                                     <p className="text-sm text-muted-foreground">{tx.walletName} • {tx.category || 'Chưa phân loại'} • {formatDate(tx.date, settings)}</p>
                                                 </div>
                                             </div>
-                                            <p className={cn("text-lg font-bold", tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600')}>
+                                            <p className={cn("text-lg font-bold text-right pl-4", tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600')}>
                                                 {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount, 'VND', settings)}
                                             </p>
                                         </div>
@@ -134,7 +153,7 @@ const TransactionList = ({ onOpenModal, refreshTrigger }) => {
                     </CardContent>
                 </Card>
             </div>
-            <div className="lg:col-span-1 space-y-6">
+            <div className="lg:col-span-1 space-y-6 sticky top-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>Tổng Quan</CardTitle>
@@ -160,8 +179,8 @@ const TransactionList = ({ onOpenModal, refreshTrigger }) => {
                         <CardTitle>Hành Động</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 gap-2">
-                        <Button onClick={() => onOpenModal('expense')} variant="destructive" className="rounded-md bg-red-600 hover:bg-red-700 text-white"><MinusCircle className="mr-2 h-4 w-4" />Chi Tiêu</Button>
-                        <Button onClick={() => onOpenModal('income')} className="rounded-md"><PlusCircle className="mr-2 h-4 w-4" />Thu Nhập</Button>
+                        <Button onClick={() => onOpenAddModal('expense')} variant="destructive" className="rounded-md bg-red-600 hover:bg-red-700 text-white"><MinusCircle className="mr-2 h-4 w-4" />Chi Tiêu</Button>
+                        <Button onClick={() => onOpenAddModal('income')} className="rounded-md"><PlusCircle className="mr-2 h-4 w-4" />Thu Nhập</Button>
                     </CardContent>
                 </Card>
             </div>

@@ -3,12 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog'
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
   DollarSignIcon,
   CheckCircleIcon,
-  AlertCircleIcon,
   ArrowLeftRightIcon,
   ShieldCheckIcon,
   RefreshCwIcon,
@@ -22,6 +23,7 @@ import {
 import { walletService } from '../services/walletService'
 import { useSettings } from '../../../shared/contexts/SettingsContext'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
+import { toast } from 'sonner'
 
 const TransferFormSkeleton = () => (
     <div className="p-8">
@@ -78,40 +80,32 @@ const TransferMoney = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [errors, setErrors] = useState({})
-  const [showConfirmation, setShowConfirmation] = useState(false)
-  const [transferResult, setTransferResult] = useState(null)
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
+  const [successData, setSuccessData] = useState(null)
   const [recentTransfers, setRecentTransfers] = useState([])
   const { settings } = useSettings()
   const navigate = useNavigate()
 
-  const fetchWallets = async () => {
-    setPageStatus('loading')
-    setPageError(null)
+  const fetchData = async () => {
     try {
-      const response = await walletService.getWallets()
-      const walletList = response.data.data || []
-      const activeWallets = walletList.filter(wallet => !wallet.archived)
-      setWallets(activeWallets)
-      setPageStatus('success')
+      const [walletRes, transRes] = await Promise.all([
+        walletService.getWallets(),
+        walletService.getTransactions({ type: 'TRANSFER', limit: 5 })
+      ]);
+      const activeWallets = (walletRes.data.data || []).filter(wallet => !wallet.archived);
+      setWallets(activeWallets);
+      setRecentTransfers(transRes.data.data || []);
     } catch (error) {
-      setPageError('Không thể tải danh sách ví. Vui lòng kiểm tra kết nối và thử lại.')
-      setPageStatus('error')
-    }
-  }
-
-  const fetchRecentTransfers = async () => {
-    try {
-      const response = await walletService.getTransactions({ type: 'TRANSFER', limit: 5 })
-      setRecentTransfers(response.data.data || [])
-    } catch (error) {
-      console.error('Lỗi khi tải giao dịch gần đây:', error)
-      setRecentTransfers([])
+      console.error('Lỗi khi tải dữ liệu:', error);
+      setPageError('Không thể tải dữ liệu cần thiết. Vui lòng thử lại.');
+      setPageStatus('error');
     }
   }
 
   useEffect(() => {
-    fetchWallets()
-    fetchRecentTransfers()
+    setPageStatus('loading')
+    fetchData().then(() => setPageStatus('success'));
   }, [])
 
   const validateTransfer = () => {
@@ -144,13 +138,22 @@ const TransferMoney = () => {
     setToWallet(fromWallet)
   }
 
-  const handleTransfer = () => {
+  const handleOpenConfirm = () => {
     if (validateTransfer()) {
-      setShowConfirmation(true)
+      setIsConfirmModalOpen(true)
     }
   }
 
+  const resetForm = () => {
+    setFromWallet('')
+    setToWallet('')
+    setAmount('')
+    setDescription('')
+    setErrors({})
+  }
+
   const confirmTransfer = async () => {
+    setIsConfirmModalOpen(false)
     setIsSubmitting(true)
     try {
       const transferData = {
@@ -160,28 +163,18 @@ const TransferMoney = () => {
         description: description.trim()
       }
       await walletService.transferMoney(transferData)
-      setTransferResult({
-        success: true,
-        message: 'Chuyển tiền thành công!',
-        transactionId: 'TXN' + Date.now(),
+
+      setSuccessData({
         amount: Number(amount),
         fromWalletName: wallets.find(w => w.id.toString() === fromWallet)?.name,
         toWalletName: wallets.find(w => w.id.toString() === toWallet)?.name
-      })
-      setShowConfirmation(false)
-      setFromWallet('')
-      setToWallet('')
-      setAmount('')
-      setDescription('')
-      setErrors({})
-      fetchWallets()
-      fetchRecentTransfers()
+      });
+
+      setIsSuccessModalOpen(true);
+      resetForm();
+      fetchData();
     } catch (error) {
-      setTransferResult({
-        success: false,
-        message: error.response?.data?.message || 'Có lỗi xảy ra khi chuyển tiền'
-      })
-      setShowConfirmation(false)
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi chuyển tiền');
     } finally {
       setIsSubmitting(false)
     }
@@ -200,43 +193,23 @@ const TransferMoney = () => {
     }
     if (pageStatus === 'error') {
       return (
-          <PageStateDisplay
-              icon={<Frown className="w-5 h-5 text-red-500" />}
-              title="Đã xảy ra lỗi"
-              message={pageError}
-          >
-            <Button onClick={fetchWallets}>
-              <RefreshCwIcon className="w-4 h-4 mr-2" />
-              Thử lại
-            </Button>
+          <PageStateDisplay icon={<Frown className="w-5 h-5 text-red-500" />} title="Đã xảy ra lỗi" message={pageError}>
+            <Button onClick={fetchData}><RefreshCwIcon className="w-4 h-4 mr-2" />Thử lại</Button>
           </PageStateDisplay>
       )
     }
     if (pageStatus === 'success' && wallets.length < 2) {
-      const message = wallets.length === 0
-          ? 'Bạn chưa có ví nào. Hãy tạo ví mới để bắt đầu.'
-          : 'Bạn cần ít nhất hai ví để thực hiện chuyển tiền.'
+      const message = wallets.length === 0 ? 'Bạn chưa có ví nào. Hãy tạo ví mới để bắt đầu.' : 'Bạn cần ít nhất hai ví để thực hiện chuyển tiền.'
       return (
-          <PageStateDisplay
-              icon={<WalletCards className="w-8 h-8 text-blue-500" />}
-              title="Chưa sẵn sàng để chuyển tiền"
-              message={message}
-          >
-            <Button asChild>
-              <Link to="/wallets/add">
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Tạo ví mới
-              </Link>
-            </Button>
+          <PageStateDisplay icon={<WalletCards className="w-8 h-8 text-blue-500" />} title="Chưa sẵn sàng để chuyển tiền" message={message}>
+            <Button asChild><Link to="/wallets/add"><PlusCircle className="w-4 h-4 mr-2" />Tạo ví mới</Link></Button>
           </PageStateDisplay>
       )
     }
 
     return (
         <div className="p-8">
-          <div className="flex items-center space-x-3 mb-6">
-            <h2 className="text-2xl font-semibold text-foreground">Thông Tin Chuyển Tiền</h2>
-          </div>
+          <div className="flex items-center space-x-3 mb-6"><h2 className="text-2xl font-semibold text-foreground">Thông Tin Chuyển Tiền</h2></div>
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
               <div className="space-y-2">
@@ -267,47 +240,7 @@ const TransferMoney = () => {
               <Label htmlFor="description">Ghi chú (tùy chọn)</Label>
               <textarea id="description" placeholder="Nhập ghi chú cho giao dịch..." value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary border-border bg-background resize-none" />
             </div>
-            <div className="pt-6"><Button onClick={handleTransfer} disabled={isSubmitting || !fromWallet || !toWallet || !amount} className="w-full h-12 rounded-lg">{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isSubmitting ? 'Đang chuyển...' : 'Chuyển Tiền'}</Button></div>
-          </div>
-        </div>
-    )
-  }
-
-  if (transferResult) return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-card rounded-lg shadow-lg border border-border p-8">
-          <div className="text-center">
-            {transferResult.success ? (
-                <><div className="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircleIcon className="w-8 h-8 text-green-600 dark:text-green-400" /></div><h3 className="text-xl font-bold text-green-600 dark:text-green-400 mb-2">Chuyển Tiền Thành Công!</h3><p className="text-muted-foreground mb-6">Đã chuyển {formatCurrency(transferResult.amount, 'VND', settings)} từ {transferResult.fromWalletName} sang {transferResult.toWalletName}</p></>
-            ) : (
-                <><div className="w-16 h-16 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4"><AlertCircleIcon className="w-8 h-8 text-red-600 dark:text-red-400" /></div><h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">Chuyển Tiền Thất Bại</h3><p className="text-muted-foreground mb-4">{transferResult.message}</p></>
-            )}
-            <div className="flex space-x-3"><Button onClick={() => setTransferResult(null)} className="flex-1 h-12 rounded-lg">Chuyển Tiền Mới</Button><Button variant="outline" onClick={() => navigate('/wallets')} className="flex-1 h-12 rounded-lg">Quay Lại</Button></div>
-          </div>
-        </div>
-      </div>
-  )
-
-  if (showConfirmation) {
-    const fromWalletData = wallets.find(w => w.id.toString() === fromWallet)
-    const toWalletData = wallets.find(w => w.id.toString() === toWallet)
-    return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full bg-card rounded-lg shadow-lg border border-border p-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto mb-4"><ShieldCheckIcon className="w-8 h-8 text-blue-600 dark:text-blue-400" /></div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Xác Nhận Chuyển Tiền</h3>
-              <p className="text-muted-foreground mb-6">Vui lòng kiểm tra thông tin trước khi xác nhận</p>
-              <div className="bg-muted rounded-lg p-6 mb-6 space-y-4 text-left">
-                <div className="flex items-center justify-between"><div className="text-left"><p className="text-sm text-muted-foreground">Từ ví</p><p className="font-medium text-foreground">{fromWalletData?.name}</p><p className="text-sm text-muted-foreground">Số dư: {formatCurrency(fromWalletData?.balance, fromWalletData?.currency, settings)}</p></div><ArrowRightIcon className="w-6 h-6 text-gray-400" /><div className="text-right"><p className="text-sm text-muted-foreground">Đến ví</p><p className="font-medium text-foreground">{toWalletData?.name}</p><p className="text-sm text-muted-foreground">Số dư: {formatCurrency(toWalletData?.balance, toWalletData?.currency, settings)}</p></div></div>
-                <div className="border-t border-border pt-4 space-y-2"><div className="flex justify-between"><span className="font-medium text-foreground">Tổng cộng:</span><span className="font-bold text-green-600">{formatCurrency(parseFloat(amount), 'VND', settings)}</span></div></div>
-                {description && <div className="border-t border-border pt-4 text-left"><p className="text-sm text-muted-foreground">Ghi chú:</p><p className="text-foreground italic">"{description}"</p></div>}
-              </div>
-              <div className="flex space-x-3">
-                <Button onClick={confirmTransfer} disabled={isSubmitting} className="flex-1 h-12 rounded-lg">{isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang xử lý...</> : <><CheckCircleIcon className="w-5 h-5 mr-2" />Xác Nhận</>}</Button>
-                <Button variant="outline" onClick={() => setShowConfirmation(false)} disabled={isSubmitting} className="flex-1 h-12 rounded-lg">Hủy</Button>
-              </div>
-            </div>
+            <div className="pt-6"><Button onClick={handleOpenConfirm} disabled={isSubmitting || !fromWallet || !toWallet || !amount} className="w-full h-12 rounded-lg">{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isSubmitting ? 'Đang chuyển...' : 'Chuyển Tiền'}</Button></div>
           </div>
         </div>
     )
@@ -320,15 +253,7 @@ const TransferMoney = () => {
             <h1 className="text-3xl font-bold tracking-tight text-green-600">Chuyển tiền</h1>
             <p className="text-muted-foreground mt-2">Chuyển tiền nhanh chóng và an toàn giữa các ví của bạn</p></div>
           <div className="mt-4 sm:mt-0">
-            <Button
-                onClick={() => navigate(-1)}
-                variant="ghost"
-                size="sm"
-                className="h-10 px-4 text-sm font-light bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-800/30 text-green-600 dark:text-green-400 rounded-md border-0"
-            >
-              <ArrowLeftIcon className="w-4 h-4 mr-1" />
-              Quay lại
-            </Button>
+            <Button onClick={() => navigate(-1)} variant="ghost" size="sm" className="h-10 px-4 text-sm font-light bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-800/30 text-green-600 dark:text-green-400 rounded-md border-0"><ArrowLeftIcon className="w-4 h-4 mr-1" />Quay lại</Button>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -342,30 +267,19 @@ const TransferMoney = () => {
                       {recentTransfers.map(t => (
                           <div key={t.id} className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
-                                <ArrowLeftRightIcon className="w-4 h-4 text-blue-600" />
-                              </div>
+                              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center"><ArrowLeftRightIcon className="w-4 h-4 text-blue-600" /></div>
                               <div>
-                                <p className="font-medium text-foreground text-sm" title={t.fromWalletName + ' → ' + t.toWalletName}>
-                                  {t.fromWalletName} → {t.toWalletName}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {formatDate(t.date, settings)}
-                                </p>
+                                <p className="font-medium text-foreground text-sm" title={t.fromWalletName + ' → ' + t.toWalletName}>{t.fromWalletName} → {t.toWalletName}</p>
+                                <p className="text-xs text-muted-foreground">{formatDate(t.date, settings)}</p>
                               </div>
                             </div>
-                            <span className="font-bold text-sm text-red-600">
-                              -{formatCurrency(t.amount, 'VND', settings)}
-                            </span>
+                            <span className="font-bold text-sm text-red-600">-{formatCurrency(t.amount, 'VND', settings)}</span>
                           </div>
                       ))}
                     </div>
                 ) : (
                     <div className="text-center py-4">
-                      <ReceiptIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Chưa có giao dịch nào
-                      </p>
+                      <ReceiptIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" /><p className="text-sm text-muted-foreground">Chưa có giao dịch nào</p>
                     </div>
                 )}
               </div>
@@ -382,6 +296,63 @@ const TransferMoney = () => {
             </div>
           </div>
         </div>
+
+        <AlertDialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Xác nhận Chuyển Tiền</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="pt-2 text-sm">
+                  <p className="mb-4">Vui lòng kiểm tra lại thông tin chuyển tiền trước khi xác nhận.</p>
+                  <div className="space-y-3 rounded-md border bg-muted/50 p-4">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Từ ví:</span>
+                      <span className="font-semibold text-foreground">{wallets.find(w => w.id.toString() === fromWallet)?.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Đến ví:</span>
+                      <span className="font-semibold text-foreground">{wallets.find(w => w.id.toString() === toWallet)?.name}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="text-muted-foreground">Số tiền:</span>
+                      <span className="font-bold text-lg text-primary">{formatCurrency(parseFloat(amount || 0), 'VND', settings)}</span>
+                    </div>
+                    {description.trim() && (
+                        <div className="flex justify-between items-start pt-2 border-t">
+                          <span className="text-muted-foreground">Ghi chú:</span>
+                          <span className="font-semibold text-foreground text-right pl-4">{description}</span>
+                        </div>
+                    )}
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isSubmitting}>Hủy</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmTransfer} disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Xác nhận
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Dialog open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
+                <CheckCircleIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
+              </div>
+              <DialogTitle className="text-center">Chuyển Tiền Thành Công!</DialogTitle>
+              <DialogDescription className="text-center px-4">
+                Đã chuyển thành công {formatCurrency(successData?.amount || 0, 'VND', settings)} từ ví {successData?.fromWalletName} đến ví {successData?.toWalletName}.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setIsSuccessModalOpen(false)} className="w-full">Đóng</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </>
   )
 }

@@ -27,7 +27,6 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false)
   }
 
-  // HÀM MỚI ĐỂ CẬP NHẬT USER TRONG CONTEXT
   const updateUserContext = (updatedUserData) => {
     setUser(updatedUserData);
     localStorage.setItem(appConfig.auth.userKey, JSON.stringify(updatedUserData));
@@ -40,6 +39,8 @@ export const AuthProvider = ({ children }) => {
         setLoading(false)
         return
       }
+      // Đảm bảo token được set vào apiClient khi khởi tạo
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
       try {
         const response = await authService.getCurrentUserProfile()
         updateUserContext(response.data.data);
@@ -60,6 +61,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.login(credentials)
       const { user: userData, token } = response.data.data
       localStorage.setItem(appConfig.auth.tokenKey, token)
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}` // Cập nhật apiClient
       updateUserContext(userData)
       setIsAuthenticated(true)
       errorHandler.showSuccess('Đăng nhập thành công!')
@@ -76,13 +78,17 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true)
       localStorage.setItem(appConfig.auth.tokenKey, token)
-      const response = await authService.getCurrentUserProfile()
+      // SỬA LỖI QUAN TRỌNG: Cập nhật header cho apiClient NGAY LẬP TỨC
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+      const response = await authService.getCurrentUserProfile() // Bây giờ request này sẽ thành công
       updateUserContext(response.data.data)
       setIsAuthenticated(true)
       errorHandler.showSuccess('Đăng nhập thành công!')
       return response.data
     } catch (error) {
       errorHandler.handleApiError(error, 'Đăng nhập thất bại')
+      clearAuthData() // Xóa token hỏng nếu có lỗi
       throw error
     } finally {
       setLoading(false)
@@ -150,7 +156,6 @@ export const AuthProvider = ({ children }) => {
       setLoading(true)
       const response = await authService.forgotPassword(email)
 
-      // Hiển thị thông báo success từ API response
       if (response.data && response.data.message) {
         errorHandler.showSuccess(response.data.message)
       } else {
@@ -159,9 +164,7 @@ export const AuthProvider = ({ children }) => {
 
       return response.data
     } catch (error) {
-      // Xử lý lỗi theo yêu cầu API
       if (error.response && error.response.data && error.response.data.message) {
-        // Hiển thị message từ API response cho các lỗi cụ thể
         errorHandler.handleApiError(error)
       } else {
         errorHandler.handleApiError(error, 'Không thể gửi email đặt lại mật khẩu')
@@ -178,7 +181,6 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.uploadAvatar(file)
       const updatedUser = response.data.data
 
-      // Cập nhật user context với thông tin avatar mới
       updateUserContext(updatedUser)
       errorHandler.showSuccess('Ảnh đại diện đã được cập nhật!')
 

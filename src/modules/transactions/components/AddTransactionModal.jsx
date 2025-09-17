@@ -5,10 +5,11 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { useWallet } from '../../../shared/hooks/useWallet';
+import { useNotification } from '../../../shared/contexts/NotificationContext';
 import { categoryService } from '../services/categoryService';
 import { transactionService } from '../services/transactionService';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { cn } from '../../../lib/utils';
@@ -114,8 +115,8 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
                 <Input id={`date-${type}`} type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} />
                 {errors.date && <p className="text-sm text-red-500">{errors.date}</p>}
             </div>
-            <DialogFooter className="pt-4">
-                <Button type="submit" disabled={loading} className={cn(type === 'expense' && 'bg-red-600 hover:bg-red-700')}>
+            <DialogFooter className="pt-4 sm:justify-end flex">
+                <Button type="submit" disabled={loading} size="sm" className={cn('rounded', type === 'expense' && 'bg-red-600 hover:bg-red-700')}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Thêm Khoản {type === 'income' ? 'Thu' : 'Chi'}
                 </Button>
@@ -126,6 +127,8 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
 
 const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded, initialCategoryId }) => {
     const [activeTab, setActiveTab] = useState(initialType);
+    const { refreshWallets } = useWallet();
+    const { refreshNotifications } = useNotification();
 
     useEffect(() => {
         if(isOpen) {
@@ -134,8 +137,21 @@ const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded,
     }, [isOpen, initialType]);
 
     const handleFormSubmit = async (transactionData) => {
-        await transactionService.createTransaction(transactionData);
-        toast.success(`Thêm khoản ${transactionData.type === 'INCOME' ? 'thu' : 'chi'} thành công!`);
+        const response = await transactionService.createTransaction(transactionData);
+        const newTransaction = response.data.data;
+
+        toast.success(`Thêm khoản ${newTransaction.type === 'INCOME' ? 'thu' : 'chi'} thành công!`);
+
+        if (newTransaction.budgetExceeded) {
+            toast.warning(`Bạn đã chi tiêu vượt ngân sách cho danh mục '${newTransaction.category}'.`, {
+                icon: <AlertTriangle className="w-4 h-4" />,
+                duration: 5000,
+                closeButton: true,
+            });
+        }
+
+        await refreshWallets();
+        refreshNotifications();
         onTransactionAdded();
         onClose();
     };
@@ -145,8 +161,8 @@ const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded,
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <div className="flex border-b">
-                        <button onClick={() => setActiveTab('expense')} className={cn('flex-1 py-3 text-sm font-semibold', activeTab === 'expense' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground')}>Thêm Khoản Chi</button>
-                        <button onClick={() => setActiveTab('income')} className={cn('flex-1 py-3 text-sm font-semibold', activeTab === 'income' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground')}>Thêm Khoản Thu</button>
+                        <button onClick={() => setActiveTab('expense')} className={cn('flex-1 py-3 text-sm font-semibold border-b-2', activeTab === 'expense' ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-primary')}>Thêm Khoản Chi</button>
+                        <button onClick={() => setActiveTab('income')} className={cn('flex-1 py-3 text-sm font-semibold border-b-2', activeTab === 'income' ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-primary')}>Thêm Khoản Thu</button>
                     </div>
                 </DialogHeader>
                 <div className="py-4">

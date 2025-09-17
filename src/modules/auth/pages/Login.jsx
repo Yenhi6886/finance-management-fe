@@ -81,19 +81,10 @@ const Login = () => {
           )}
 
           <div className="mb-6">
-            <a
-                href="http://localhost:8080/oauth2/authorize/google"
-                className="w-full block"
-            >
-              <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-12 border-border hover:bg-muted transition-all duration-200 text-foreground rounded-lg bg-card font-normal text-sm"
-              >
-                <GoogleIcon className="mr-3 h-4 w-4" />
-                <span>
-                    Đăng nhập với Google
-                  </span>
+            <a href="http://localhost:8080/api/auth/oauth2/google" className="w-full">
+              <Button variant="outline" className="w-full">
+                {/* SVG Icon */}
+                Đăng nhập với Google
               </Button>
             </a>
           </div>

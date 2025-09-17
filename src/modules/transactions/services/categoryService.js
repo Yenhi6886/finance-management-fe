@@ -12,5 +12,8 @@ export const categoryService = {
     },
     deleteCategory: (id) => {
         return apiService.delete(`/categories/${id}`);
+    },
+    getTransactionsByCategoryId: (id) => {
+        return apiService.get(`/categories/${id}/transactions`);
     }
 };

@@ -43,6 +43,7 @@ import { cn } from '../../../lib/utils'
 import { IconComponent } from '../../../shared/config/icons'
 import { formatCurrency, formatNumber } from '../../../shared/utils/formattingUtils.js'
 
+import listIconAnimation from '../../../assets/icons/listicon.json'
 import addWalletAnimation from '../../../assets/icons/addwalletgreen.json'
 import transferAnimation from '../../../assets/icons/transfer.json'
 import moneyAnimation from '../../../assets/icons/money.json'
@@ -87,8 +88,15 @@ const WalletList = () => {
   const hasShownToastRef = useRef(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const walletListRef = useRef(null);
 
   const walletActions = [
+    {
+      title: 'Xem Danh Sách Ví',
+      description: 'Di chuyển đến danh sách ví của bạn',
+      icon: listIconAnimation,
+      action: () => walletListRef.current?.scrollIntoView({ behavior: 'smooth' })
+    },
     {
       title: 'Thêm Ví Mới',
       description: 'Tạo một tài khoản ví mới để theo dõi',
@@ -229,18 +237,14 @@ const WalletList = () => {
               <CardContent className="space-y-2">
                 {walletActions.map((action) => (
                     <div
-                        key={action.path}
-                        onClick={() => navigate(action.path)}
-                        onMouseEnter={() => setHoveredAction(action.path)}
+                        key={action.title}
+                        onClick={() => action.path ? navigate(action.path) : action.action()}
+                        onMouseEnter={() => setHoveredAction(action.title)}
                         onMouseLeave={() => setHoveredAction(null)}
                         className="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors hover:bg-muted"
                     >
                       <div className="flex items-center gap-4">
-                        <AnimatedIcon
-                            animationData={action.icon}
-                            size={40}
-                            play={hoveredAction === action.path}
-                        />
+                        {action.isIconComponent ? <action.icon className="w-10 h-10 text-primary" /> : <AnimatedIcon animationData={action.icon} size={40} play={hoveredAction === action.title} />}
                         <div>
                           <h3 className="font-semibold">{action.title}</h3>
                           <p className="text-sm text-muted-foreground">{action.description}</p>
@@ -274,8 +278,16 @@ const WalletList = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">Số ví đang được theo dõi</p>
-                <p className="text-3xl font-bold tracking-tight">{activeWallets.length}</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Ví đang hoạt động:</span>
+                    <span className="text-xl font-bold tracking-tight">{activeWallets.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Ví đang lưu trữ:</span>
+                    <span className="text-xl font-bold tracking-tight">{archivedWallets.length}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             <Card className="bg-muted/50">
@@ -314,7 +326,7 @@ const WalletList = () => {
           </Card>
         </div>
 
-        <div className="pt-4 space-y-6">
+        <div ref={walletListRef} className="pt-4 space-y-6">
           <div className="border-b pb-2">
             <h2 className="text-2xl font-bold tracking-tight text-green-600">Danh Sách Ví Của Bạn</h2>
           </div>
