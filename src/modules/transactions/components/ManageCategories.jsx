@@ -313,7 +313,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
     );
 };
 
-const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick }) => {
+const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick, initialCategoryIdToView, onCategoryViewed }) => {
     const [categories, setCategories] = useState([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -360,7 +360,19 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
 
     useEffect(() => {
         fetchCategories();
-    }, [refreshTrigger]);
+    }, [fetchCategories, refreshTrigger]);
+
+    useEffect(() => {
+        if (initialCategoryIdToView && categories.length > 0) {
+            const categoryToView = categories.find(cat => String(cat.id) === String(initialCategoryIdToView));
+            if (categoryToView) {
+                setDetailedCategory(categoryToView);
+                if (onCategoryViewed) {
+                    onCategoryViewed();
+                }
+            }
+        }
+    }, [categories, initialCategoryIdToView, onCategoryViewed]);
 
     const handleOpenEditModal = (category = null) => {
         setSelectedCategory(category);
@@ -383,7 +395,7 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
     return (
         <>
             <div className="flex items-center justify-between pb-4 border-b">
-                <h2 className="text-2xl font-bold tracking-tight text-green-600">Quản Lý Danh Mục</h2>
+                <h2 className="text-2xl font-bold tracking-tight text-green-600">{`Tổng quan Danh mục (${categories.length})`}</h2>
                 <Button onClick={() => handleOpenEditModal()} className="rounded-md">
                     <PlusCircle className="mr-2 h-4 w-4" /> Thêm Danh Mục
                 </Button>

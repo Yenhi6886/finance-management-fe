@@ -48,16 +48,13 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                 label: 'Số tiền',
                 data: [totalIncome, totalExpense],
                 backgroundColor: [
-                    '#10b981', // Green for income
-                    '#ef4444'  // Red for expense
+                    '#10b981',
+                    '#ef4444'
                 ],
-                borderColor: ['#ffffff'],
-                borderWidth: 2,
                 hoverBackgroundColor: [
-                    '#059669', // Darker green on hover
-                    '#dc2626'  // Darker red on hover
+                    '#059669',
+                    '#dc2626'
                 ],
-                hoverBorderWidth: 3,
             },
         ],
     };

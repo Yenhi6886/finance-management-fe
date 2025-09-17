@@ -25,6 +25,8 @@ import { cn } from '../../../lib/utils'
 import { walletService } from '../services/walletService'
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { LoadingScreen } from "../../../components/Loading.jsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
+import { IconComponent } from '../../../shared/config/icons'
 import {
   Dialog,
   DialogContent,
@@ -463,23 +465,32 @@ const ShareWallet = () => {
                         <Label htmlFor="walletSelect" className="font-medium">
                           Chọn ví để chia sẻ <span className="text-red-500">*</span>
                         </Label>
-                        <select
-                            id="walletSelect"
-                            value={selectedWallet}
-                            onChange={(e) => setSelectedWallet(e.target.value)}
-                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md bg-background"
-                            disabled={myWallets.length === 0}
-                        >
-                          {myWallets.length > 0 ? (
-                              myWallets.map(wallet => (
-                                  <option key={wallet.id} value={wallet.id}>
-                                    {wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}
-                                  </option>
-                              ))
-                          ) : (
-                              <option>Không có ví nào để chia sẻ</option>
-                          )}
-                        </select>
+                        <Select onValueChange={setSelectedWallet} value={selectedWallet} disabled={myWallets.length === 0}>
+                          <SelectTrigger className="mt-1 h-10 text-base border-2 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <SelectValue placeholder="Chọn ví để chia sẻ">
+                              {selectedWallet && myWallets.find(w => w.id === selectedWallet) && (
+                                <div className="flex items-center space-x-2">
+                                  <IconComponent name={myWallets.find(w => w.id === selectedWallet).icon} className="w-4 h-4" />
+                                  <span>{myWallets.find(w => w.id === selectedWallet).name} - {formatCurrency(myWallets.find(w => w.id === selectedWallet).balance, myWallets.find(w => w.id === selectedWallet).currency)}</span>
+                                </div>
+                              )}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {myWallets.length > 0 ? (
+                                myWallets.map(wallet => (
+                                    <SelectItem key={wallet.id} value={wallet.id}>
+                                      <div className="flex items-center space-x-2">
+                                        <IconComponent name={wallet.icon} className="w-4 h-4" />
+                                        <span>{wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}</span>
+                                      </div>
+                                    </SelectItem>
+                                ))
+                            ) : (
+                                <SelectItem value="" disabled>Không có ví nào để chia sẻ</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div>

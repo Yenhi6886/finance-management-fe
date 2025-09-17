@@ -13,6 +13,7 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { cn } from '../../../lib/utils';
+import { IconComponent } from '../../../shared/config/icons';
 
 const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
     const { wallets } = useWallet();
@@ -97,10 +98,24 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
             <div className="space-y-2">
                 <Label htmlFor={`wallet-${type}`}>Ví *</Label>
                 <Select onValueChange={setWalletId} value={walletId}>
-                    <SelectTrigger><SelectValue placeholder="Chọn ví" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn ví">
+                        {walletId && wallets.find(w => w.id.toString() === walletId) && (
+                          <div className="flex items-center space-x-2">
+                            <IconComponent name={wallets.find(w => w.id.toString() === walletId).icon} className="w-4 h-4" />
+                            <span>{wallets.find(w => w.id.toString() === walletId).name} ({formatCurrency(wallets.find(w => w.id.toString() === walletId).balance, wallets.find(w => w.id.toString() === walletId).currency, settings)})</span>
+                          </div>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
                         {wallets.map(w => (
-                            <SelectItem key={w.id} value={String(w.id)}>{w.name} ({formatCurrency(w.balance, w.currency, settings)})</SelectItem>
+                            <SelectItem key={w.id} value={String(w.id)}>
+                              <div className="flex items-center space-x-2">
+                                <IconComponent name={w.icon} className="w-4 h-4" />
+                                <span>{w.name} ({formatCurrency(w.balance, w.currency, settings)})</span>
+                              </div>
+                            </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>

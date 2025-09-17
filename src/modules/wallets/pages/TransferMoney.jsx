@@ -24,6 +24,8 @@ import { walletService } from '../services/walletService'
 import { useSettings } from '../../../shared/contexts/SettingsContext'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
 import { toast } from 'sonner'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
+import { IconComponent } from '../../../shared/config/icons'
 
 const TransferFormSkeleton = () => (
     <div className="p-8">
@@ -214,18 +216,54 @@ const TransferMoney = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
               <div className="space-y-2">
                 <Label htmlFor="fromWallet">Từ ví <span className="text-red-500">*</span></Label>
-                <select id="fromWallet" value={fromWallet} onChange={(e) => { setFromWallet(e.target.value); setToWallet(''); }} className={`w-full h-12 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${errors.fromWallet ? 'border-red-500' : 'border-border'} bg-background`}>
-                  <option value="">Chọn ví nguồn</option>
-                  {wallets.map(w => <option key={w.id} value={w.id}>{w.name} - {formatCurrency(w.balance, w.currency, settings)}</option>)}
-                </select>
+                <Select onValueChange={(value) => { setFromWallet(value); setToWallet(''); }} value={fromWallet}>
+                  <SelectTrigger className={`w-full h-12 ${errors.fromWallet ? 'border-red-500' : 'border-border'}`}>
+                    <SelectValue placeholder="Chọn ví nguồn">
+                      {fromWallet && wallets.find(w => w.id === fromWallet) && (
+                        <div className="flex items-center space-x-2">
+                          <IconComponent name={wallets.find(w => w.id === fromWallet).icon} className="w-4 h-4" />
+                          <span>{wallets.find(w => w.id === fromWallet).name} - {formatCurrency(wallets.find(w => w.id === fromWallet).balance, wallets.find(w => w.id === fromWallet).currency, settings)}</span>
+                        </div>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {wallets.map(w => (
+                      <SelectItem key={w.id} value={w.id}>
+                        <div className="flex items-center space-x-2">
+                          <IconComponent name={w.icon} className="w-4 h-4" />
+                          <span>{w.name} - {formatCurrency(w.balance, w.currency, settings)}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {errors.fromWallet && <p className="text-sm text-red-500">{errors.fromWallet}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="toWallet">Đến ví <span className="text-red-500">*</span></Label>
-                <select id="toWallet" value={toWallet} onChange={(e) => setToWallet(e.target.value)} disabled={!fromWallet} className={`w-full h-12 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${errors.toWallet ? 'border-red-500' : 'border-border'} bg-background disabled:bg-muted`}>
-                  <option value="">Chọn ví đích</option>
-                  {toWallets.map(w => <option key={w.id} value={w.id}>{w.name} - {formatCurrency(w.balance, w.currency, settings)}</option>)}
-                </select>
+                <Select onValueChange={setToWallet} value={toWallet} disabled={!fromWallet}>
+                  <SelectTrigger className={`w-full h-12 ${errors.toWallet ? 'border-red-500' : 'border-border'} ${!fromWallet ? 'bg-muted' : ''}`}>
+                    <SelectValue placeholder="Chọn ví đích">
+                      {toWallet && toWallets.find(w => w.id === toWallet) && (
+                        <div className="flex items-center space-x-2">
+                          <IconComponent name={toWallets.find(w => w.id === toWallet).icon} className="w-4 h-4" />
+                          <span>{toWallets.find(w => w.id === toWallet).name} - {formatCurrency(toWallets.find(w => w.id === toWallet).balance, toWallets.find(w => w.id === toWallet).currency, settings)}</span>
+                        </div>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {toWallets.map(w => (
+                      <SelectItem key={w.id} value={w.id}>
+                        <div className="flex items-center space-x-2">
+                          <IconComponent name={w.icon} className="w-4 h-4" />
+                          <span>{w.name} - {formatCurrency(w.balance, w.currency, settings)}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {errors.toWallet && <p className="text-sm text-red-500">{errors.toWallet}</p>}
                 {fromWallet && toWallets.length === 0 && <p className="text-sm text-yellow-600 mt-1">Không có ví đích hợp lệ (cần cùng loại tiền tệ).</p>}
               </div>
