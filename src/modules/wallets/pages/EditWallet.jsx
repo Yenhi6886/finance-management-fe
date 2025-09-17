@@ -45,8 +45,7 @@ const EditWallet = () => {
             currency: walletData.currency,
             description: walletData.description || ''
           })
-          
-          // Kiểm tra xem ví có giao dịch không
+
           const hasTransactions = walletData.balance > 0 || walletData.transactionCount > 0
           setHasTransactions(hasTransactions)
         } else {
@@ -84,19 +83,6 @@ const EditWallet = () => {
         if (!value.trim()) error = 'Tên ví là bắt buộc.'
         else if (value.trim().length > 50) error = 'Tên ví không được quá 50 ký tự.'
         break
-      case 'balance':
-        // Chỉ validate balance khi có giao dịch
-        if (hasTransactions) {
-          if (value.trim() === '') error = 'Số dư là bắt buộc.'
-          else if (isNaN(Number(value))) error = 'Số dư phải là một con số.'
-          else if (Number(value) < 0) error = 'Số dư không được là số âm.'
-          else if (String(value).replace(/\D/g, '').length > 10) error = 'Số tiền không được vượt quá 10 chữ số.'
-          else if (Number(value) > 9999999999) error = 'Số tiền tối đa là 9,999,999,999.'
-        }
-        break
-      case 'currency':
-        if (!value) error = 'Vui lòng chọn loại tiền tệ.'
-        break
       case 'description':
         if (value.trim().length > 200) error = 'Mô tả không được quá 200 ký tự.'
         break
@@ -108,18 +94,9 @@ const EditWallet = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    if (name === 'balance') {
-      const sanitizedValue = value.replace(/[^0-9]/g, '')
-      if (sanitizedValue.length <= 10) {
-        setFormData(prev => ({ ...prev, [name]: sanitizedValue }))
-        const error = validateField(name, sanitizedValue)
-        setErrors(prev => ({ ...prev, [name]: error }))
-      }
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }))
-      const error = validateField(name, value)
-      setErrors(prev => ({ ...prev, [name]: error }))
-    }
+    setFormData(prev => ({ ...prev, [name]: value }))
+    const error = validateField(name, value)
+    setErrors(prev => ({ ...prev, [name]: error }))
   }
 
   const handleIconChange = (icon) => {
@@ -146,18 +123,12 @@ const EditWallet = () => {
 
     setSaving(true)
     try {
-      const updateData = { 
+      const updateData = {
         name: formData.name,
         icon: formData.icon,
-        currency: formData.currency,
         description: formData.description
       }
-      
-      // Chỉ gửi balance khi có giao dịch
-      if (hasTransactions) {
-        updateData.balance = Number(formData.balance)
-      }
-      
+
       await walletService.updateWallet(id, updateData)
       await refreshWallets()
       navigate('/wallets', {
@@ -207,39 +178,37 @@ const EditWallet = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {hasTransactions && (
-                    <div className="space-y-2">
-                      <Label htmlFor="balance" className="text-base font-medium">Số dư hiện tại <span className="text-red-500">*</span></Label>
-                      <Input id="balance" name="balance" type="text" inputMode="decimal" placeholder="0" value={formatDisplayBalance(formData.balance)} onChange={handleInputChange} className={`h-12 text-base ${errors.balance ? 'border-red-500' : ''}`} />
-                      {errors.balance && <p className="text-sm text-red-500 mt-1">{errors.balance}</p>}
-                    </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="balance" className="text-base font-medium">Số dư hiện tại</Label>
+                        <Input id="balance" name="balance" type="text" placeholder="0" value={formatDisplayBalance(formData.balance)} className="h-12 text-base" disabled />
+                      </div>
                   )}
                   <div className="space-y-2">
-                    <Label htmlFor="currency" className="text-base font-medium">Loại tiền tệ <span className="text-red-500">*</span></Label>
-                    <select id="currency" name="currency" value={formData.currency} onChange={handleInputChange} className={`w-full h-12 px-3 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.currency ? 'border-red-500' : 'border-input'} bg-background`}>
+                    <Label htmlFor="currency" className="text-base font-medium">Loại tiền tệ</Label>
+                    <select id="currency" name="currency" value={formData.currency} className="w-full h-12 px-3 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 border-input bg-background" disabled>
                       {currencies.map((currency) => (<option key={currency.code} value={currency.code}>{currency.name}</option>))}
                     </select>
-                    {errors.currency && <p className="text-sm text-red-500 mt-1">{errors.currency}</p>}
                   </div>
                 </div>
-                
+
                 {!hasTransactions && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                          Ví chưa có giao dịch
-                        </h3>
-                        <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
-                          <p>Ví này chưa có giao dịch nào. Bạn có thể nạp tiền vào ví để bắt đầu sử dụng.</p>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                            Ví chưa có giao dịch
+                          </h3>
+                          <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                            <p>Ví này chưa có giao dịch nào. Bạn có thể nạp tiền vào ví để bắt đầu sử dụng.</p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
                 )}
 
                 <div className="space-y-2">
@@ -294,10 +263,6 @@ const EditWallet = () => {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                    <span>Cập nhật số dư nếu có sự thay đổi thực tế để ứng dụng theo dõi chính xác.</span>
-                  </li>
                   <li className="flex items-start gap-2">
                     <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
                     <span>Mô tả rõ ràng giúp bạn nhớ lại mục đích của ví sau này.</span>
