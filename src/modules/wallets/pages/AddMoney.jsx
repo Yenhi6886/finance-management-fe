@@ -36,6 +36,7 @@ const AddMoney = () => {
   const [errors, setErrors] = useState({})
   const [recentTransactions, setRecentTransactions] = useState([])
   const { settings } = useSettings()
+  const walletIdToCurrency = Object.fromEntries((wallets || []).map(w => [String(w.id), w.currency]))
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
@@ -274,7 +275,7 @@ const AddMoney = () => {
                                   <p className="text-xs text-muted-foreground">{formatDate(t.date, settings)}</p>
                                 </div>
                               </div>
-                              <span className="font-bold text-green-600 dark:text-green-400 text-sm">+{formatCurrency(t.amount, 'VND', settings)}</span>
+                              <span className="font-bold text-green-600 dark:text-green-400 text-sm">+{formatCurrency(t.amount, t.currency || walletIdToCurrency?.[String(t.walletId)] || 'VND', settings)}</span>
                             </div>
                         ))}
                       </div>
@@ -362,7 +363,7 @@ const AddMoney = () => {
               </div>
               <DialogTitle className="text-center">Nạp Tiền Thành Công!</DialogTitle>
               <DialogDescription className="text-center">
-                Đã nạp thành công {formatCurrency(successData.amount, 'VND', settings)} vào ví {successData.walletName}.
+                Đã nạp thành công {formatCurrency(successData.amount, successData.currency || 'VND', settings)} vào ví {successData.walletName}.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
