@@ -165,11 +165,20 @@ const ShareWallet = () => {
     
     setLoading(true)
 
+    // Convert date to proper format for backend
+    let formattedExpiryDate = null
+    if (expiryDate) {
+      // Convert YYYY-MM-DD to LocalDateTime format (end of day)
+      const date = new Date(expiryDate)
+      date.setHours(23, 59, 59, 999) // Set to end of day
+      formattedExpiryDate = date.toISOString()
+    }
+
     const payload = {
       walletId: selectedWallet,
       permissionLevel,
       message,
-      expiryDate: expiryDate || null
+      expiryDate: formattedExpiryDate
     }
 
     try {
@@ -280,11 +289,22 @@ const ShareWallet = () => {
         <div className="space-y-4">
           {sharedByMe.map((share) => (
               <div key={share.id} className="bg-background border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold text-card-foreground">{share.walletName}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Đã chia sẻ cho: <span className="font-medium text-primary">{share.sharedWithEmail}</span>
                   </p>
+                  {share.createdAt && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Chia sẻ lúc: {new Date(share.createdAt).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-4">
                   <select
@@ -318,11 +338,22 @@ const ShareWallet = () => {
         <div className="space-y-4">
           {sharedWithMe.map((share) => (
               <div key={share.id} className="bg-background border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold text-card-foreground">{share.name}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Được chia sẻ bởi: <span className="font-medium text-primary">{share.ownerName} ({share.ownerEmail})</span>
                   </p>
+                  {share.sharedAt && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Chia sẻ lúc: {new Date(share.sharedAt).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-4">
               <span className={cn('text-sm font-medium px-2 py-1 rounded', permissionDisplay[share.permissionLevel]?.color)}>
