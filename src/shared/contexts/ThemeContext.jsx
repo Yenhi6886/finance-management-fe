@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { Chart } from 'chart.js'
 
 const ThemeContext = createContext()
 
@@ -12,18 +13,21 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    // Get theme from localStorage or default to light
     return localStorage.getItem('finance-theme') || 'light'
   })
 
   useEffect(() => {
-    // Apply theme to document
     const root = window.document.documentElement
     root.classList.remove('light', 'dark')
     root.classList.add(theme)
-    
-    // Save to localStorage
     localStorage.setItem('finance-theme', theme)
+
+    const isDarkMode = theme === 'dark'
+
+    Chart.defaults.color = isDarkMode ? '#94a3b8' : '#64748b'
+    Chart.defaults.borderColor = isDarkMode ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.7)'
+    Chart.defaults.backgroundColor = null
+
   }, [theme])
 
   const toggleTheme = () => {
@@ -31,8 +35,8 @@ export const ThemeProvider = ({ children }) => {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
+      <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
+        {children}
+      </ThemeContext.Provider>
   )
 }

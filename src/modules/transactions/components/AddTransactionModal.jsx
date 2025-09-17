@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
+import { Textarea } from '../../../components/ui/textarea';
 import { useWallet } from '../../../shared/hooks/useWallet';
 import { useNotification } from '../../../shared/contexts/NotificationContext';
 import { categoryService } from '../services/categoryService';
@@ -13,15 +14,25 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { cn } from '../../../lib/utils';
+import { IconComponent } from '../../../shared/config/icons';
 
 const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
-    const { wallets } = useWallet();
+    const { wallets, currentWallet } = useWallet();
     const { settings } = useSettings();
     const [amount, setAmount] = useState('');
     const [categoryId, setCategoryId] = useState(initialCategoryId || '');
     const [walletId, setWalletId] = useState('');
     const [description, setDescription] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().slice(0, 16));
+    // Sửa lỗi múi giờ - sử dụng giờ địa phương
+    const [date, setDate] = useState(() => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    });
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
@@ -29,6 +40,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
+                setWalletId(currentWallet ? String(currentWallet.id) : '');
                 const response = await categoryService.getCategories();
                 setCategories(response.data.data || []);
             } catch (error) {
@@ -59,13 +71,17 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
         if (!validate()) return;
         setLoading(true);
         try {
+            // Sửa lỗi múi giờ - chuyển đổi đúng cách
+            const localDate = new Date(date);
+            const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
+            
             const transactionData = {
                 amount: parseFloat(amount),
                 type: type.toUpperCase(),
                 walletId: parseInt(walletId),
                 categoryId: parseInt(categoryId),
                 description: description.trim(),
-                date: new Date(date).toISOString(),
+                date: utcDate.toISOString(),
             };
             await onFormSubmit(transactionData);
         } catch (error) {
@@ -97,10 +113,24 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
             <div className="space-y-2">
                 <Label htmlFor={`wallet-${type}`}>Ví *</Label>
                 <Select onValueChange={setWalletId} value={walletId}>
-                    <SelectTrigger><SelectValue placeholder="Chọn ví" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn ví">
+                        {walletId && wallets.find(w => w.id.toString() === walletId) && (
+                          <div className="flex items-center space-x-2">
+                            <IconComponent name={wallets.find(w => w.id.toString() === walletId).icon} className="w-4 h-4" />
+                            <span>{wallets.find(w => w.id.toString() === walletId).name} ({formatCurrency(wallets.find(w => w.id.toString() === walletId).balance, wallets.find(w => w.id.toString() === walletId).currency, settings)})</span>
+                          </div>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
                         {wallets.map(w => (
-                            <SelectItem key={w.id} value={String(w.id)}>{w.name} ({formatCurrency(w.balance, w.currency, settings)})</SelectItem>
+                            <SelectItem key={w.id} value={String(w.id)}>
+                              <div className="flex items-center space-x-2">
+                                <IconComponent name={w.icon} className="w-4 h-4" />
+                                <span>{w.name} ({formatCurrency(w.balance, w.currency, settings)})</span>
+                              </div>
+                            </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -108,7 +138,21 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
             </div>
             <div className="space-y-2">
                 <Label htmlFor={`description-${type}`}>Ghi chú</Label>
-                <Input id={`description-${type}`} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={`Ghi chú về khoản ${type === 'income' ? 'thu' : 'chi'}...`} />
+                <Textarea 
+                    id={`description-${type}`} 
+                    value={description} 
+                    onChange={(e) => setDescription(e.target.value)} 
+                    placeholder={`Ghi chú về khoản ${type === 'income' ? 'thu' : 'chi'}...`}
+                    rows={3}
+                    maxLength={500}
+                    className="resize-none"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                    <span>Nhập tối đa 500 ký tự</span>
+                    <span className={description.length > 450 ? 'text-orange-500' : description.length > 480 ? 'text-red-500' : ''}>
+                        {description.length}/500
+                    </span>
+                </div>
             </div>
             <div className="space-y-2">
                 <Label htmlFor={`date-${type}`}>Thời gian *</Label>

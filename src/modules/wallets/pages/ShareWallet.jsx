@@ -25,6 +25,8 @@ import { cn } from '../../../lib/utils'
 import { walletService } from '../services/walletService'
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { LoadingScreen } from "../../../components/Loading.jsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
+import { IconComponent } from '../../../shared/config/icons'
 import {
   Dialog,
   DialogContent,
@@ -165,11 +167,20 @@ const ShareWallet = () => {
     
     setLoading(true)
 
+    // Convert date to proper format for backend
+    let formattedExpiryDate = null
+    if (expiryDate) {
+      // Convert YYYY-MM-DD to LocalDateTime format (end of day)
+      const date = new Date(expiryDate)
+      date.setHours(23, 59, 59, 999) // Set to end of day
+      formattedExpiryDate = date.toISOString()
+    }
+
     const payload = {
       walletId: selectedWallet,
       permissionLevel,
       message,
-      expiryDate: expiryDate || null
+      expiryDate: formattedExpiryDate
     }
 
     try {
@@ -280,11 +291,22 @@ const ShareWallet = () => {
         <div className="space-y-4">
           {sharedByMe.map((share) => (
               <div key={share.id} className="bg-background border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold text-card-foreground">{share.walletName}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Đã chia sẻ cho: <span className="font-medium text-primary">{share.sharedWithEmail}</span>
                   </p>
+                  {share.createdAt && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Chia sẻ lúc: {new Date(share.createdAt).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-4">
                   <select
@@ -318,11 +340,22 @@ const ShareWallet = () => {
         <div className="space-y-4">
           {sharedWithMe.map((share) => (
               <div key={share.id} className="bg-background border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold text-card-foreground">{share.name}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Được chia sẻ bởi: <span className="font-medium text-primary">{share.ownerName} ({share.ownerEmail})</span>
                   </p>
+                  {share.sharedAt && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Chia sẻ lúc: {new Date(share.sharedAt).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-4">
               <span className={cn('text-sm font-medium px-2 py-1 rounded', permissionDisplay[share.permissionLevel]?.color)}>
@@ -463,23 +496,32 @@ const ShareWallet = () => {
                         <Label htmlFor="walletSelect" className="font-medium">
                           Chọn ví để chia sẻ <span className="text-red-500">*</span>
                         </Label>
-                        <select
-                            id="walletSelect"
-                            value={selectedWallet}
-                            onChange={(e) => setSelectedWallet(e.target.value)}
-                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md bg-background"
-                            disabled={myWallets.length === 0}
-                        >
-                          {myWallets.length > 0 ? (
-                              myWallets.map(wallet => (
-                                  <option key={wallet.id} value={wallet.id}>
-                                    {wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}
-                                  </option>
-                              ))
-                          ) : (
-                              <option>Không có ví nào để chia sẻ</option>
-                          )}
-                        </select>
+                        <Select onValueChange={setSelectedWallet} value={selectedWallet} disabled={myWallets.length === 0}>
+                          <SelectTrigger className="mt-1 h-10 text-base border-2 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <SelectValue placeholder="Chọn ví để chia sẻ">
+                              {selectedWallet && myWallets.find(w => w.id === selectedWallet) && (
+                                <div className="flex items-center space-x-2">
+                                  <IconComponent name={myWallets.find(w => w.id === selectedWallet).icon} className="w-4 h-4" />
+                                  <span>{myWallets.find(w => w.id === selectedWallet).name} - {formatCurrency(myWallets.find(w => w.id === selectedWallet).balance, myWallets.find(w => w.id === selectedWallet).currency)}</span>
+                                </div>
+                              )}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {myWallets.length > 0 ? (
+                                myWallets.map(wallet => (
+                                    <SelectItem key={wallet.id} value={wallet.id}>
+                                      <div className="flex items-center space-x-2">
+                                        <IconComponent name={wallet.icon} className="w-4 h-4" />
+                                        <span>{wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}</span>
+                                      </div>
+                                    </SelectItem>
+                                ))
+                            ) : (
+                                <SelectItem value="" disabled>Không có ví nào để chia sẻ</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div>
