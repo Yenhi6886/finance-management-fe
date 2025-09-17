@@ -22,8 +22,10 @@ import { useSettings } from '../../../shared/contexts/SettingsContext'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
 import { toast } from 'sonner'
 import { IconComponent } from '../../../shared/config/icons'
+import { useWallet } from '../../../shared/hooks/useWallet.js'
 
 const AddMoney = () => {
+  const { currentWallet } = useWallet();
   const [wallets, setWallets] = useState([])
   const [selectedWallet, setSelectedWallet] = useState('')
   const [amount, setAmount] = useState('')
@@ -40,6 +42,7 @@ const AddMoney = () => {
 
   const fetchData = async () => {
     try {
+      setSelectedWallet(currentWallet ? String(currentWallet.id) : '');
       const [walletRes, transRes] = await Promise.all([
         walletService.getWallets(),
         walletService.getTransactions({ type: 'INCOME', limit: 5 })
