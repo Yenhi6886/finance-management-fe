@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { cn } from '../../../lib/utils';
@@ -21,6 +22,15 @@ const Transactions = () => {
     const [initialCategoryId, setInitialCategoryId] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const { refreshWallets } = useWallet();
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const initialCategoryIdToView = searchParams.get('viewCategory');
+
+    useEffect(() => {
+        if (initialCategoryIdToView) {
+            setActiveTab('categories');
+        }
+    }, [initialCategoryIdToView]);
 
     const handleOpenAddModal = (type, categoryId = null) => {
         setInitialModalType(type);
@@ -41,6 +51,10 @@ const Transactions = () => {
     const handleAddTransactionFromCategory = (categoryId) => {
         handleOpenAddModal('expense', categoryId);
     };
+
+    const onCategoryViewed = useCallback(() => {
+        navigate('/transactions', { replace: true });
+    }, [navigate]);
 
     return (
         <div className="space-y-6">
@@ -68,7 +82,15 @@ const Transactions = () => {
             </div>
 
             {activeTab === 'transactions' && <TransactionList onOpenAddModal={handleOpenAddModal} onOpenEditModal={handleOpenEditModal} refreshTrigger={refreshTrigger} />}
-            {activeTab === 'categories' && <ManageCategories onAddTransaction={handleAddTransactionFromCategory} refreshTrigger={refreshTrigger} onTransactionClick={handleOpenEditModal} />}
+            {activeTab === 'categories' && (
+                <ManageCategories
+                    onAddTransaction={handleAddTransactionFromCategory}
+                    refreshTrigger={refreshTrigger}
+                    onTransactionClick={handleOpenEditModal}
+                    initialCategoryIdToView={initialCategoryIdToView}
+                    onCategoryViewed={onCategoryViewed}
+                />
+            )}
 
             <AddTransactionModal
                 isOpen={isAddModalOpen}

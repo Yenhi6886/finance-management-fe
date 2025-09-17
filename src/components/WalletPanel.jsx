@@ -1,18 +1,35 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../shared/hooks/useWallet'
 import { cn } from '../lib/utils.js'
 import AnimatedIcon from './ui/AnimatedIcon'
 import addWalletAnimation from '../assets/icons/addWallet.json'
-import { X, Check } from 'lucide-react'
+import { X, Check, FolderKanban } from 'lucide-react'
 import { IconComponent } from '../shared/config/icons'
 import { useSettings } from '../shared/contexts/SettingsContext'
 import { formatCurrency } from '../shared/utils/formattingUtils.js'
+import { categoryService } from '../modules/transactions/services/categoryService'
+import { toast } from 'sonner'
 
 const WalletPanel = ({ isOpen, onClose }) => {
     const { wallets, currentWallet, selectWallet } = useWallet()
     const { settings } = useSettings()
     const navigate = useNavigate()
+    const [categories, setCategories] = useState([])
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            if (isOpen) {
+                try {
+                    const response = await categoryService.getCategories()
+                    setCategories(response.data.data || [])
+                } catch (error) {
+                    toast.error('Không thể tải danh sách danh mục.')
+                }
+            }
+        }
+        fetchCategories()
+    }, [isOpen])
 
     const handleSelectWallet = (wallet) => {
         selectWallet(wallet)
@@ -24,14 +41,19 @@ const WalletPanel = ({ isOpen, onClose }) => {
         onClose()
     }
 
+    const handleCategorySelect = (categoryId) => {
+        navigate(`/transactions?viewCategory=${categoryId}`)
+        onClose()
+    }
+
     return (
         <div
             className={cn(
                 'bg-white dark:bg-background border-r border-gray-200 dark:border-gray-700 h-full flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden',
-                isOpen ? 'w-64' : 'w-0'
+                isOpen ? 'w-72' : 'w-0'
             )}
         >
-            <div className="w-64 flex flex-col h-full">
+            <div className="w-72 flex flex-col h-full">
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                     <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Danh Sách Ví</h2>
                     <button
@@ -42,24 +64,23 @@ const WalletPanel = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
-                {currentWallet && (
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Ví hiện tại</p>
-                        <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/60 rounded-lg">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xl">
-                                <IconComponent name={currentWallet.icon} className="w-5 h-5 text-green-600 dark:text-green-200" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-medium text-green-800 dark:text-green-200 truncate">{currentWallet.name}</p>
-                                <p className="text-sm text-green-600 dark:text-green-400">
-                                    {formatCurrency(currentWallet.balance, currentWallet.currency, settings)}
-                                </p>
+                <div className="flex-1 overflow-y-auto p-4">
+                    {currentWallet && (
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Ví hiện tại</p>
+                            <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/60 rounded-lg">
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xl">
+                                    <IconComponent name={currentWallet.icon} className="w-5 h-5 text-green-600 dark:text-green-200" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-green-800 dark:text-green-200 truncate">{currentWallet.name}</p>
+                                    <p className="text-sm text-green-600 dark:text-green-400">
+                                        {formatCurrency(currentWallet.balance, currentWallet.currency, settings)}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-
-                <div className="flex-1 overflow-y-auto p-4">
+                    )}
                     <div className="space-y-2">
                         {wallets.map((wallet) => (
                             <button
@@ -82,18 +103,34 @@ const WalletPanel = ({ isOpen, onClose }) => {
                             </button>
                         ))}
                     </div>
-
                     {wallets.length === 0 && (
-                        <div className="text-center py-8">
+                        <div className="text-center py-4">
                             <p className="text-gray-500 dark:text-gray-400">Chưa có ví nào</p>
-                            <button onClick={() => handleNavigate('/wallets/add')} className="mt-2 text-green-600 hover:text-green-600 text-sm">
-                                Tạo ví đầu tiên
-                            </button>
                         </div>
                     )}
+
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <h3 className="px-3 pb-2 text-sm font-semibold text-gray-600 dark:text-gray-400">Danh Mục</h3>
+                        <div className="space-y-2">
+                            {categories.map((category) => (
+                                <button
+                                    key={category.id}
+                                    onClick={() => handleCategorySelect(category.id)}
+                                    className="w-full flex items-center space-x-3 p-3 rounded-lg transition-colors text-left hover:bg-gray-50 dark:hover:bg-gray-800"
+                                >
+                                    <div className="w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                                        <FolderKanban className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-gray-800 dark:text-gray-200 truncate">{category.name}</p>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
-                <div className="p-4">
+                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="grid grid-cols-2 gap-2">
                         <button onClick={() => handleNavigate('/wallets/add')} className="flex items-center justify-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
                             <AnimatedIcon animationData={addWalletAnimation} size={16} className="mr-1" play={true} loop={true} />

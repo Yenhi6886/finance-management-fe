@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../modules/auth/contexts/AuthContext.jsx'
 import { useTheme } from '../shared/contexts/ThemeContext.jsx'
+import { useNotification } from '../shared/contexts/NotificationContext.jsx'
 import { cn } from '../lib/utils.js'
 import AnimatedIcon from './ui/AnimatedIcon'
 import { Button } from './ui/button'
 import { Avatar } from './ui/avatar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'
+import { NotificationPanel } from './NotificationPanel'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +49,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
   const location = useLocation()
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const { unreadCount } = useNotification();
 
   const handleLogout = async () => {
     try {
@@ -244,9 +247,17 @@ const Sidebar = ({ onToggleWalletPanel }) => {
             {user && (
                 <div className="hidden md:flex flex-col p-2 space-y-2">
                   <div className="flex justify-center">
-                    <Button variant="ghost" size="icon" onMouseEnter={() => setHoveredItem('notification')} onMouseLeave={() => setHoveredItem(null)} className="w-8 h-8 hover:bg-green-100 dark:hover:bg-white/10">
-                      <AnimatedIcon animationData={notificationAnimation} size={20} className="text-green-600 dark:text-green-400" play={hoveredItem === 'notification'} />
-                    </Button>
+                    <NotificationPanel>
+                      <Button variant="ghost" size="icon" onMouseEnter={() => setHoveredItem('notification')} onMouseLeave={() => setHoveredItem(null)} className="w-8 h-8 hover:bg-green-100 dark:hover:bg-white/10 relative">
+                        <AnimatedIcon animationData={notificationAnimation} size={20} className="text-green-600 dark:text-green-400" play={hoveredItem === 'notification'} />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-0 right-0 flex h-2.5 w-2.5">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                  </span>
+                        )}
+                      </Button>
+                    </NotificationPanel>
                   </div>
                   <div className="relative user-menu-container">
                     {showUserMenu && (
