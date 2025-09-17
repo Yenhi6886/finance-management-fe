@@ -22,7 +22,6 @@ import { useSettings } from '../../../shared/contexts/SettingsContext'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
 import { toast } from 'sonner'
 import { IconComponent } from '../../../shared/config/icons'
-import { useWallet } from '../../../shared/hooks/useWallet.js'
 
 const AddMoney = () => {
   const { currentWallet } = useWallet();
@@ -302,7 +301,7 @@ const AddMoney = () => {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Số tiền:</span>
-                      <span className="font-bold text-lg text-green-600">{formatCurrency(parseFloat(amount || 0), 'VND', settings)}</span>
+                      <span className="font-bold text-lg text-green-600">{formatCurrency(wallet.balance, wallet.currency, settings)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Phương thức:</span>
