@@ -21,7 +21,6 @@ const AddWallet = () => {
     name: '',
     icon: defaultIcon,
     currency: 'VND',
-    balance: '0',
     description: ''
   })
   const [errors, setErrors] = useState({})
@@ -37,12 +36,6 @@ const AddWallet = () => {
       case 'name':
         if (!value.trim()) error = 'Tên ví là bắt buộc.'
         else if (value.trim().length > 50) error = 'Tên ví không được quá 50 ký tự.'
-        break;
-      case 'balance':
-        const numericBalance = parseFloat(value);
-        if (value && isNaN(numericBalance)) error = 'Số tiền phải là một số hợp lệ.';
-        else if (numericBalance < 0) error = 'Số tiền không được là số âm.';
-        else if (value.replace(/[^0-9]/g, '').length > 10) error = 'Số tiền không được vượt quá 10 chữ số.';
         break;
       case 'description':
         if (value && value.trim().length > 200) error = 'Mô tả không được quá 200 ký tự.';
@@ -64,13 +57,6 @@ const AddWallet = () => {
     }
   }
 
-  const handleBalanceChange = (e) => {
-    const value = e.target.value;
-    const sanitizedValue = value.replace(/[^0-9]/g, '');
-    if (sanitizedValue.length <= 10) {
-      handleInputChange('balance', sanitizedValue);
-    }
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -92,7 +78,7 @@ const AddWallet = () => {
     try {
       const walletData = {
         ...formData,
-        balance: parseFloat(formData.balance) || 0,
+        balance: 0, // Luôn tạo ví với số dư = 0
         name: formData.name.trim(),
         description: formData.description.trim()
       }
@@ -115,22 +101,14 @@ const AddWallet = () => {
     }
   }
 
-  const formatDisplayCurrency = (amountStr) => {
-    if (!amountStr) return '0';
-    const amount = parseInt(amountStr, 10);
-    if (isNaN(amount)) return '0';
-    return amount.toLocaleString('vi-VN');
-  }
-
-  const formatPreviewCurrency = (amountStr, currencyCode = 'VND') => {
-    const amount = parseInt(amountStr, 10) || 0;
+  const formatPreviewCurrency = (currencyCode = 'VND') => {
     const currencyInfo = currencies.find(c => c.code === currencyCode);
     const symbol = currencyInfo ? currencyInfo.symbol : '';
 
     if (currencyCode === 'USD') {
-      return `$${amount.toLocaleString('en-US')}`;
+      return `$0`;
     }
-    return `${amount.toLocaleString('vi-VN')} ${symbol}`;
+    return `0 ${symbol}`;
   }
 
   return (
@@ -198,32 +176,18 @@ const AddWallet = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="balance" className="text-base font-medium">Số tiền ban đầu</Label>
-                    <Input
-                        id="balance"
-                        type="text"
-                        placeholder="0"
-                        value={formatDisplayCurrency(formData.balance)}
-                        onChange={handleBalanceChange}
-                        className={`h-12 text-base ${errors.balance ? 'border-red-500' : ''}`}
-                    />
-                    {errors.balance && <p className="text-sm text-red-500 mt-1">{errors.balance}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="currency" className="text-base font-medium">Loại tiền tệ <span className="text-red-500">*</span></Label>
-                    <select
-                        id="currency"
-                        value={formData.currency}
-                        onChange={(e) => handleInputChange('currency', e.target.value)}
-                        className="w-full h-12 px-3 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 border-input bg-background"
-                    >
-                      {currencies.map((currency) => (
-                          <option key={currency.code} value={currency.code}>{currency.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="currency" className="text-base font-medium">Loại tiền tệ <span className="text-red-500">*</span></Label>
+                  <select
+                      id="currency"
+                      value={formData.currency}
+                      onChange={(e) => handleInputChange('currency', e.target.value)}
+                      className="w-full h-12 px-3 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 border-input bg-background"
+                  >
+                    {currencies.map((currency) => (
+                        <option key={currency.code} value={currency.code}>{currency.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="space-y-2">
@@ -267,7 +231,7 @@ const AddWallet = () => {
                   </div>
                   <p className="text-sm text-muted-foreground">Số dư</p>
                   <p className="text-2xl font-bold">
-                    {formatPreviewCurrency(formData.balance, formData.currency)}
+                    {formatPreviewCurrency(formData.currency)}
                   </p>
                 </div>
               </CardContent>
