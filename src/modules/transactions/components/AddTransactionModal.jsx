@@ -17,7 +17,7 @@ import { cn } from '../../../lib/utils';
 import { IconComponent } from '../../../shared/config/icons';
 
 const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
-    const { wallets, currentWallet } = useWallet();
+    const { wallets } = useWallet();
     const { settings } = useSettings();
     const [amount, setAmount] = useState('');
     const [categoryId, setCategoryId] = useState(initialCategoryId || '');
@@ -40,7 +40,6 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                setWalletId(currentWallet ? String(currentWallet.id) : '');
                 const response = await categoryService.getCategories();
                 setCategories(response.data.data || []);
             } catch (error) {
