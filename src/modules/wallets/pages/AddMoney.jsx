@@ -4,6 +4,7 @@ import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import {
   ArrowLeftIcon,
   PlusIcon,
@@ -20,6 +21,7 @@ import { walletService } from '../services/walletService'
 import { useSettings } from '../../../shared/contexts/SettingsContext'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
 import { toast } from 'sonner'
+import { IconComponent } from '../../../shared/config/icons'
 
 const AddMoney = () => {
   const [wallets, setWallets] = useState([])
@@ -146,10 +148,28 @@ const AddMoney = () => {
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <Label htmlFor="walletSelect">Chọn ví <span className="text-red-500">*</span></Label>
-                      <select id="walletSelect" value={selectedWallet} onChange={(e) => setSelectedWallet(e.target.value)} className={`w-full h-12 px-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${errors.selectedWallet ? 'border-red-500' : 'border-border'} bg-background`}>
-                        <option value="">Chọn ví để nạp tiền</option>
-                        {wallets.map(w => (<option key={w.id} value={w.id}>{w.name} - {formatCurrency(w.balance, w.currency, settings)}</option>))}
-                      </select>
+                      <Select onValueChange={setSelectedWallet} value={selectedWallet}>
+                        <SelectTrigger className={`w-full h-12 ${errors.selectedWallet ? 'border-red-500' : 'border-border'}`}>
+                          <SelectValue placeholder="Chọn ví để nạp tiền">
+                            {selectedWallet && wallets.find(w => w.id.toString() === selectedWallet) && (
+                              <div className="flex items-center space-x-2">
+                                <IconComponent name={wallets.find(w => w.id.toString() === selectedWallet).icon} className="w-4 h-4" />
+                                <span>{wallets.find(w => w.id.toString() === selectedWallet).name} - {formatCurrency(wallets.find(w => w.id.toString() === selectedWallet).balance, wallets.find(w => w.id.toString() === selectedWallet).currency, settings)}</span>
+                              </div>
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {wallets.map(w => (
+                            <SelectItem key={w.id} value={w.id.toString()}>
+                              <div className="flex items-center space-x-2">
+                                <IconComponent name={w.icon} className="w-4 h-4" />
+                                <span>{w.name} - {formatCurrency(w.balance, w.currency, settings)}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       {errors.selectedWallet && <p className="text-sm text-red-500">{errors.selectedWallet}</p>}
                     </div>
                     <div className="space-y-2">
@@ -170,7 +190,7 @@ const AddMoney = () => {
                         ))}
                       </div>
                     </div>
-                    <div className="space-y-4">
+                    {/* <div className="space-y-4">
                       <Label>Phương thức nạp tiền <span className="text-red-500">*</span></Label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {paymentMethods.map(({ key, label, description, icon: Icon }) => (
@@ -186,7 +206,7 @@ const AddMoney = () => {
                         ))}
                       </div>
                       {errors.addMethod && <p className="text-sm text-red-500">{errors.addMethod}</p>}
-                    </div>
+                    </div> */}
                     <div className="space-y-2">
                       <Label htmlFor="note">Ghi chú</Label>
                       <textarea id="note" placeholder="Ghi chú về giao dịch này..." value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground resize-none" />
@@ -270,13 +290,16 @@ const AddMoney = () => {
                 <div className="pt-2 text-sm">
                   <p className="mb-4">Vui lòng kiểm tra lại thông tin nạp tiền trước khi xác nhận.</p>
                   <div className="space-y-3 rounded-md border bg-muted/50 p-4">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Nạp vào ví:</span>
-                      <span className="font-semibold text-foreground">{wallets.find(w => w.id.toString() === selectedWallet)?.name}</span>
+                      <div className="flex items-center space-x-2">
+                        <IconComponent name={wallets.find(w => w.id.toString() === selectedWallet)?.icon} className="w-4 h-4" />
+                        <span className="font-semibold text-foreground">{wallets.find(w => w.id.toString() === selectedWallet)?.name}</span>
+                      </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Số tiền:</span>
-                      <span className="font-bold text-lg text-green-600">{formatCurrency(parseFloat(amount || 0), 'VND', settings)}</span>
+                      <span className="font-bold text-lg text-green-600">{formatCurrency(wallet.balance, wallet.currency, settings)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Phương thức:</span>
