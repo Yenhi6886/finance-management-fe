@@ -37,10 +37,12 @@ const AddMoney = () => {
   const [recentTransactions, setRecentTransactions] = useState([])
   const { settings } = useSettings()
   const walletIdToCurrency = Object.fromEntries((wallets || []).map(w => [String(w.id), w.currency]))
+  const filteredWallets = wallets.filter(w => !selectedCurrency || w.currency === selectedCurrency)
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
   const [successData, setSuccessData] = useState({ amount: 0, walletName: '', currency: '' })
+  const MAX_WALLET_BALANCE = 9999999999
 
   const fetchData = async () => {
     try {
@@ -83,6 +85,19 @@ const AddMoney = () => {
     const wallet = wallets.find(w => w.id.toString() === selectedWallet)
     if (wallet && selectedCurrency && wallet.currency !== selectedCurrency) {
       newErrors.selectedWallet = 'Ví không khớp với loại tiền tệ đã chọn'
+    }
+
+
+
+    // Kiểm tra tổng số dư sau khi nạp không vượt quá giới hạn
+    if (wallet && amount && !newErrors.amount) {
+      const currentBalance = Number(wallet.balance) || 0
+      const addAmount = Number(amount) || 0
+      if (currentBalance + addAmount > MAX_WALLET_BALANCE) {
+        const currencyForFormat = wallet.currency || selectedCurrency || 'VND'
+        const remaining = Math.max(0, MAX_WALLET_BALANCE - currentBalance)
+        newErrors.amount = `Số dư ví tối đa là ${formatCurrency(MAX_WALLET_BALANCE, currencyForFormat, settings)}. Số dư hiện tại ${formatCurrency(currentBalance, currencyForFormat, settings)}. Bạn chỉ có thể nạp tối đa ${formatCurrency(remaining, currencyForFormat, settings)}.`
+      }
     }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -163,7 +178,7 @@ const AddMoney = () => {
                           if (w?.currency) setSelectedCurrency(w.currency)
                         }
                       }} value={selectedWallet}>
-                        <SelectTrigger className={`w-full h-12 ${errors.selectedWallet ? 'border-red-500' : 'border-border'}`}>
+                        <SelectTrigger className={`w-full h-12 text-sm ${errors.selectedWallet ? 'border-red-500' : 'border-border'}`}>
                           <SelectValue placeholder="Chọn ví để nạp tiền">
                             {selectedWallet && wallets.find(w => w.id.toString() === selectedWallet) && (
                               <div className="flex items-center space-x-2">
@@ -173,17 +188,23 @@ const AddMoney = () => {
                             )}
                           </SelectValue>
                         </SelectTrigger>
-                        <SelectContent>
-                          {wallets
-                            .filter(w => !selectedCurrency || w.currency === selectedCurrency)
-                            .map(w => (
-                            <SelectItem key={w.id} value={w.id.toString()}>
-                              <div className="flex items-center space-x-2">
-                                <IconComponent name={w.icon} className="w-4 h-4" />
-                                <span>{w.name} - {formatCurrency(w.balance, w.currency, settings)}</span>
-                              </div>
+                        <SelectContent position="popper" side="bottom" align="start" className="text-sm">
+                          {filteredWallets.length === 0 ? (
+                            <SelectItem value="__no_wallet__" disabled className="text-sm">
+                              <span className="text-red-500">
+                                {`Bạn chưa có ví ${selectedCurrency === 'USD' ? 'USD' : 'VND'}. Vui lòng tạo ví phù hợp trước khi nạp.`}
+                              </span>
                             </SelectItem>
-                          ))}
+                          ) : (
+                            filteredWallets.map(w => (
+                              <SelectItem key={w.id} value={w.id.toString()} className="text-sm">
+                                <div className="flex items-center space-x-2">
+                                  <IconComponent name={w.icon} className="w-4 h-4" />
+                                  <span>{w.name} - {formatCurrency(w.balance, w.currency, settings)}</span>
+                                </div>
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                       {errors.selectedWallet && <p className="text-sm text-red-500">{errors.selectedWallet}</p>}
@@ -191,15 +212,16 @@ const AddMoney = () => {
                     <div className="space-y-2">
                       <Label>Chọn loại tiền tệ <span className="text-red-500">*</span></Label>
                       <Select value={selectedCurrency} onValueChange={(v) => { setSelectedCurrency(v); setSelectedWallet('') }}>
-                        <SelectTrigger className={`w-full h-12 ${errors.selectedCurrency ? 'border-red-500' : 'border-border'}`}>
+                        <SelectTrigger className={`w-full h-12 text-sm ${errors.selectedCurrency ? 'border-red-500' : 'border-border'}`}>
                           <SelectValue placeholder="Chọn loại tiền tệ" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="VND">Việt Nam Đồng (₫)</SelectItem>
-                          <SelectItem value="USD">US Dollar ($)</SelectItem>
+                        <SelectContent position="popper" side="bottom" align="start" className="text-sm">
+                          <SelectItem value="VND" className="text-sm">Việt Nam Đồng (₫)</SelectItem>
+                          <SelectItem value="USD" className="text-sm">US Dollar ($)</SelectItem>
                         </SelectContent>
                       </Select>
                       {errors.selectedCurrency && <p className="text-sm text-red-500">{errors.selectedCurrency}</p>}
+                      {errors.currencyWalletMissing && <p className="text-sm text-red-500">{errors.currencyWalletMissing}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="amount">Số tiền <span className="text-red-500">*</span></Label>
