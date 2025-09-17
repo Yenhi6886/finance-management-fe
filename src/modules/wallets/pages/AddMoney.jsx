@@ -66,11 +66,11 @@ const AddMoney = () => {
       newErrors.selectedWallet = 'Vui lòng chọn ví'
     }
     if (!amount || parseFloat(amount) <= 0) {
-      newErrors.amount = 'Số tiền phải lớn hơn 0'
+      newErrors.amount = `Số tiền phai lớn hơn ${formatCurrency(0, 'VND', settings)}`
     } else if (parseFloat(amount) < 1000) {
-      newErrors.amount = 'Số tiền tối thiểu là 1,000'
+      newErrors.amount = `Số tiền tối thiểu là ${formatCurrency(1000, 'VND', settings)}`
     } else if (parseFloat(amount) > 100000000) {
-      newErrors.amount = 'Số tiền tối đa là 100,000,000'
+      newErrors.amount = `Số tiền tối đa là ${formatCurrency(100000000, 'VND', settings)}`
     }
     if (!addMethod) {
       newErrors.addMethod = 'Vui lòng chọn phương thức nạp tiền'
@@ -120,12 +120,6 @@ const AddMoney = () => {
     }
   }
 
-  const paymentMethods = [
-    { key: 'Ngân hàng', label: 'Ngân hàng', description: 'Chuyển khoản từ tài khoản ngân hàng', icon: BanknoteIcon },
-    { key: 'Thẻ', label: 'Thẻ', description: 'Thẻ tín dụng hoặc thẻ ghi nợ', icon: CreditCardIcon },
-    { key: 'Tiền mặt', label: 'Tiền mặt', description: 'Nạp tiền mặt tại quầy', icon: DollarSignIcon },
-    { key: 'Chuyển khoản', label: 'Chuyển khoản', description: 'Từ ví hoặc tài khoản khác', icon: TransferIcon }
-  ]
 
   return (
       <>
@@ -178,7 +172,7 @@ const AddMoney = () => {
                     <div className="space-y-2">
                       <Label htmlFor="amount">Số tiền <span className="text-red-500">*</span></Label>
                       <div className="relative">
-                        <Input id="amount" type="number" placeholder="Nhập số tiền" value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 pl-12 pr-4 ${errors.amount ? 'border-red-500' : ''}`} min="1000" max="100000000" step="1000" />
+                        <Input id="amount" type="number" placeholder="Nhập số tiền" value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 pl-12 pr-4 ${errors.amount ? 'border-red-500' : ''}`} min="1000" max="9999999999" step="1000" />
                         <DollarSignIcon className="w-5 h-5 text-muted-foreground absolute left-4 top-1/2 transform -translate-y-1/2" />
                       </div>
                       {errors.amount && <p className="text-sm text-red-500">{errors.amount}</p>}
