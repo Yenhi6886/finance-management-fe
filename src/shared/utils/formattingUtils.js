@@ -26,7 +26,7 @@ export const formatCurrency = (amount, currency = 'VND', settings) => {
             maximumFractionDigits: 0,
         }).format(amount);
 
-        return `₫${formattedNumber}`;
+        return `${formattedNumber} ₫`;
 
     } catch (error) {
         console.error("Error formatting currency:", error);
