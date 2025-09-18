@@ -23,7 +23,6 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
     const [categoryId, setCategoryId] = useState(initialCategoryId || '');
     const [walletId, setWalletId] = useState('');
     const [description, setDescription] = useState('');
-    // Sửa lỗi múi giờ - sử dụng giờ địa phương
     const [date, setDate] = useState(() => {
         const now = new Date();
         const year = now.getFullYear();
@@ -74,7 +73,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
             // Sửa lỗi múi giờ - chuyển đổi đúng cách
             const localDate = new Date(date);
             const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
-            
+
             const transactionData = {
                 amount: parseFloat(amount),
                 type: type.toUpperCase(),
@@ -104,7 +103,13 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
                     <SelectTrigger><SelectValue placeholder="Chọn danh mục" /></SelectTrigger>
                     <SelectContent>
                         {categories.map(cat => (
-                            <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
+                            <SelectItem
+                                key={cat.id}
+                                value={String(cat.id)}
+                                className="hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-200"
+                            >
+                                {cat.name}
+                            </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -114,22 +119,26 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
                 <Label htmlFor={`wallet-${type}`}>Ví *</Label>
                 <Select onValueChange={setWalletId} value={walletId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Chọn ví">
-                        {walletId && wallets.find(w => w.id.toString() === walletId) && (
-                          <div className="flex items-center space-x-2">
-                            <IconComponent name={wallets.find(w => w.id.toString() === walletId).icon} className="w-4 h-4" />
-                            <span>{wallets.find(w => w.id.toString() === walletId).name} ({formatCurrency(wallets.find(w => w.id.toString() === walletId).balance, wallets.find(w => w.id.toString() === walletId).currency, settings)})</span>
-                          </div>
-                        )}
-                      </SelectValue>
+                        <SelectValue placeholder="Chọn ví">
+                            {walletId && wallets.find(w => w.id.toString() === walletId) && (
+                                <div className="flex items-center space-x-2">
+                                    <IconComponent name={wallets.find(w => w.id.toString() === walletId).icon} className="w-4 h-4" />
+                                    <span>{wallets.find(w => w.id.toString() === walletId).name} ({formatCurrency(wallets.find(w => w.id.toString() === walletId).balance, wallets.find(w => w.id.toString() === walletId).currency, settings)})</span>
+                                </div>
+                            )}
+                        </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                         {wallets.map(w => (
-                            <SelectItem key={w.id} value={String(w.id)}>
-                              <div className="flex items-center space-x-2">
-                                <IconComponent name={w.icon} className="w-4 h-4" />
-                                <span>{w.name} ({formatCurrency(w.balance, w.currency, settings)})</span>
-                              </div>
+                            <SelectItem
+                                key={w.id}
+                                value={String(w.id)}
+                                className="hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-200"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <IconComponent name={w.icon} className="w-4 h-4" />
+                                    <span>{w.name} ({formatCurrency(w.balance, w.currency, settings)})</span>
+                                </div>
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -138,10 +147,10 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
             </div>
             <div className="space-y-2">
                 <Label htmlFor={`description-${type}`}>Ghi chú</Label>
-                <Textarea 
-                    id={`description-${type}`} 
-                    value={description} 
-                    onChange={(e) => setDescription(e.target.value)} 
+                <Textarea
+                    id={`description-${type}`}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                     placeholder={`Ghi chú về khoản ${type === 'income' ? 'thu' : 'chi'}...`}
                     rows={3}
                     maxLength={500}

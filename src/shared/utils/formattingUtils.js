@@ -1,3 +1,6 @@
+import { formatDistanceToNow } from 'date-fns';
+import { vi } from 'date-fns/locale';
+
 export const formatCurrency = (amount, currency = 'VND', settings) => {
     try {
         if (typeof amount !== 'number') {
@@ -76,3 +79,17 @@ export const formatNumber = (number, settings) => {
     const locale = isDotSeparator ? 'vi-VN' : 'en-US';
     return number.toLocaleString(locale);
 }
+
+export const formatRelativeTime = (dateString) => {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return dateString;
+        }
+        return formatDistanceToNow(date, { addSuffix: true, locale: vi });
+    } catch (error) {
+        console.error("Error formatting relative time:", error);
+        return dateString;
+    }
+};

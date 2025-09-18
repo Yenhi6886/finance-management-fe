@@ -7,7 +7,7 @@ import { PlusCircle, FileText, ArrowUpCircle, ArrowDownCircle, Loader2, MinusCir
 import { transactionService } from '../services/transactionService';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { useWallet } from '../../../shared/hooks/useWallet';
-import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js';
+import { formatCurrency, formatRelativeTime } from '../../../shared/utils/formattingUtils.js';
 import AddTransactionModal from '../components/AddTransactionModal';
 import EditTransactionModal from '../components/EditTransactionModal';
 import ManageCategories from '../components/ManageCategories';
@@ -156,7 +156,7 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
                                                 {tx.type === 'INCOME' ? <ArrowUpCircle className="w-8 h-8 text-green-500 flex-shrink-0" /> : <ArrowDownCircle className="w-8 h-8 text-red-500 flex-shrink-0" />}
                                                 <div>
                                                     <p className="font-semibold">{tx.description || (tx.type === 'INCOME' ? 'Khoản thu nhập' : 'Khoản chi tiêu')}</p>
-                                                    <p className="text-sm text-muted-foreground">{tx.walletName} • {tx.category || 'Chưa phân loại'} • {formatDate(tx.date, settings)}</p>
+                                                    <p className="text-sm text-muted-foreground">{tx.walletName} • {tx.category || 'Chưa phân loại'} • {formatRelativeTime(tx.date)}</p>
                                                 </div>
                                             </div>
                                             <p className={cn("text-lg font-bold text-right pl-4", tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600')}>
