@@ -47,9 +47,15 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
             setCategoryId(String(transaction.categoryId) || '');
             setWalletId(String(transaction.walletId) || '');
             setDescription(transaction.description || '');
-            const localDate = new Date(transaction.date);
-            localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
-            setDate(localDate.toISOString().slice(0, 16));
+
+            const dateObj = new Date(transaction.date);
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const hours = String(dateObj.getHours()).padStart(2, '0');
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+            const localDateTimeString = `${year}-${month}-${day}T${hours}:${minutes}`;
+            setDate(localDateTimeString);
         }
     }, [transaction]);
 
@@ -142,22 +148,22 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                         <Label htmlFor={`wallet-edit`}>Ví *</Label>
                         <Select onValueChange={setWalletId} value={walletId}>
                             <SelectTrigger>
-                              <SelectValue placeholder="Chọn ví">
-                                {walletId && wallets.find(w => w.id.toString() === walletId) && (
-                                  <div className="flex items-center space-x-2">
-                                    <IconComponent name={wallets.find(w => w.id.toString() === walletId).icon} className="w-4 h-4" />
-                                    <span>{wallets.find(w => w.id.toString() === walletId).name} ({formatCurrency(wallets.find(w => w.id.toString() === walletId).balance, wallets.find(w => w.id.toString() === walletId).currency, settings)})</span>
-                                  </div>
-                                )}
-                              </SelectValue>
+                                <SelectValue placeholder="Chọn ví">
+                                    {walletId && wallets.find(w => w.id.toString() === walletId) && (
+                                        <div className="flex items-center space-x-2">
+                                            <IconComponent name={wallets.find(w => w.id.toString() === walletId).icon} className="w-4 h-4" />
+                                            <span>{wallets.find(w => w.id.toString() === walletId).name} ({formatCurrency(wallets.find(w => w.id.toString() === walletId).balance, wallets.find(w => w.id.toString() === walletId).currency, settings)})</span>
+                                        </div>
+                                    )}
+                                </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                                 {wallets.map(w => (
                                     <SelectItem key={w.id} value={String(w.id)}>
-                                      <div className="flex items-center space-x-2">
-                                        <IconComponent name={w.icon} className="w-4 h-4" />
-                                        <span>{w.name} ({formatCurrency(w.balance, w.currency, settings)})</span>
-                                      </div>
+                                        <div className="flex items-center space-x-2">
+                                            <IconComponent name={w.icon} className="w-4 h-4" />
+                                            <span>{w.name} ({formatCurrency(w.balance, w.currency, settings)})</span>
+                                        </div>
                                     </SelectItem>
                                 ))}
                             </SelectContent>
