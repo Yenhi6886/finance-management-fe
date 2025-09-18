@@ -209,5 +209,4 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
         </div>
     )
 };
-
 export default Transactions;
