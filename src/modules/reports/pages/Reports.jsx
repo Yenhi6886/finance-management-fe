@@ -11,7 +11,8 @@ import {
     Calendar,
     Filter,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    PieChart
 } from 'lucide-react'
 import { useSettings } from '../../../shared/contexts/SettingsContext'
 import { useWallet } from '../../../shared/hooks/useWallet'
@@ -143,7 +144,7 @@ const Reports = () => {
             setIsBudgetLoading(false);
         }
     };
-    
+
     const handleFilterPeriod = () => {
         setPeriodPage(0);
         fetchPeriodData(0);
@@ -166,13 +167,13 @@ const Reports = () => {
 
     const transactions = periodData?.transactions?.content || [];
     const periodTotalPages = periodData?.transactions?.totalPages || 1;
-    
+
     const todayTransactions = todayData?.transactions?.content || [];
     const todayTotalPages = todayData?.transactions?.totalPages || 1;
 
     const totalAmountPeriod = periodData?.totalAmount || 0;
     const totalAmountToday = todayData?.totalAmount || 0;
-    
+
     const budgetTransactions = budgetData?.transactions?.content || [];
     const budgetTotalPages = budgetData?.transactions?.totalPages || 1;
 
@@ -253,26 +254,16 @@ const Reports = () => {
                                     </tr>
                                     </thead>
                                     <tbody>
-                                        {isPeriodLoading ? (
-                                             <tr><td colSpan="5" className="p-6 text-center"><Loading /></td></tr>
-                                        ) : transactions.length > 0 ? (
-                                            transactions.map((transaction, index) => (
-                                                <tr key={transaction.id} className="border-b">
-                                                    <td className="p-3">{(periodPage * PAGE_SIZE) + index + 1}</td>
-                                                    <td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td>
-                                                    <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
-                                                        {transaction.type === 'INCOME' ? '+' : '-'}
-                                                        {formatCurrency(transaction.amount, 'VND', settings)}
-                                                    </td>
-                                                    <td className="p-3">{transaction.description}</td>
-                                                    <td className="p-3">{transaction.walletName}</td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="5" className="p-6 text-center text-muted-foreground">
-                                                    Không có dữ liệu
-
+                                    {isPeriodLoading ? (
+                                        <tr><td colSpan="5" className="p-6 text-center"><Loading /></td></tr>
+                                    ) : transactions.length > 0 ? (
+                                        transactions.map((transaction, index) => (
+                                            <tr key={transaction.id} className="border-b">
+                                                <td className="p-3">{(periodPage * PAGE_SIZE) + index + 1}</td>
+                                                <td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td>
+                                                <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {transaction.type === 'INCOME' ? '+' : '-'}
+                                                    {formatCurrency(transaction.amount, 'VND', settings)}
                                                 </td>
                                                 <td className="p-3">{transaction.description}</td>
                                                 <td className="p-3">{transaction.walletName}</td>
@@ -288,7 +279,7 @@ const Reports = () => {
                                     </tbody>
                                 </table>
                             </div>
-                             <PaginationControls
+                            <PaginationControls
                                 currentPage={periodPage}
                                 totalPages={periodTotalPages}
                                 onPageChange={fetchPeriodData}
@@ -340,25 +331,15 @@ const Reports = () => {
                                     </tr>
                                     </thead>
                                     <tbody>
-                                        {isTodayLoading ? (
-                                            <tr><td colSpan="4" className="p-6 text-center"><Loading /></td></tr>
-                                        ) : todayTransactions.length > 0 ? (
-                                            todayTransactions.map((transaction, index) => (
-                                                <tr key={transaction.id} className="border-b">
-                                                    <td className="p-3">{(todayPage * PAGE_SIZE) + index + 1}</td>
-                                                    <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
-                                                        {transaction.type === 'INCOME' ? '+' : '-'}
-                                                        {formatCurrency(transaction.amount, 'VND', settings)}
-                                                    </td>
-                                                    <td className="p-3">{transaction.description}</td>
-                                                    <td className="p-3">{transaction.walletName}</td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="4" className="p-6 text-center text-muted-foreground">
-                                                    Không có giao dịch nào hôm nay
-
+                                    {isTodayLoading ? (
+                                        <tr><td colSpan="4" className="p-6 text-center"><Loading /></td></tr>
+                                    ) : todayTransactions.length > 0 ? (
+                                        todayTransactions.map((transaction, index) => (
+                                            <tr key={transaction.id} className="border-b">
+                                                <td className="p-3">{(todayPage * PAGE_SIZE) + index + 1}</td>
+                                                <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {transaction.type === 'INCOME' ? '+' : '-'}
+                                                    {formatCurrency(transaction.amount, 'VND', settings)}
                                                 </td>
                                                 <td className="p-3">{transaction.description}</td>
                                                 <td className="p-3">{transaction.walletName}</td>
@@ -444,41 +425,41 @@ const Reports = () => {
                                             </CardContent>
                                         </Card>
                                     </div>
-                                    
+
                                     <div className="border rounded-lg">
                                         <table className="w-full">
                                             <thead className="border-b bg-muted/50">
-                                                <tr>
-                                                    <th className="p-3 text-left">STT</th>
-                                                    <th className="p-3 text-left">Ngày Thu Chi</th>
-                                                    <th className="p-3 text-left">Số Tiền</th>
-                                                    <th className="p-3 text-left">Ghi Chú</th>
-                                                    <th className="p-3 text-left">Ví</th>
-                                                </tr>
+                                            <tr>
+                                                <th className="p-3 text-left">STT</th>
+                                                <th className="p-3 text-left">Ngày Thu Chi</th>
+                                                <th className="p-3 text-left">Số Tiền</th>
+                                                <th className="p-3 text-left">Ghi Chú</th>
+                                                <th className="p-3 text-left">Ví</th>
+                                            </tr>
                                             </thead>
                                             <tbody>
-                                                {isBudgetLoading ? (
-                                                     <tr><td colSpan="5" className="p-6 text-center"><Loading /></td></tr>
-                                                ) : budgetTransactions.length > 0 ? (
-                                                    budgetTransactions.map((transaction, index) => (
-                                                        <tr key={transaction.id} className="border-b">
-                                                            <td className="p-3">{(budgetPage * PAGE_SIZE) + index + 1}</td>
-                                                            <td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td>
-                                                            <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
-                                                                {transaction.type === 'INCOME' ? '+' : '-'}
-                                                                {formatCurrency(transaction.amount, 'VND', settings)}
-                                                            </td>
-                                                            <td className="p-3">{transaction.description}</td>
-                                                            <td className="p-3">{transaction.walletName}</td>
-                                                        </tr>
-                                                    ))
-                                                ) : (
-                                                    <tr>
-                                                        <td colSpan="5" className="p-6 text-center text-muted-foreground">
-                                                            Không có dữ liệu
+                                            {isBudgetLoading ? (
+                                                <tr><td colSpan="5" className="p-6 text-center"><Loading /></td></tr>
+                                            ) : budgetTransactions.length > 0 ? (
+                                                budgetTransactions.map((transaction, index) => (
+                                                    <tr key={transaction.id} className="border-b">
+                                                        <td className="p-3">{(budgetPage * PAGE_SIZE) + index + 1}</td>
+                                                        <td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td>
+                                                        <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
+                                                            {transaction.type === 'INCOME' ? '+' : '-'}
+                                                            {formatCurrency(transaction.amount, 'VND', settings)}
                                                         </td>
+                                                        <td className="p-3">{transaction.description}</td>
+                                                        <td className="p-3">{transaction.walletName}</td>
                                                     </tr>
-                                                )}
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="5" className="p-6 text-center text-muted-foreground">
+                                                        Không có dữ liệu
+                                                    </td>
+                                                </tr>
+                                            )}
                                             </tbody>
                                         </table>
                                     </div>
