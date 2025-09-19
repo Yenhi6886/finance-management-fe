@@ -16,6 +16,7 @@ import {
 import { useSettings } from '../../../shared/contexts/SettingsContext'
 import { useWallet } from '../../../shared/hooks/useWallet'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils'
+import { ExportDialog, EmailSettingsDialog } from '../components/ExportComponents'
 import reportService from '../services/reportService'
 import { LoadingSpinner as Loading } from '../../../components/Loading'
 
@@ -52,18 +53,21 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
 };
 
 
+
 const Reports = () => {
     const { settings } = useSettings();
     const { wallets } = useWallet();
 
+    // States for filters
     const [dateRange, setDateRange] = useState({
         startDate: format(new Date(), 'yyyy-MM-dd'),
         endDate: format(new Date(), 'yyyy-MM-dd')
     });
     const [selectedPeriodWallet, setSelectedPeriodWallet] = useState('all');
     const [selectedTodayWallet, setSelectedTodayWallet] = useState('all');
-    const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+    const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM')); // YYYY-MM
 
+    // States for data & loading
     const [isPeriodLoading, setIsPeriodLoading] = useState(false);
     const [periodData, setPeriodData] = useState(null);
     const [periodPage, setPeriodPage] = useState(0);
@@ -78,7 +82,6 @@ const Reports = () => {
 
     const fetchTodayData = async (page = 0) => {
         setIsTodayLoading(true);
-        setTodayData(null);
         try {
             let response;
             if (selectedTodayWallet === "all") {
@@ -86,13 +89,13 @@ const Reports = () => {
             } else {
                 response = await reportService.getTodayTransactionsByWallet(selectedTodayWallet, page, PAGE_SIZE);
             }
+
             if (response.data.success) {
                 setTodayData(response.data.data);
                 setTodayPage(page);
             }
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu hôm nay:", error);
-            setTodayData(null);
         } finally {
             setIsTodayLoading(false);
         }
@@ -100,7 +103,6 @@ const Reports = () => {
 
     const fetchPeriodData = async (page = 0) => {
         setIsPeriodLoading(true);
-        setPeriodData(null);
         try {
             const startDate = `${dateRange.startDate}T00:00:00`;
             const endDate = `${dateRange.endDate}T23:59:59`;
@@ -112,13 +114,13 @@ const Reports = () => {
                 response = await reportService.getTransactionsByWalletIdandByTime(selectedPeriodWallet, startDate, endDate, page, PAGE_SIZE);
             }
 
+
             if (response.data.success) {
                 setPeriodData(response.data.data);
                 setPeriodPage(page);
             }
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu theo khoảng thời gian:", error);
-            setPeriodData(null);
         } finally {
             setIsPeriodLoading(false);
         }
@@ -126,7 +128,6 @@ const Reports = () => {
 
     const fetchBudgetData = async (page = 0) => {
         setIsBudgetLoading(true);
-        setBudgetData(null);
         try {
             const [year, month] = selectedMonth.split('-');
             const monthNumber = parseInt(month, 10);
@@ -134,10 +135,10 @@ const Reports = () => {
             if (response.data.success) {
                 setBudgetData(response.data.data);
                 setBudgetPage(page);
+
             }
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu ngân sách:", error);
-            setBudgetData(null);
         } finally {
             setIsBudgetLoading(false);
         }
@@ -175,6 +176,7 @@ const Reports = () => {
     const budgetTransactions = budgetData?.transactions?.content || [];
     const budgetTotalPages = budgetData?.transactions?.totalPages || 1;
 
+
     return (
         <div className="p-4 md:p-8 space-y-8">
             <Tabs defaultValue="today-report" className="space-y-6">
@@ -185,6 +187,7 @@ const Reports = () => {
                     <TabsTrigger value="email-settings">Báo Cáo Email</TabsTrigger>
                 </TabsList>
 
+                {/* Tab 1: Period Report */}
                 <TabsContent value="period-report" className="space-y-6">
                     <Card>
                         <CardHeader>
@@ -200,7 +203,7 @@ const Reports = () => {
                                     <Input
                                         type="date"
                                         value={dateRange.startDate}
-                                        onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                                        onChange={(e) => setDateRange(prev => ({...prev, startDate: e.target.value}))}
                                     />
                                 </div>
                                 <div>
@@ -208,7 +211,7 @@ const Reports = () => {
                                     <Input
                                         type="date"
                                         value={dateRange.endDate}
-                                        onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                                        onChange={(e) => setDateRange(prev => ({...prev, endDate: e.target.value}))}
                                     />
                                 </div>
                                 <div>
@@ -231,21 +234,23 @@ const Reports = () => {
                             <Button onClick={handleFilterPeriod} disabled={isPeriodLoading}>
                                 {isPeriodLoading ? <Loading /> : <><Filter className="w-4 h-4 mr-2" /> Lọc Dữ Liệu</>}
                             </Button>
+
                             {periodData && (
                                 <Badge variant="secondary" className="ml-4">
                                     Tổng: {formatCurrency(totalAmountPeriod, 'VND', settings)}
                                 </Badge>
                             )}
+
                             <div className="border rounded-lg">
                                 <table className="w-full">
                                     <thead className="border-b bg-muted/50">
-                                        <tr>
-                                            <th className="p-3 text-left">STT</th>
-                                            <th className="p-3 text-left">Ngày Thu Chi</th>
-                                            <th className="p-3 text-left">Số Tiền</th>
-                                            <th className="p-3 text-left">Ghi Chú</th>
-                                            <th className="p-3 text-left">Ví</th>
-                                        </tr>
+                                    <tr>
+                                        <th className="p-3 text-left">STT</th>
+                                        <th className="p-3 text-left">Ngày Thu Chi</th>
+                                        <th className="p-3 text-left">Số Tiền</th>
+                                        <th className="p-3 text-left">Ghi Chú</th>
+                                        <th className="p-3 text-left">Ví</th>
+                                    </tr>
                                     </thead>
                                     <tbody>
                                         {isPeriodLoading ? (
@@ -267,9 +272,19 @@ const Reports = () => {
                                             <tr>
                                                 <td colSpan="5" className="p-6 text-center text-muted-foreground">
                                                     Không có dữ liệu
+
                                                 </td>
+                                                <td className="p-3">{transaction.description}</td>
+                                                <td className="p-3">{transaction.walletName}</td>
                                             </tr>
-                                        )}
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="5" className="p-6 text-center text-muted-foreground">
+                                                Không có dữ liệu
+                                            </td>
+                                        </tr>
+                                    )}
                                     </tbody>
                                 </table>
                             </div>
@@ -282,6 +297,7 @@ const Reports = () => {
                     </Card>
                 </TabsContent>
 
+                {/* Tab 2: Today Report */}
                 <TabsContent value="today-report" className="space-y-6">
                     <Card>
                         <CardHeader>
@@ -316,12 +332,12 @@ const Reports = () => {
                             <div className="border rounded-lg">
                                 <table className="w-full">
                                     <thead className="border-b bg-muted/50">
-                                        <tr>
-                                            <th className="p-3 text-left">STT</th>
-                                            <th className="p-3 text-left">Số Tiền</th>
-                                            <th className="p-3 text-left">Ghi Chú</th>
-                                            <th className="p-3 text-left">Ví</th>
-                                        </tr>
+                                    <tr>
+                                        <th className="p-3 text-left">STT</th>
+                                        <th className="p-3 text-left">Số Tiền</th>
+                                        <th className="p-3 text-left">Ghi Chú</th>
+                                        <th className="p-3 text-left">Ví</th>
+                                    </tr>
                                     </thead>
                                     <tbody>
                                         {isTodayLoading ? (
@@ -342,9 +358,19 @@ const Reports = () => {
                                             <tr>
                                                 <td colSpan="4" className="p-6 text-center text-muted-foreground">
                                                     Không có giao dịch nào hôm nay
+
                                                 </td>
+                                                <td className="p-3">{transaction.description}</td>
+                                                <td className="p-3">{transaction.walletName}</td>
                                             </tr>
-                                        )}
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="p-6 text-center text-muted-foreground">
+                                                Không có giao dịch nào hôm nay
+                                            </td>
+                                        </tr>
+                                    )}
                                     </tbody>
                                 </table>
                             </div>
@@ -357,11 +383,13 @@ const Reports = () => {
                     </Card>
                 </TabsContent>
 
+                {/* Tab 3: Budget Report */}
                 <TabsContent value="budget-report" className="space-y-6">
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <CardTitle className="flex items-center gap-2">
+                                    <PieChart className="w-5 h-5" />
                                     Thống Kê Ngân Sách Tháng
                                 </CardTitle>
                                 <div className='flex items-center gap-2'>
@@ -374,11 +402,13 @@ const Reports = () => {
                                     <Button onClick={handleFilterBudget} disabled={isBudgetLoading}>
                                         {isBudgetLoading ? <Loading /> : 'Xem'}
                                     </Button>
+
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {isBudgetLoading ? <Loading /> : budgetData ? (
+
                                 <>
                                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                                         <Card>
@@ -457,17 +487,20 @@ const Reports = () => {
                                         totalPages={budgetTotalPages}
                                         onPageChange={fetchBudgetData}
                                     />
+
                                 </>
                             ) : (
                                 <div className="p-6 text-center text-muted-foreground">
-                                    Không có dữ liệu
+                                    Chưa có dữ liệu ngân sách cho tháng này
                                 </div>
                             )}
                         </CardContent>
                     </Card>
                 </TabsContent>
 
+                {/* Tab 4: Email Settings (Not implemented) */}
                 <TabsContent value="email-settings">
+                    {/* ... your email settings UI ... */}
                 </TabsContent>
             </Tabs>
         </div>
