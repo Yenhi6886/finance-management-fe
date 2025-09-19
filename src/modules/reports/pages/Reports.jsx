@@ -20,6 +20,8 @@ import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtil
 import { ExportDialog, EmailSettingsDialog } from '../components/ExportComponents'
 import reportService from '../services/reportService'
 import { LoadingSpinner as Loading } from '../../../components/Loading'
+import emailService from '../services/emailService'
+import { toast } from 'sonner'
 
 const PAGE_SIZE = 10;
 
@@ -59,6 +61,10 @@ const Reports = () => {
     const { settings } = useSettings();
     const { wallets } = useWallet();
 
+    // Email settings summary state
+    const [emailSettings, setEmailSettings] = useState(null);
+    const [isEmailLoading, setIsEmailLoading] = useState(false);
+
     // States for filters
     const [dateRange, setDateRange] = useState({
         startDate: format(new Date(), 'yyyy-MM-dd'),
@@ -80,6 +86,29 @@ const Reports = () => {
     const [isBudgetLoading, setIsBudgetLoading] = useState(false);
     const [budgetData, setBudgetData] = useState(null);
     const [budgetPage, setBudgetPage] = useState(0);
+
+    const loadEmailSettings = async () => {
+        setIsEmailLoading(true);
+        try {
+            const res = await emailService.getSettings();
+            setEmailSettings(res?.data || null);
+        } catch (e) {
+            console.warn('Không thể tải cài đặt email', e);
+        } finally {
+            setIsEmailLoading(false);
+        }
+    };
+
+    const buildReportRequest = () => {
+        const start = `${dateRange.startDate}T00:00:00`;
+        const end = `${dateRange.endDate}T23:59:59`;
+        const walletIds = selectedPeriodWallet === 'all' ? undefined : [Number(selectedPeriodWallet)];
+        return {
+            startDate: start,
+            endDate: end,
+            walletIds
+        };
+    };
 
     const fetchTodayData = async (page = 0) => {
         setIsTodayLoading(true);
@@ -158,6 +187,7 @@ const Reports = () => {
     useEffect(() => {
         fetchTodayData(0);
         fetchBudgetData(0);
+        loadEmailSettings();
     }, []);
 
     useEffect(() => {
@@ -232,9 +262,12 @@ const Reports = () => {
                                     </Select>
                                 </div>
                             </div>
-                            <Button onClick={handleFilterPeriod} disabled={isPeriodLoading}>
-                                {isPeriodLoading ? <Loading /> : <><Filter className="w-4 h-4 mr-2" /> Lọc Dữ Liệu</>}
-                            </Button>
+                            <div className="flex items-center gap-2">
+                                <Button onClick={handleFilterPeriod} disabled={isPeriodLoading}>
+                                    {isPeriodLoading ? <Loading /> : <><Filter className="w-4 h-4 mr-2" /> Lọc Dữ Liệu</>}
+                                </Button>
+                                <ExportDialog title="Báo Cáo Theo Khoảng Thời Gian" buildReportRequest={buildReportRequest} />
+                            </div>
 
                             {periodData && (
                                 <Badge variant="secondary" className="ml-4">
@@ -368,26 +401,25 @@ const Reports = () => {
                 <TabsContent value="budget-report" className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-2">
-                                    <PieChart className="w-5 h-5" />
-                                    Thống Kê Ngân Sách Tháng
-                                </CardTitle>
-                                <div className='flex items-center gap-2'>
-                                    <Input
-                                        type="month"
-                                        value={selectedMonth}
-                                        onChange={(e) => setSelectedMonth(e.target.value)}
-                                        className="mt-1"
-                                    />
-                                    <Button onClick={handleFilterBudget} disabled={isBudgetLoading}>
-                                        {isBudgetLoading ? <Loading /> : 'Xem'}
-                                    </Button>
-
-                                </div>
-                            </div>
+                            <CardTitle className="flex items-center gap-2">
+                                <PieChart className="w-5 h-5" />
+                                Thống Kê Ngân Sách Tháng
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            <div className='flex items-center gap-2'>
+                                <Input
+                                    type="month"
+                                    value={selectedMonth}
+                                    onChange={(e) => setSelectedMonth(e.target.value)}
+                                    className="mt-1"
+                                />
+                                <Button onClick={handleFilterBudget} disabled={isBudgetLoading}>
+                                    {isBudgetLoading ? <Loading /> : 'Xem'}
+                                </Button>
+                                <EmailSettingsDialog />
+                            </div>
+
                             {isBudgetLoading ? <Loading /> : budgetData ? (
 
                                 <>
@@ -479,9 +511,118 @@ const Reports = () => {
                     </Card>
                 </TabsContent>
 
-                {/* Tab 4: Email Settings (Not implemented) */}
+                {/* Tab 4: Email Settings */}
                 <TabsContent value="email-settings">
-                    {/* ... your email settings UI ... */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Cài Đặt Báo Cáo Email</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="text-sm text-muted-foreground">
+                                    {isEmailLoading ? 'Đang tải cài đặt...' : (
+                                        emailSettings ? (
+                                            <>
+                                                <div>Email nhận: <span className="font-medium">{emailSettings.targetEmail || '(mặc định: email tài khoản)'}</span></div>
+                                                <div>Giờ gửi: {emailSettings.sendHour ?? 8}h{String(emailSettings.sendMinute ?? 0).padStart(2,'0')}</div>
+                                            </>
+                                        ) : 'Chưa có cài đặt'
+                                    )}
+                                </div>
+                                <EmailSettingsDialog />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Báo Cáo Hàng Ngày</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground mb-3">Nhận báo cáo tổng quan thu chi mỗi ngày</p>
+                                        <Button
+                                            variant={emailSettings?.dailyEnabled ? 'secondary' : 'default'}
+                                            onClick={async () => {
+                                                const next = { ...(emailSettings || {}), dailyEnabled: !(emailSettings?.dailyEnabled) };
+                                                try {
+                                                    await emailService.saveSettings(next);
+                                                    setEmailSettings(next);
+                                                    toast.success(next.dailyEnabled ? 'Đã kích hoạt báo cáo hàng ngày' : 'Đã tắt báo cáo hàng ngày');
+                                                } catch (e) {
+                                                    toast.error('Không thể lưu cài đặt');
+                                                }
+                                            }}
+                                        >
+                                            {emailSettings?.dailyEnabled ? 'Tắt' : 'Kích Hoạt'}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Báo Cáo Hàng Tuần</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground mb-3">Nhận báo cáo tổng hợp mỗi tuần</p>
+                                        <Button
+                                            variant={emailSettings?.weeklyEnabled ? 'secondary' : 'default'}
+                                            onClick={async () => {
+                                                const next = { ...(emailSettings || {}), weeklyEnabled: !(emailSettings?.weeklyEnabled) };
+                                                try {
+                                                    await emailService.saveSettings(next);
+                                                    setEmailSettings(next);
+                                                    toast.success(next.weeklyEnabled ? 'Đã kích hoạt báo cáo hàng tuần' : 'Đã tắt báo cáo hàng tuần');
+                                                } catch (e) {
+                                                    toast.error('Không thể lưu cài đặt');
+                                                }
+                                            }}
+                                        >
+                                            {emailSettings?.weeklyEnabled ? 'Tắt' : 'Kích Hoạt'}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Báo Cáo Hàng Tháng</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground mb-3">Nhận báo cáo chi tiết mỗi tháng</p>
+                                        <Button
+                                            variant={emailSettings?.monthlyEnabled ? 'secondary' : 'default'}
+                                            onClick={async () => {
+                                                const next = { ...(emailSettings || {}), monthlyEnabled: !(emailSettings?.monthlyEnabled) };
+                                                try {
+                                                    await emailService.saveSettings(next);
+                                                    setEmailSettings(next);
+                                                    toast.success(next.monthlyEnabled ? 'Đã kích hoạt báo cáo hàng tháng' : 'Đã tắt báo cáo hàng tháng');
+                                                } catch (e) {
+                                                    toast.error('Không thể lưu cài đặt');
+                                                }
+                                            }}
+                                        >
+                                            {emailSettings?.monthlyEnabled ? 'Tắt' : 'Kích Hoạt'}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div className="mt-6">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Nội Dung Báo Cáo Email</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ul className="text-sm list-disc pl-5 space-y-2 text-muted-foreground">
+                                            <li>Tổng số tiền ban đầu trong kỳ</li>
+                                            <li>Tổng số tiền còn lại hiện tại</li>
+                                            <li>Danh sách chi tiết các giao dịch đã thực hiện</li>
+                                            <li>Phân tích xu hướng chi tiêu</li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
         </div>
