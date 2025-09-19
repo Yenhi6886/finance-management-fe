@@ -117,9 +117,9 @@ const ShareWallet = () => {
     return () => clearTimeout(timer);
   }, [successMessage, error]);
 
-  const formatCurrency = (amount, currency = 'VND') => {
+  const formatCurrency = (amount) => {
     const formatted = new Intl.NumberFormat('vi-VN').format(amount)
-    return currency === 'USD' ? `$${formatted}` : `${formatted} ₫`
+    return `${formatted} ₫`
   }
 
   const resetForm = () => {

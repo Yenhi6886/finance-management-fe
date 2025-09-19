@@ -56,11 +56,7 @@ export const WalletProvider = ({ children }) => {
 
   const getTotalBalance = () => {
     return wallets.reduce((total, wallet) => {
-      const exchangeRate = 25400
-      const balanceInVND = wallet.currency === 'USD'
-          ? wallet.balance * exchangeRate
-          : wallet.balance
-      return total + balanceInVND
+      return total + wallet.balance
     }, 0)
   }
 

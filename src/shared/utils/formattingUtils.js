@@ -1,7 +1,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-export const formatCurrency = (amount, currency = 'VND', settings) => {
+export const formatCurrency = (amount, currency, settings) => {
     try {
         if (typeof amount !== 'number') {
             const parsedAmount = parseFloat(amount);
@@ -15,15 +15,7 @@ export const formatCurrency = (amount, currency = 'VND', settings) => {
         const isDotSeparator = currencyFormatValue.toUpperCase() === 'DOT_SEPARATOR';
         const locale = isDotSeparator ? 'vi-VN' : 'en-US';
 
-        if (currency === 'USD') {
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            }).format(amount);
-        }
-
+        // Always format as VND
         const formattedNumber = new Intl.NumberFormat(locale, {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
@@ -33,7 +25,7 @@ export const formatCurrency = (amount, currency = 'VND', settings) => {
 
     } catch (error) {
         console.error("Error formatting currency:", error);
-        return `${amount} ${currency}`;
+        return `${amount} ₫`;
     }
 };
 

@@ -8,7 +8,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
-  DollarSignIcon,
   CheckCircleIcon,
   ArrowLeftRightIcon,
   ShieldCheckIcon,
@@ -271,7 +270,7 @@ const TransferMoney = () => {
             {fromWallet && toWallet && <div className="flex justify-center"><Button onClick={handleSwapWallets} variant="ghost" size="sm" className="h-10 px-4 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-800/30 text-blue-700 dark:text-blue-400 rounded-lg"><RefreshCwIcon className="w-4 h-4 mr-2" />Hoán đổi ví</Button></div>}
             <div className="space-y-2">
               <Label htmlFor="amount">Số tiền chuyển <span className="text-red-500">*</span></Label>
-              <div className="relative"><Input id="amount" type="number" placeholder="Nhập số tiền" value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 pl-12 pr-4 ${errors.amount ? 'border-red-500' : ''}`} min="1000" step="1000" /><DollarSignIcon className="w-5 h-5 text-muted-foreground absolute left-4 top-1/2 transform -translate-y-1/2" /></div>
+              <div className="relative"><Input id="amount" type="number" placeholder="Nhập số tiền" value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 pl-4 pr-12 ${errors.amount ? 'border-red-500' : ''}`} min="1000" step="1000" /><span className="text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2">₫</span></div>
               {errors.amount && <p className="text-sm text-red-500">{errors.amount}</p>}
             </div>
             <div className="space-y-2">

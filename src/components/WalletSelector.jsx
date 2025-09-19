@@ -15,12 +15,9 @@ import { IconComponent } from '../shared/config/icons'
 const WalletSelector = () => {
   const { currentWallet, wallets, selectWallet, loading, getTotalBalance } = useWallet()
 
-  const formatCurrency = (amount, currency = 'VND') => {
+  const formatCurrency = (amount) => {
     if (typeof amount !== 'number') {
       amount = parseFloat(amount) || 0
-    }
-    if (currency === 'USD') {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
     }
     return `${amount.toLocaleString('vi-VN')} ₫`
   }
@@ -43,7 +40,7 @@ const WalletSelector = () => {
             <div className="text-left">
               <div className="text-sm font-medium">{currentWallet.name}</div>
               <div className="text-xs text-muted-foreground">
-                {formatCurrency(currentWallet.balance, currentWallet.currency)}
+                {formatCurrency(currentWallet.balance)}
               </div>
             </div>
           </div>
@@ -75,7 +72,7 @@ const WalletSelector = () => {
                 <div>
                   <div className="font-medium">{wallet.name}</div>
                   <div className="text-sm text-muted-foreground">
-                    {formatCurrency(wallet.balance, wallet.currency)}
+                    {formatCurrency(wallet.balance)}
                   </div>
                   {wallet.description && (
                     <div className="text-xs text-muted-foreground truncate max-w-[150px]">

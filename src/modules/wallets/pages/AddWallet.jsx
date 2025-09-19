@@ -26,8 +26,7 @@ const AddWallet = () => {
   const [errors, setErrors] = useState({})
 
   const currencies = [
-    { code: 'VND', name: 'Việt Nam Đồng (₫)', symbol: '₫' },
-    { code: 'USD', name: 'US Dollar ($)', symbol: '$' }
+    { code: 'VND', name: 'Việt Nam Đồng (₫)', symbol: '₫' }
   ]
 
   const validateField = (field, value) => {
@@ -105,9 +104,6 @@ const AddWallet = () => {
     const currencyInfo = currencies.find(c => c.code === currencyCode);
     const symbol = currencyInfo ? currencyInfo.symbol : '';
 
-    if (currencyCode === 'USD') {
-      return `$0`;
-    }
     return `0 ${symbol}`;
   }
 

@@ -33,6 +33,9 @@ import {
   AddMoney
 } from './modules/wallets'
 
+// New Currency Page
+import CurrencyPage from './modules/currency/pages/CurrencyPage'
+
 // Error page
 import ErrorPage from './modules/error/ErrorPage'
 import OAuthCallback from './modules/auth/pages/oauth-callback'
@@ -68,6 +71,9 @@ function App() {
                         <Route path="settings" element={<Settings />} />
                         <Route path="reports" element={<Reports />} />
                         <Route path="transactions" element={<Transactions />} />
+
+                        {/* New Currency Route */}
+                        <Route path="dollar" element={<CurrencyPage />} />
 
                         {/* Wallet routes */}
                         <Route path="wallets" element={<WalletList />} />

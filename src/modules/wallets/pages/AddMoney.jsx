@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import {
   ArrowLeftIcon,
   PlusIcon,
-  DollarSignIcon,
   CreditCardIcon,
   BanknoteIcon,
   CheckCircleIcon,
@@ -35,13 +34,12 @@ const AddMoney = () => {
   const [errors, setErrors] = useState({})
   const [recentTransactions, setRecentTransactions] = useState([])
   const { settings } = useSettings()
-  const walletIdToCurrency = Object.fromEntries((wallets || []).map(w => [String(w.id), w.currency]))
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
   const [successData, setSuccessData] = useState({ amount: 0, walletName: '', currency: '' })
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setSelectedWallet(currentWallet ? String(currentWallet.id) : '');
       const [walletRes, transRes] = await Promise.all([
@@ -55,11 +53,11 @@ const AddMoney = () => {
       console.error('Error fetching data:', error);
       toast.error('Không thể tải dữ liệu cần thiết.');
     }
-  };
+  }, [currentWallet]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const validateForm = () => {
     const newErrors = {}
@@ -110,7 +108,7 @@ const AddMoney = () => {
       setSuccessData({
         amount: parseFloat(amount),
         walletName: selectedWalletObj?.name || '',
-        currency: selectedWalletObj?.currency || 'VND'
+        currency: 'VND'
       });
 
       setIsSuccessModalOpen(true);
@@ -155,7 +153,7 @@ const AddMoney = () => {
                             {selectedWallet && wallets.find(w => w.id.toString() === selectedWallet) && (
                                 <div className="flex items-center space-x-2">
                                   <IconComponent name={wallets.find(w => w.id.toString() === selectedWallet).icon} className="w-4 h-4" />
-                                  <span>{wallets.find(w => w.id.toString() === selectedWallet).name} - {formatCurrency(wallets.find(w => w.id.toString() === selectedWallet).balance, wallets.find(w => w.id.toString() === selectedWallet).currency, settings)}</span>
+                                  <span>{wallets.find(w => w.id.toString() === selectedWallet).name} - {formatCurrency(wallets.find(w => w.id.toString() === selectedWallet).balance, 'VND', settings)}</span>
                                 </div>
                             )}
                           </SelectValue>
@@ -166,7 +164,7 @@ const AddMoney = () => {
                                   <SelectItem key={w.id} value={w.id.toString()}>
                                     <div className="flex items-center space-x-2">
                                       <IconComponent name={w.icon} className="w-4 h-4" />
-                                      <span>{w.name} - {formatCurrency(w.balance, w.currency, settings)}</span>
+                                  <span>{w.name} - {formatCurrency(w.balance, 'VND', settings)}</span>
                                     </div>
                                   </SelectItem>
                               ))
@@ -182,12 +180,8 @@ const AddMoney = () => {
                     <div className="space-y-2">
                       <Label htmlFor="amount">Số tiền <span className="text-red-500">*</span></Label>
                       <div className="relative">
-                        <Input id="amount" type="number" placeholder="Nhập số tiền" value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 ${wallets.find(w => w.id.toString() === selectedWallet)?.currency === 'USD' ? 'pl-12 pr-4' : 'pl-4 pr-12'} ${errors.amount ? 'border-red-500' : ''}`} min="1000" max="100000" step="1000" />
-                        {wallets.find(w => w.id.toString() === selectedWallet)?.currency === 'USD' ? (
-                            <DollarSignIcon className="w-5 h-5 text-muted-foreground absolute left-4 top-1/2 transform -translate-y-1/2" />
-                        ) : (
-                            <span className="text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2">₫</span>
-                        )}
+                        <Input id="amount" type="number" placeholder="Nhập số tiền" value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 pl-4 pr-12 ${errors.amount ? 'border-red-500' : ''}`} min="1000" max="100000" step="1000" />
+                        <span className="text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2">₫</span>
                       </div>
                       {errors.amount && <p className="text-sm text-red-500">{errors.amount}</p>}
                     </div>
@@ -196,7 +190,7 @@ const AddMoney = () => {
                       <div className="grid grid-cols-4 gap-3">
                         {[100000, 500000, 1000000, 5000000].map(quickAmount => (
                             <Button key={quickAmount} variant="ghost" size="sm" onClick={() => setAmount(quickAmount.toString())} className="h-10 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg">
-                              {formatCurrency(quickAmount, wallets.find(w => w.id.toString() === selectedWallet)?.currency || 'VND', settings)}
+                              {formatCurrency(quickAmount, 'VND', settings)}
                             </Button>
                         ))}
                       </div>
@@ -236,7 +230,7 @@ const AddMoney = () => {
                                   <p className="text-xs text-muted-foreground">{formatDate(t.date, settings)}</p>
                                 </div>
                               </div>
-                              <span className="font-bold text-green-600 dark:text-green-400 text-sm">+{formatCurrency(t.amount, t.currency || walletIdToCurrency?.[String(t.walletId)] || 'VND', settings)}</span>
+                              <span className="font-bold text-green-600 dark:text-green-400 text-sm">+{formatCurrency(t.amount, 'VND', settings)}</span>
                             </div>
                         ))}
                       </div>
@@ -293,7 +287,7 @@ const AddMoney = () => {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Số tiền:</span>
-                      <span className="font-bold text-lg text-green-600">{formatCurrency(parseFloat(amount || 0), (wallets.find(w => w.id.toString() === selectedWallet)?.currency) || 'VND', settings)}</span>
+                      <span className="font-bold text-lg text-green-600">{formatCurrency(parseFloat(amount || 0), 'VND', settings)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Phương thức:</span>

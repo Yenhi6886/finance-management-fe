@@ -38,7 +38,8 @@ import chartAnimation from '../assets/icons/chart.json'
 import notificationAnimation from '../assets/icons/notification.json'
 import walletAnimation from '../assets/icons/wallet.json'
 import walletDarkAnimation from '../assets/icons/walletdark.json'
-import userAnimation from '../assets/icons/profile.json'
+import dollarAnimation from '../assets/icons/dollar.json'
+
 
 
 const Sidebar = ({ onToggleWalletPanel }) => {
@@ -121,6 +122,13 @@ const Sidebar = ({ onToggleWalletPanel }) => {
       href: '/reports',
       icon: chartAnimation,
     },
+    {
+      id: 'dollar',
+      title: 'Tỉ giá',
+      href: '/dollar',
+      icon: dollarAnimation,
+      size: 35,
+    }
   ]
 
   const addWalletItem = {

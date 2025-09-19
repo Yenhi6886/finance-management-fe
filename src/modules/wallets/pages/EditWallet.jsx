@@ -27,8 +27,7 @@ const EditWallet = () => {
   const [errors, setErrors] = useState({})
 
   const currencies = [
-    { code: 'VND', name: 'Việt Nam Đồng (₫)' },
-    { code: 'USD', name: 'US Dollar ($)' }
+    { code: 'VND', name: 'Việt Nam Đồng (₫)' }
   ]
 
   useEffect(() => {
@@ -62,11 +61,9 @@ const EditWallet = () => {
     fetchWallet()
   }, [id, navigate])
 
-  const formatPreviewCurrency = (amount, currencyCode) => {
+  const formatPreviewCurrency = (amount) => {
     const numericAmount = parseFloat(amount) || 0
-    return currencyCode === 'USD'
-        ? `$${numericAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-        : `${numericAmount.toLocaleString('vi-VN')} ₫`
+    return `${numericAmount.toLocaleString('vi-VN')} ₫`
   }
 
   const formatDisplayBalance = (balance) => {
@@ -250,7 +247,7 @@ const EditWallet = () => {
                     <h3 className="font-bold text-lg">{formData.name.trim() || 'Tên ví'}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">Số dư</p>
-                  <p className="text-2xl font-bold">{formatPreviewCurrency(formData.balance, formData.currency)}</p>
+                  <p className="text-2xl font-bold">{formatPreviewCurrency(formData.balance)}</p>
                 </div>
               </CardContent>
             </Card>

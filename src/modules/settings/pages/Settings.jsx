@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import { useTheme } from '../../../shared/contexts/ThemeContext'
 import { cn } from '../../../lib/utils'
-import { Sun, Moon, Laptop, Palette, Languages, DollarSign, Check, Info, RefreshCw, Loader2, Calendar} from 'lucide-react'
-import { toast } from 'sonner'
+import { Sun, Moon, Laptop, Palette, Languages, Check, Info, Calendar} from 'lucide-react'
 import { useSettings } from '../../../shared/contexts/SettingsContext'
-import { formatNumber, formatDate } from '../../../shared/utils/formattingUtils.js'
 
 const InterfaceSettings = () => {
     const { theme, setTheme } = useTheme()
@@ -155,96 +153,6 @@ const LanguageSettings = () => {
     )
 }
 
-const ExchangeRateSettings = () => {
-    const { settings, updateSettings, refreshSettings, loading: settingsLoading } = useSettings();
-    const [newRate, setNewRate] = useState('');
-    const [isUpdating, setIsUpdating] = useState(false);
-
-    const handleUpdateRate = async () => {
-        const rateValue = parseFloat(newRate);
-        if (isNaN(rateValue) || rateValue <= 0) {
-            toast.warning("Vui lòng nhập một tỷ giá hợp lệ.");
-            return;
-        }
-
-        setIsUpdating(true);
-        await updateSettings({ usdToVndRate: rateValue });
-        setNewRate('');
-        setIsUpdating(false);
-    };
-
-    if (settingsLoading) {
-        return <div>Đang tải cài đặt...</div>;
-    }
-
-    return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-green-600 dark:text-green-400">Tỷ Giá Hiện Tại</CardTitle>
-                        <CardDescription>Tỷ giá USD/VND đang được áp dụng</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="p-4 border rounded-lg bg-muted/30">
-                            <div className="flex justify-between items-center text-sm text-muted-foreground">
-                                <span>USD/VND</span>
-                                <RefreshCw className="w-4 h-4 text-green-500 cursor-pointer" onClick={refreshSettings}/>
-                            </div>
-                            <p className="text-3xl font-bold mt-2">
-                                {settings?.usdToVndRate ? formatNumber(settings.usdToVndRate, settings) : 'N/A'}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Cập nhật lần cuối: {settings?.updatedAt ? formatDate(settings.updatedAt, settings) : 'Chưa có'}
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-green-600 dark:text-green-400">Cập Nhật Tỷ Giá</CardTitle>
-                        <CardDescription>Thiết lập tỷ giá USD/VND mới</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <Label htmlFor="newRate">Tỷ giá mới (VND)</Label>
-                            <Input
-                                id="newRate"
-                                type="number"
-                                placeholder="Nhập tỷ giá USD/VND..."
-                                value={newRate}
-                                onChange={(e) => setNewRate(e.target.value)}
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">Ví dụ: 25400 (1 USD = 25,400 VND)</p>
-                        </div>
-                        <Button className="w-full bg-green-600 hover:bg-green-700 rounded-lg" onClick={handleUpdateRate} disabled={isUpdating}>
-                            {isUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                            {isUpdating ? 'Đang cập nhật...' : 'Cập Nhật Tỷ Giá'}
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <Card className="bg-muted/30 border-dashed">
-                <CardContent className="pt-6">
-                    <div className="flex items-start space-x-3">
-                        <Info className="w-5 h-5 text-muted-foreground mt-1" />
-                        <div>
-                            <h4 className="font-semibold">Thông Tin</h4>
-                            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mt-2">
-                                <li>Tỷ giá được sử dụng cho tất cả các tính toán trong hệ thống</li>
-                                <li>Thay đổi tỷ giá sẽ ảnh hưởng đến tất cả giao dịch mới</li>
-                                <li>Tỷ giá phải lớn hơn 0 và được lưu với độ chính xác 4 chữ số thập phân</li>
-                                <li>Dữ liệu được đồng bộ với backend API</li>
-                            </ul>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    )
-}
-
 const FormatSettings = () => {
     const { settings, updateSettings, loading } = useSettings();
 
@@ -311,7 +219,6 @@ const Settings = () => {
         { id: 'interface', name: 'Cài Đặt Giao Diện', icon: Palette },
         { id: 'language', name: 'Cài Đặt Ngôn Ngữ', icon: Languages },
         { id: 'format', name: 'Định Dạng', icon: Calendar },
-        { id: 'rate', name: 'Tỷ Giá USD/VND', icon: DollarSign },
     ]
 
     return (
@@ -349,7 +256,6 @@ const Settings = () => {
                 {activeTab === 'interface' && <InterfaceSettings />}
                 {activeTab === 'language' && <LanguageSettings />}
                 {activeTab === 'format' && <FormatSettings />}
-                {activeTab === 'rate' && <ExchangeRateSettings />}
             </div>
         </div>
     )
