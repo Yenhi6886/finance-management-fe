@@ -1,69 +1,48 @@
-import { apiService } from '../../../shared/services/apiService'
+import apiClient from "../../../shared/services/apiService"; // Sử dụng apiClient từ file của bạn
 
-class ReportService {
-  // Get transactions within date range
-  async getTransactionReport(params) {
-    const { startDate, endDate, walletId, type } = params
-    const queryParams = new URLSearchParams({
-      startDate,
-      endDate,
-      ...(walletId && { walletId }),
-      ...(type && { type })
-    })
-    
-    return await apiService.get(`/reports/transactions?${queryParams}`)
+const getTransactionStatistics = (params) => {
+  const queryParams = new URLSearchParams();
+
+  // Loại bỏ các param null hoặc undefined
+  if (params.page !== undefined) queryParams.append('page', params.page);
+  if (params.size) queryParams.append('size', params.size);
+  if (params.walletId) queryParams.append('walletId', params.walletId);
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+
+  // Nếu không có param nào, không thêm dấu ?
+  const queryString = queryParams.toString();
+  const endpointPath = queryString ? `?${queryString}` : '';
+
+  if (params.walletId) {
+    if (params.startDate) { // Lọc theo ví và khoảng thời gian
+      return apiClient.get(`/api/transactions/statistics/wallet${endpointPath}`);
+    } else { // Lọc theo ví hôm nay
+      return apiClient.get(`/api/transactions/statistics/wallet/today${endpointPath}`);
+    }
+  } else {
+    if (params.startDate) { // Lọc tất cả theo khoảng thời gian
+      return apiClient.get(`/api/transactions/statistics${endpointPath}`);
+    } else { // Lọc tất cả hôm nay
+      return apiClient.get(`/api/transactions/statistics/today${endpointPath}`);
+    }
   }
+};
 
-  // Get today's transactions
-  async getTodayTransactions(walletId = null) {
-    const params = walletId ? `?walletId=${walletId}` : ''
-    return await apiService.get(`/reports/transactions/today${params}`)
-  }
+const getBudgetStatistics = (params) => {
+  const queryParams = new URLSearchParams({
+    year: params.year,
+    month: params.month,
+    page: params.page || 0,
+    size: params.size || 10,
+  });
 
-  // Get budget report for specific month
-  async getBudgetReport(month) {
-    return await apiService.get(`/reports/budgets/${month}`)
-  }
+  return apiClient.get(`/api/budgets/statistics?${queryParams.toString()}`);
+};
 
-  // Get dashboard summary statistics
-  async getDashboardSummary(period = 'month') {
-    return await apiService.get(`/reports/dashboard/summary?period=${period}`)
-  }
+const reportService = {
+  getTransactionStatistics,
+  getBudgetStatistics,
+};
 
-  // Export transactions to file
-  async exportTransactions(exportData) {
-    return await apiService.post('/reports/export', exportData)
-  }
-
-  // Schedule email reports
-  async scheduleEmailReport(emailSettings) {
-    return await apiService.post('/reports/email/schedule', emailSettings)
-  }
-
-  // Get email settings
-  async getEmailSettings() {
-    return await apiService.get('/reports/email/settings')
-  }
-
-  // Update email settings
-  async updateEmailSettings(settings) {
-    return await apiService.put('/reports/email/settings', settings)
-  }
-
-  // Send report email immediately
-  async sendEmailNow(emailData) {
-    return await apiService.post('/reports/email/send-now', emailData)
-  }
-
-  // Get wallet-specific report
-  async getWalletReport(walletId, startDate, endDate) {
-    const queryParams = new URLSearchParams({
-      startDate,
-      endDate
-    })
-    
-    return await apiService.get(`/wallets/${walletId}/reports?${queryParams}`)
-  }
-}
-
-export const reportService = new ReportService()
+export default reportService;
