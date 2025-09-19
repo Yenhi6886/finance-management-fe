@@ -9,13 +9,48 @@ import { Badge } from '../../../components/ui/badge'
 import { format } from 'date-fns';
 import {
     Calendar,
-    Filter
+    Filter,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react'
 import { useSettings } from '../../../shared/contexts/SettingsContext'
 import { useWallet } from '../../../shared/hooks/useWallet'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils'
 import reportService from '../services/reportService'
 import { LoadingSpinner as Loading } from '../../../components/Loading'
+
+const PAGE_SIZE = 10;
+
+const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
+    if (totalPages <= 1) return null;
+
+    return (
+        <div className="flex items-center justify-end space-x-2 py-4">
+            <span className="text-sm text-muted-foreground">
+                Trang {currentPage + 1} / {totalPages}
+            </span>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 0}
+            >
+                <ChevronLeft className="h-4 w-4" />
+                Trước
+            </Button>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages - 1}
+            >
+                Sau
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+        </div>
+    );
+};
+
 
 const Reports = () => {
     const { settings } = useSettings();
@@ -31,25 +66,29 @@ const Reports = () => {
 
     const [isPeriodLoading, setIsPeriodLoading] = useState(false);
     const [periodData, setPeriodData] = useState(null);
+    const [periodPage, setPeriodPage] = useState(0);
 
     const [isTodayLoading, setIsTodayLoading] = useState(false);
     const [todayData, setTodayData] = useState(null);
+    const [todayPage, setTodayPage] = useState(0);
 
     const [isBudgetLoading, setIsBudgetLoading] = useState(false);
     const [budgetData, setBudgetData] = useState(null);
+    const [budgetPage, setBudgetPage] = useState(0);
 
-    const fetchTodayData = async () => {
+    const fetchTodayData = async (page = 0) => {
         setIsTodayLoading(true);
         setTodayData(null);
         try {
             let response;
             if (selectedTodayWallet === "all") {
-                response = await reportService.getTodayTransactions();
+                response = await reportService.getTodayTransactions(page, PAGE_SIZE);
             } else {
-                response = await reportService.getTodayTransactionsByWallet(selectedTodayWallet);
+                response = await reportService.getTodayTransactionsByWallet(selectedTodayWallet, page, PAGE_SIZE);
             }
             if (response.data.success) {
                 setTodayData(response.data.data);
+                setTodayPage(page);
             }
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu hôm nay:", error);
@@ -59,7 +98,7 @@ const Reports = () => {
         }
     };
 
-    const fetchPeriodData = async () => {
+    const fetchPeriodData = async (page = 0) => {
         setIsPeriodLoading(true);
         setPeriodData(null);
         try {
@@ -68,13 +107,14 @@ const Reports = () => {
             let response;
 
             if (selectedPeriodWallet === 'all') {
-                response = await reportService.getTransactionsByTime(startDate, endDate);
+                response = await reportService.getTransactionsByTime(startDate, endDate, page, PAGE_SIZE);
             } else {
-                response = await reportService.getTransactionsByWalletIdandByTime(selectedPeriodWallet, startDate, endDate);
+                response = await reportService.getTransactionsByWalletIdandByTime(selectedPeriodWallet, startDate, endDate, page, PAGE_SIZE);
             }
 
             if (response.data.success) {
                 setPeriodData(response.data.data);
+                setPeriodPage(page);
             }
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu theo khoảng thời gian:", error);
@@ -84,15 +124,16 @@ const Reports = () => {
         }
     };
 
-    const fetchBudgetData = async () => {
+    const fetchBudgetData = async (page = 0) => {
         setIsBudgetLoading(true);
         setBudgetData(null);
         try {
             const [year, month] = selectedMonth.split('-');
             const monthNumber = parseInt(month, 10);
-            const response = await reportService.getBudgetStatistics(year, monthNumber);
+            const response = await reportService.getBudgetStatistics(year, monthNumber, page, PAGE_SIZE);
             if (response.data.success) {
-            setBudgetData(response.data.data);
+                setBudgetData(response.data.data);
+                setBudgetPage(page);
             }
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu ngân sách:", error);
@@ -101,20 +142,38 @@ const Reports = () => {
             setIsBudgetLoading(false);
         }
     };
+    
+    const handleFilterPeriod = () => {
+        setPeriodPage(0);
+        fetchPeriodData(0);
+    }
+
+    const handleFilterBudget = () => {
+        setBudgetPage(0);
+        fetchBudgetData(0);
+    }
 
     useEffect(() => {
-        fetchTodayData();
-        fetchBudgetData();
+        fetchTodayData(0);
+        fetchBudgetData(0);
     }, []);
 
     useEffect(() => {
-        fetchTodayData();
+        setTodayPage(0);
+        fetchTodayData(0);
     }, [selectedTodayWallet]);
 
     const transactions = periodData?.transactions?.content || [];
+    const periodTotalPages = periodData?.transactions?.totalPages || 1;
+    
     const todayTransactions = todayData?.transactions?.content || [];
+    const todayTotalPages = todayData?.transactions?.totalPages || 1;
+
     const totalAmountPeriod = periodData?.totalAmount || 0;
     const totalAmountToday = todayData?.totalAmount || 0;
+    
+    const budgetTransactions = budgetData?.transactions?.content || [];
+    const budgetTotalPages = budgetData?.transactions?.totalPages || 1;
 
     return (
         <div className="p-4 md:p-8 space-y-8">
@@ -169,7 +228,7 @@ const Reports = () => {
                                     </Select>
                                 </div>
                             </div>
-                            <Button onClick={fetchPeriodData} disabled={isPeriodLoading}>
+                            <Button onClick={handleFilterPeriod} disabled={isPeriodLoading}>
                                 {isPeriodLoading ? <Loading /> : <><Filter className="w-4 h-4 mr-2" /> Lọc Dữ Liệu</>}
                             </Button>
                             {periodData && (
@@ -194,7 +253,7 @@ const Reports = () => {
                                         ) : transactions.length > 0 ? (
                                             transactions.map((transaction, index) => (
                                                 <tr key={transaction.id} className="border-b">
-                                                    <td className="p-3">{index + 1}</td>
+                                                    <td className="p-3">{(periodPage * PAGE_SIZE) + index + 1}</td>
                                                     <td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td>
                                                     <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                                                         {transaction.type === 'INCOME' ? '+' : '-'}
@@ -214,6 +273,11 @@ const Reports = () => {
                                     </tbody>
                                 </table>
                             </div>
+                             <PaginationControls
+                                currentPage={periodPage}
+                                totalPages={periodTotalPages}
+                                onPageChange={fetchPeriodData}
+                            />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -265,7 +329,7 @@ const Reports = () => {
                                         ) : todayTransactions.length > 0 ? (
                                             todayTransactions.map((transaction, index) => (
                                                 <tr key={transaction.id} className="border-b">
-                                                    <td className="p-3">{index + 1}</td>
+                                                    <td className="p-3">{(todayPage * PAGE_SIZE) + index + 1}</td>
                                                     <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                                                         {transaction.type === 'INCOME' ? '+' : '-'}
                                                         {formatCurrency(transaction.amount, 'VND', settings)}
@@ -284,6 +348,11 @@ const Reports = () => {
                                     </tbody>
                                 </table>
                             </div>
+                            <PaginationControls
+                                currentPage={todayPage}
+                                totalPages={todayTotalPages}
+                                onPageChange={fetchTodayData}
+                            />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -302,7 +371,7 @@ const Reports = () => {
                                         onChange={(e) => setSelectedMonth(e.target.value)}
                                         className="mt-1"
                                     />
-                                    <Button onClick={fetchBudgetData} disabled={isBudgetLoading}>
+                                    <Button onClick={handleFilterBudget} disabled={isBudgetLoading}>
                                         {isBudgetLoading ? <Loading /> : 'Xem'}
                                     </Button>
                                 </div>
@@ -310,40 +379,85 @@ const Reports = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {isBudgetLoading ? <Loading /> : budgetData ? (
-                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Ngân sách</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{formatCurrency(budgetData.totalBudget, 'VND', settings)}</div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Đã thu</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold text-green-500">{formatCurrency(budgetData.totalIncome, 'VND', settings)}</div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Đã chi</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold text-red-500">{formatCurrency(budgetData.totalExpense, 'VND', settings)}</div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Còn lại</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">{formatCurrency(budgetData.remainingAmount, 'VND', settings)}</div>
-                                        </CardContent>
-                                    </Card>
-                                </div>
+                                <>
+                                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Ngân sách</CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold">{formatCurrency(budgetData.totalBudget, 'VND', settings)}</div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Đã thu</CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold text-green-500">{formatCurrency(budgetData.totalIncome, 'VND', settings)}</div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Đã chi</CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold text-red-500">{formatCurrency(budgetData.totalExpense, 'VND', settings)}</div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Còn lại</CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold">{formatCurrency(budgetData.remainingAmount, 'VND', settings)}</div>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                    
+                                    <div className="border rounded-lg">
+                                        <table className="w-full">
+                                            <thead className="border-b bg-muted/50">
+                                                <tr>
+                                                    <th className="p-3 text-left">STT</th>
+                                                    <th className="p-3 text-left">Ngày Thu Chi</th>
+                                                    <th className="p-3 text-left">Số Tiền</th>
+                                                    <th className="p-3 text-left">Ghi Chú</th>
+                                                    <th className="p-3 text-left">Ví</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {isBudgetLoading ? (
+                                                     <tr><td colSpan="5" className="p-6 text-center"><Loading /></td></tr>
+                                                ) : budgetTransactions.length > 0 ? (
+                                                    budgetTransactions.map((transaction, index) => (
+                                                        <tr key={transaction.id} className="border-b">
+                                                            <td className="p-3">{(budgetPage * PAGE_SIZE) + index + 1}</td>
+                                                            <td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td>
+                                                            <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
+                                                                {transaction.type === 'INCOME' ? '+' : '-'}
+                                                                {formatCurrency(transaction.amount, 'VND', settings)}
+                                                            </td>
+                                                            <td className="p-3">{transaction.description}</td>
+                                                            <td className="p-3">{transaction.walletName}</td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="5" className="p-6 text-center text-muted-foreground">
+                                                            Không có dữ liệu
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <PaginationControls
+                                        currentPage={budgetPage}
+                                        totalPages={budgetTotalPages}
+                                        onPageChange={fetchBudgetData}
+                                    />
+                                </>
                             ) : (
                                 <div className="p-6 text-center text-muted-foreground">
                                     Không có dữ liệu
