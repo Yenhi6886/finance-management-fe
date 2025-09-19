@@ -138,6 +138,12 @@ const Login = () => {
               </div>
             </div>
 
+            <div className="flex justify-end mt-2">
+              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                Quên mật khẩu?
+              </Link>
+            </div>
+
             <div className="flex items-start space-x-2 py-2">
               <input
                   type="checkbox"
