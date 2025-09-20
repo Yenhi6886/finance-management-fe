@@ -169,7 +169,16 @@ const EditWallet = () => {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-base font-medium">Tên ví <span className="text-red-500">*</span></Label>
-                  <Input id="name" name="name" type="text" placeholder="Ví tiền mặt, Tài khoản ngân hàng..." value={formData.name} onChange={handleInputChange} className={`h-12 text-base ${errors.name ? 'border-red-500' : ''}`} maxLength={51} />
+                  <Input 
+                    id="name" 
+                    name="name" 
+                    type="text" 
+                    placeholder="Ví tiền mặt, Tài khoản ngân hàng..." 
+                    value={formData.name} 
+                    onChange={handleInputChange} 
+                    className={`h-12 text-base bg-background text-foreground border-input ${errors.name ? 'border-red-500' : ''}`} 
+                    maxLength={51} 
+                  />
                   {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
                 </div>
 
@@ -177,12 +186,26 @@ const EditWallet = () => {
                   {hasTransactions && (
                       <div className="space-y-2">
                         <Label htmlFor="balance" className="text-base font-medium">Số dư hiện tại</Label>
-                        <Input id="balance" name="balance" type="text" placeholder="0" value={formatDisplayBalance(formData.balance)} className="h-12 text-base" disabled />
+                        <Input 
+                          id="balance" 
+                          name="balance" 
+                          type="text" 
+                          placeholder="0" 
+                          value={formatDisplayBalance(formData.balance)} 
+                          className="h-12 text-base bg-background text-foreground border-input" 
+                          disabled 
+                        />
                       </div>
                   )}
                   <div className="space-y-2">
                     <Label htmlFor="currency" className="text-base font-medium">Loại tiền tệ</Label>
-                    <select id="currency" name="currency" value={formData.currency} className="w-full h-12 px-3 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 border-input bg-background" disabled>
+                    <select 
+                      id="currency" 
+                      name="currency" 
+                      value={formData.currency} 
+                      className="w-full h-12 px-3 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 border-input bg-background text-foreground" 
+                      disabled
+                    >
                       {currencies.map((currency) => (<option key={currency.code} value={currency.code}>{currency.name}</option>))}
                     </select>
                   </div>
@@ -212,7 +235,16 @@ const EditWallet = () => {
                   <Label className="text-base font-medium">Icon ví <span className="text-red-500">*</span></Label>
                   <div className="grid grid-cols-8 sm:grid-cols-12 gap-2 mt-2">
                     {Object.keys(availableIcons).map((iconName) => (
-                        <button key={iconName} type="button" onClick={() => handleIconChange(iconName)} className={`flex items-center justify-center w-12 h-12 rounded-lg transition-all ${formData.icon === iconName ? 'bg-green-100 ring-1 ring-green-500' : 'bg-muted hover:bg-muted/80'}`}>
+                        <button 
+                          key={iconName} 
+                          type="button" 
+                          onClick={() => handleIconChange(iconName)} 
+                          className={`flex items-center justify-center w-12 h-12 rounded-lg border transition-all ${
+                            formData.icon === iconName 
+                              ? 'bg-green-100 dark:bg-green-900 border-green-500 ring-1 ring-green-500' 
+                              : 'bg-muted hover:bg-muted/80 border-border hover:border-green-300'
+                          }`}
+                        >
                           <IconComponent name={iconName} className="w-6 h-6 text-foreground" />
                         </button>
                     ))}
@@ -221,7 +253,16 @@ const EditWallet = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="description" className="text-base font-medium">Mô tả (Tùy chọn)</Label>
-                  <textarea id="description" name="description" placeholder="Mô tả về mục đích của ví này..." value={formData.description} onChange={handleInputChange} rows={3} maxLength={201} className={`w-full px-4 py-3 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none ${errors.description ? 'border-red-500' : 'border-input'}`} />
+                  <textarea 
+                    id="description" 
+                    name="description" 
+                    placeholder="Mô tả về mục đích của ví này..." 
+                    value={formData.description} 
+                    onChange={handleInputChange} 
+                    rows={3} 
+                    maxLength={201} 
+                    className={`w-full px-4 py-3 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none bg-background text-foreground ${errors.description ? 'border-red-500' : 'border-input'}`} 
+                  />
                   {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description}</p>}
                 </div>
 
@@ -241,13 +282,13 @@ const EditWallet = () => {
                 <CardTitle className="flex items-center gap-2 text-green-600">Xem trước</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="p-4 border rounded-lg bg-card">
+                <div className="p-4 border rounded-lg bg-card border-border">
                   <div className="flex items-center gap-3 mb-4">
-                    <IconComponent name={formData.icon} className="w-8 h-8"/>
-                    <h3 className="font-bold text-lg">{formData.name.trim() || 'Tên ví'}</h3>
+                    <IconComponent name={formData.icon} className="w-8 h-8 text-foreground"/>
+                    <h3 className="font-bold text-lg text-foreground">{formData.name.trim() || 'Tên ví'}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">Số dư</p>
-                  <p className="text-2xl font-bold">{formatPreviewCurrency(formData.balance)}</p>
+                  <p className="text-2xl font-bold text-foreground">{formatPreviewCurrency(formData.balance)}</p>
                 </div>
               </CardContent>
             </Card>

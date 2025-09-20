@@ -11,12 +11,12 @@ const DashboardLayout = () => {
     };
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
+        <div className="flex h-screen flex-col md:flex-row bg-background">
             <Sidebar onToggleWalletPanel={toggleWalletPanel} />
 
-            <div className="flex flex-1 overflow-y-auto md:overflow-hidden">
+            <div className="flex-1 flex overflow-hidden">
                 <WalletPanel isOpen={isWalletPanelOpen} onClose={() => setWalletPanelOpen(false)} />
-                <main className="flex-1 overflow-x-hidden md:h-full md:overflow-y-auto">
+                <main className="flex-1 overflow-y-auto">
                     <div className="container mx-auto px-6 py-8">
                         <Outlet />
                     </div>

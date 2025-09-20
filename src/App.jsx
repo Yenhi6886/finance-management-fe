@@ -17,6 +17,7 @@ import ActivateAccount from './modules/auth/pages/ActivateAccount'
 // Main pages
 import Dashboard from './modules/dashboard/pages/Dashboard'
 import Profile from './modules/profile/pages/Profile'
+import { ProfilePage } from './modules/profile'
 import ChangePassword from './modules/profile/pages/ChangePassword'
 import { Reports } from './modules/reports'
 import { Transactions } from './modules/transactions'
@@ -66,7 +67,8 @@ function App() {
                       }>
                         <Route index element={<Navigate to="/dashboard" replace />} />
                         <Route path="dashboard" element={<Dashboard />} />
-                        <Route path="profile" element={<Profile />} />
+                        <Route path="profile" element={<ProfilePage />} />
+                        <Route path="profile/personal-info" element={<Profile />} />
                         <Route path="change-password" element={<ChangePassword />} />
                         <Route path="settings" element={<Settings />} />
                         <Route path="reports" element={<Reports />} />

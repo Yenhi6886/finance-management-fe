@@ -17,7 +17,6 @@ const exportService = {
     const res = await apiService.post('/reports/export/excel', reportRequest, {
       responseType: 'arraybuffer'
     });
-    // 后端通过 Content-Disposition 返回文件名
     const disposition = res.headers['content-disposition'] || res.headers['Content-Disposition'];
     let fileName = 'BaoCaoTaiChinh.xlsx';
     if (disposition) {

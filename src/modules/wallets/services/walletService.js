@@ -21,6 +21,10 @@ export const walletService = {
     return apiService.get(`/wallets/${id}`)
   },
 
+  getWalletDetails: async (id) => {
+    return apiService.get(`/wallets/${id}/details`)
+  },
+
   updateWallet: async (id, walletData) => {
     return apiService.put(`/wallets/${id}`, walletData)
   },

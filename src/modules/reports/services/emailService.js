@@ -6,7 +6,6 @@ const emailService = {
   },
 
   saveSettings(payload) {
-    // payload 应匹配 ReportEmailSetting: targetEmail, dailyEnabled, weeklyEnabled, monthlyEnabled, sendHour, sendMinute, weeklyDayOfWeek, monthlyDayOfMonth
     return apiService.post('/reports/email/settings', payload);
   },
 

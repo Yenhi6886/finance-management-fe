@@ -1,3 +1,3 @@
 // Profile module exports
-export { default as Profile } from './pages/Profile'
-export { default as ChangePassword } from './pages/ChangePassword'
+export { default as ProfilePage } from './pages/ProfilePage'
+

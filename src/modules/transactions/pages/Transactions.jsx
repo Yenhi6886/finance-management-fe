@@ -3,22 +3,20 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { Label } from '../../../components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { Calendar } from '../../../components/ui/calendar';
 import { cn } from '../../../lib/utils';
-import { PlusCircle, FileText, ArrowUpCircle, ArrowDownCircle, Loader2, MinusCircle, Calendar as CalendarIcon, X } from 'lucide-react';
+import { PlusCircle, FileText, ArrowUpCircle, ArrowDownCircle, Loader2, MinusCircle, X, BarChart3Icon } from 'lucide-react';
 import { transactionService } from '../services/transactionService';
 import { categoryService } from '../services/categoryService';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { useWallet } from '../../../shared/hooks/useWallet';
-import { formatCurrency, formatRelativeTime, formatDate } from '../../../shared/utils/formattingUtils.js';
+import { formatCurrency, formatRelativeTime} from '../../../shared/utils/formattingUtils.js';
 import AddTransactionModal from '../components/AddTransactionModal';
 import EditTransactionModal from '../components/EditTransactionModal';
 import ManageCategories from '../components/ManageCategories';
+import CategoryDetailView from '../components/CategoryDetailView'; // <-- IMPORT MỚI
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
 
 const Transactions = () => {
     const [activeTab, setActiveTab] = useState('transactions');
@@ -29,15 +27,41 @@ const Transactions = () => {
     const [initialCategoryId, setInitialCategoryId] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const { refreshWallets } = useWallet();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
+
+    // State mới để quản lý việc xem chi tiết danh mục
+    const [viewingCategory, setViewingCategory] = useState(null);
+
     const initialCategoryIdToView = searchParams.get('viewCategory');
+    const tabFromUrl = searchParams.get('tab');
+    const actionFromUrl = searchParams.get('action');
 
     useEffect(() => {
-        if (initialCategoryIdToView) {
+        if (tabFromUrl === 'categories') {
             setActiveTab('categories');
         }
-    }, [initialCategoryIdToView]);
+    }, [tabFromUrl]);
+
+    // Tìm và set category để xem chi tiết khi có param trên URL
+    useEffect(() => {
+        const fetchAndSetCategory = async () => {
+            if (initialCategoryIdToView && activeTab === 'categories') {
+                try {
+                    const response = await categoryService.getCategoryById(initialCategoryIdToView);
+                    setViewingCategory(response.data.data);
+                } catch (error) {
+                    toast.error("Không tìm thấy danh mục để xem.");
+                    setSearchParams(params => {
+                        params.delete('viewCategory');
+                        return params;
+                    }, { replace: true });
+                }
+            }
+        };
+        fetchAndSetCategory();
+    }, [initialCategoryIdToView, activeTab, setSearchParams]);
+
 
     const handleOpenAddModal = (type, categoryId = null) => {
         setInitialModalType(type);
@@ -52,15 +76,34 @@ const Transactions = () => {
 
     const handleDataRefresh = useCallback(async () => {
         setRefreshTrigger(prev => prev + 1);
+        if (viewingCategory) {
+            // Nếu đang xem chi tiết, refresh lại dữ liệu của category đó
+            const response = await categoryService.getCategoryById(viewingCategory.id);
+            setViewingCategory(response.data.data);
+        }
         await refreshWallets();
-    }, [refreshWallets]);
+    }, [refreshWallets, viewingCategory]);
 
     const handleAddTransactionFromCategory = (categoryId) => {
         handleOpenAddModal('expense', categoryId);
     };
 
-    const onCategoryViewed = useCallback(() => {
-        navigate('/transactions', { replace: true });
+    // Hàm để xử lý khi click vào 1 danh mục
+    const handleViewCategory = (category) => {
+        setViewingCategory(category);
+    };
+
+    // Hàm để đóng cửa sổ xem chi tiết
+    const handleCloseCategoryView = () => {
+        setViewingCategory(null);
+        setSearchParams(params => {
+            params.delete('viewCategory');
+            return params;
+        }, { replace: true });
+    };
+
+    const onAutoModalOpened = useCallback(() => {
+        navigate('/transactions?tab=categories', { replace: true });
     }, [navigate]);
 
     return (
@@ -90,13 +133,22 @@ const Transactions = () => {
 
             {activeTab === 'transactions' && <TransactionList onOpenAddModal={handleOpenAddModal} onOpenEditModal={handleOpenEditModal} refreshTrigger={refreshTrigger} />}
             {activeTab === 'categories' && (
-                <ManageCategories
-                    onAddTransaction={handleAddTransactionFromCategory}
-                    refreshTrigger={refreshTrigger}
-                    onTransactionClick={handleOpenEditModal}
-                    initialCategoryIdToView={initialCategoryIdToView}
-                    onCategoryViewed={onCategoryViewed}
-                />
+                viewingCategory ? (
+                    <CategoryDetailView
+                        category={viewingCategory}
+                        onClose={handleCloseCategoryView}
+                        onTransactionClick={handleOpenEditModal}
+                    />
+                ) : (
+                    <ManageCategories
+                        onAddTransaction={handleAddTransactionFromCategory}
+                        refreshTrigger={refreshTrigger}
+                        onTransactionClick={handleOpenEditModal}
+                        onViewCategory={handleViewCategory} // <-- Prop mới
+                        autoOpenAddModal={actionFromUrl === 'add'}
+                        onAutoModalOpened={onAutoModalOpened}
+                    />
+                )
             )}
 
             <AddTransactionModal
@@ -118,12 +170,14 @@ const Transactions = () => {
 };
 
 const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) => {
+    const navigate = useNavigate();
     const { settings } = useSettings();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
+    const [quickSelectValue, setQuickSelectValue] = useState(null);
 
     const fetchTransactions = useCallback(async () => {
         setLoading(true);
@@ -165,10 +219,51 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
     const totalExpense = transactions.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0);
     const balance = totalIncome - totalExpense;
 
-    const displayDate = selectedDate ? formatDate(selectedDate, settings) : "hôm nay";
+    const SummaryAndActions = () => (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Tổng Quan</CardTitle>
+                    <CardDescription>Tổng hợp thu chi trong kỳ này</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-muted rounded-md">
+                        <span className="text-sm font-medium">Tổng Thu</span>
+                        <span className="font-bold text-green-600">{formatCurrency(totalIncome, 'VND', settings)}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted rounded-md">
+                        <span className="text-sm font-medium">Tổng Chi</span>
+                        <span className="font-bold text-red-500">{formatCurrency(totalExpense, 'VND', settings)}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted rounded-md border-t-2">
+                        <span className="text-sm font-medium">Cân Bằng</span>
+                        <span className={cn("font-bold", balance >= 0 ? 'text-foreground' : 'text-red-500')}>{formatCurrency(balance, 'VND', settings)}</span>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Hành Động</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button onClick={() => onOpenAddModal('expense')} variant="destructive" className="rounded-md bg-red-600 hover:bg-red-700 text-white"><MinusCircle className="mr-2 h-4 w-4" />Chi Tiêu</Button>
+                        <Button onClick={() => onOpenAddModal('income')} className="rounded-md"><PlusCircle className="mr-2 h-4 w-4" />Thu Nhập</Button>
+                    </div>
+                    <Button onClick={() => navigate('/reports')} variant="secondary" className="w-full rounded-md">
+                        <BarChart3Icon className="mr-2 h-4 w-4" />
+                        Xem Báo Cáo Chi Tiết
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div className="block lg:hidden space-y-6">
+                <SummaryAndActions />
+            </div>
             <div className="lg:col-span-2 space-y-6">
                 <Card>
                     <CardHeader><CardTitle>Bộ Lọc</CardTitle></CardHeader>
@@ -191,32 +286,56 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
                         </div>
                         <div className="space-y-2">
                             <Label>Lọc theo ngày</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {selectedDate ? format(selectedDate, "PPP", { locale: vi }) : <span>Chọn một ngày</span>}
+                            <div className="flex gap-2">
+                                <input
+                                    type="date"
+                                    value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+                                    onChange={(e) => {
+                                        if (e.target.value) {
+                                            setSelectedDate(new Date(e.target.value));
+                                        } else {
+                                            setSelectedDate(null);
+                                        }
+                                    }}
+                                    className="flex-1 px-3 py-2 border border-input bg-background text-sm ring-offset-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                />
+                                <Select value={quickSelectValue || undefined} onValueChange={(value) => {
+                                    setQuickSelectValue(value);
+                                    if (value === "today") {
+                                        setSelectedDate(new Date());
+                                    } else if (value === "yesterday") {
+                                        const yesterday = new Date();
+                                        yesterday.setDate(yesterday.getDate() - 1);
+                                        setSelectedDate(yesterday);
+                                    }
+                                }}>
+                                    <SelectTrigger className="w-40">
+                                        <SelectValue placeholder="Chọn ngày nhanh" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="today">Hôm nay</SelectItem>
+                                        <SelectItem value="yesterday">Hôm qua</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {selectedDate && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => {
+                                            setSelectedDate(null);
+                                            setQuickSelectValue(null);
+                                        }}
+                                        className="shrink-0"
+                                    >
+                                        <X className="h-4 w-4" />
                                     </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="flex w-auto flex-col space-y-2 p-2">
-                                    <Select onValueChange={(value) => setSelectedDate(new Date(value))}>
-                                        <SelectTrigger><SelectValue placeholder="Chọn nhanh" /></SelectTrigger>
-                                        <SelectContent position="popper">
-                                            <SelectItem value={new Date().toISOString()}>Hôm nay</SelectItem>
-                                            <SelectItem value={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString()}>Hôm qua</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <div className="rounded-md border">
-                                        <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} />
-                                    </div>
-                                    {selectedDate && <Button size="sm" variant="ghost" onClick={() => setSelectedDate(null)}><X className="h-4 w-4 mr-2" /> Bỏ chọn ngày</Button>}
-                                </PopoverContent>
-                            </Popover>
+                                )}
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader><CardTitle>Danh Sách Giao Dịch ({displayDate})</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>Danh Sách Giao Dịch</CardTitle></CardHeader>
                     <CardContent>
                         {loading ? <div className="text-center py-16"><Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" /></div> :
                             transactions.length > 0 ? (
@@ -246,36 +365,8 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
                     </CardContent>
                 </Card>
             </div>
-            <div className="lg:col-span-1 space-y-6 sticky top-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Tổng Quan</CardTitle>
-                        <CardDescription>Tổng hợp thu chi trong kỳ này</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex justify-between items-center p-3 bg-muted rounded-md">
-                            <span className="text-sm font-medium">Tổng Thu</span>
-                            <span className="font-bold text-green-600">{formatCurrency(totalIncome, 'VND', settings)}</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-muted rounded-md">
-                            <span className="text-sm font-medium">Tổng Chi</span>
-                            <span className="font-bold text-red-500">{formatCurrency(totalExpense, 'VND', settings)}</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-muted rounded-md border-t-2">
-                            <span className="text-sm font-medium">Cân Bằng</span>
-                            <span className={cn("font-bold", balance >= 0 ? 'text-foreground' : 'text-red-500')}>{formatCurrency(balance, 'VND', settings)}</span>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Hành Động</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-2">
-                        <Button onClick={() => onOpenAddModal('expense')} variant="destructive" className="rounded-md bg-red-600 hover:bg-red-700 text-white"><MinusCircle className="mr-2 h-4 w-4" />Chi Tiêu</Button>
-                        <Button onClick={() => onOpenAddModal('income')} className="rounded-md"><PlusCircle className="mr-2 h-4 w-4" />Thu Nhập</Button>
-                    </CardContent>
-                </Card>
+            <div className="hidden lg:block lg:col-span-1 space-y-6 sticky top-6">
+                <SummaryAndActions />
             </div>
         </div>
     )

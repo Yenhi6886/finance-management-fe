@@ -41,6 +41,7 @@ import AnimatedIcon from '../../../components/ui/AnimatedIcon'
 import { cn } from '../../../lib/utils'
 import { IconComponent } from '../../../shared/config/icons'
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js'
+import { useWallet } from '../../../shared/hooks/useWallet'
 
 import listIconAnimation from '../../../assets/icons/listicon.json'
 import addWalletAnimation from '../../../assets/icons/addwalletgreen.json'
@@ -74,6 +75,7 @@ const SlidingTabs = ({ view, setView, activeCount, archivedCount }) => {
 
 const WalletList = () => {
   const { refreshWallets } = useContext(WalletContext)
+  const { currentWallet, selectWallet } = useWallet()
   const { settings, loading: settingsLoading } = useSettings()
 
   const [activeWallets, setActiveWallets] = useState([])
@@ -201,6 +203,15 @@ const WalletList = () => {
     }
   }
 
+  const handleSetDefault = async (wallet) => {
+    try {
+      selectWallet(wallet)
+      toast.success(`Ví "${wallet.name}" đã được đặt làm ví mặc định.`)
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi đặt ví mặc định.')
+    }
+  }
+
   const walletsToDisplay = view === 'active' ? activeWallets : archivedWallets
 
   const permissionDisplay = {
@@ -222,9 +233,9 @@ const WalletList = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-600">
                   Bảng Điều Khiển Ví
@@ -253,14 +264,24 @@ const WalletList = () => {
             </Card>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 h-full flex flex-col">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg text-green-600">Tổng Quan Số Dư</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">Tổng số dư các ví đang hoạt động</p>
-                <p className="text-3xl font-bold tracking-tight">{formatCurrency(totalBalance, 'VND', settings)}</p>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Tổng số dư các ví đang hoạt động</p>
+                  <p className="text-3xl font-bold tracking-tight">{formatCurrency(totalBalance, 'VND', settings)}</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full text-green-600 border-green-600 hover:bg-green-50"
+                  onClick={() => navigate('/dollar')}
+                >
+                  Tham khảo tỷ giá
+                </Button>
               </CardContent>
             </Card>
             <Card>
@@ -283,30 +304,27 @@ const WalletList = () => {
                 </div>
               </CardContent>
             </Card>
+            <Card className="flex-1">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg text-green-600">
+                  <Star className="w-5 h-5 text-yellow-500" />
+                  Mẹo Hữu Ích
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
+                    <span>Đặt tên và icon riêng cho từng ví để dễ dàng phân biệt.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
+                    <span>Sử dụng ví lưu trữ cho các tài khoản ít dùng đến để giao diện gọn gàng.</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg text-green-600">
-                <Star className="w-5 h-5 text-yellow-500" />
-                Mẹo Hữu Ích
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
-                  <span>Đặt tên và icon riêng cho từng ví để dễ dàng phân biệt.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
-                  <span>Sử dụng ví lưu trữ cho các tài khoản ít dùng đến để giao diện gọn gàng.</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
         </div>
 
         <div ref={walletListRef} className="pt-4 space-y-6">
@@ -332,13 +350,20 @@ const WalletList = () => {
                   const permissionInfo = permissionDisplay[wallet.permissionLevel];
 
                   return (
-                      <Card key={wallet.id} className={cn("transition-shadow hover:shadow-lg", view === 'archived' && 'bg-muted/50')}>
+                      <Card key={wallet.id} className={cn(
+                        "transition-shadow hover:shadow-lg", 
+                        view === 'archived' && 'bg-muted/50',
+                        currentWallet?.id === wallet.id && 'border-green-600 border-2'
+                      )}>
                         <CardContent className="p-4 flex flex-col h-full">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
                               <IconComponent name={wallet.icon} className="w-7 h-7" />
                               <div className="flex items-center gap-2">
                                 <h3 className="font-semibold text-xl">{wallet.name}</h3>
+                                {currentWallet?.id === wallet.id && (
+                                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                )}
                                 {isShared && permissionInfo && (
                                     <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full', permissionInfo.className)}>
                                   {permissionInfo.text}
@@ -365,6 +390,13 @@ const WalletList = () => {
                                             <span>Chỉnh sửa ví</span>
                                           </DropdownMenuItem>
                                       )}
+                                      {currentWallet?.id !== wallet.id && (
+                                        <DropdownMenuItem onSelect={() => handleSetDefault(wallet)}>
+                                          <Star className="mr-2 h-4 w-4 text-yellow-500" />
+                                          <span>Đặt mặc định</span>
+                                        </DropdownMenuItem>
+                                      )}
+                                      <DropdownMenuSeparator />
                                     </>
                                 )}
                                 {isOwner && (
