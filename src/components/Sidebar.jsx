@@ -39,6 +39,8 @@ import notificationAnimation from '../assets/icons/notification.json'
 import walletAnimation from '../assets/icons/wallet.json'
 import walletDarkAnimation from '../assets/icons/walletdark.json'
 import dollarAnimation from '../assets/icons/dollar.json'
+import dollarDarkAnimation from '../assets/icons/dollardark.json'
+import profileAnimation from '../assets/icons/profile.json'
 
 
 
@@ -95,6 +97,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
 
   const currentListWalletIcon = theme === 'dark' ? listWalletDarkAnimation : listWalletAnimation;
   const currentWalletNavIcon = theme === 'dark' ? walletDarkAnimation : walletAnimation;
+  const currentDollarIcon = theme === 'dark' ? dollarDarkAnimation : dollarAnimation;
 
   const menuItems = [
     {
@@ -126,7 +129,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
       id: 'dollar',
       title: 'Tỉ giá',
       href: '/dollar',
-      icon: dollarAnimation,
+      icon: currentDollarIcon,
       size: 35,
     }
   ]
@@ -138,12 +141,19 @@ const Sidebar = ({ onToggleWalletPanel }) => {
     icon: addWalletAnimation,
   };
 
+  const profileItem = {
+    id: 'profile',
+    title: 'Cá nhân',
+    href: '/profile',
+    icon: profileAnimation,
+  };
+
   const mobileMenuItems = [
     menuItems[0], // Dashboard
     menuItems[1], // Thu Chi
     addWalletItem,
     menuItems[2], // Ví Tiền
-    menuItems[3], // Báo cáo
+    profileItem, // Cá nhân
   ];
 
 
@@ -269,48 +279,48 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                   </div>
                   <div className="relative user-menu-container">
                     {showUserMenu && (
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 flex flex-col space-y-2 z-50">
-                          <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '0ms' : '0ms' }}>
+                        <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 flex flex-row space-x-2 z-50">
+                          <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '0ms' : '0ms' }}>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => { toggleTheme(); closeUserMenu(); }} className="w-8 h-8 bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-white/10 shadow-lg border border-gray-200 dark:border-gray-600 hover:scale-110 transition-all duration-200">
                                   {theme === 'light' ? <MoonIcon className="w-4 h-4 text-green-600 dark:text-green-400" /> : <SunIcon className="w-4 h-4 text-green-600 dark:text-green-400" />}
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent side="left" className="text-xs font-normal"><p>{theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}</p></TooltipContent>
+                              <TooltipContent side="top" className="text-xs font-normal"><p>{theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}</p></TooltipContent>
                             </Tooltip>
                           </div>
-                          <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '80ms' : '0ms' }}>
+                          <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '80ms' : '0ms' }}>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => closeUserMenu()} asChild className="w-8 h-8 bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-white/10 shadow-lg border border-gray-200 dark:border-gray-600 hover:scale-110 transition-all duration-200">
-                                  <Link to="/profile"><UserIcon className="w-4 h-4 text-green-600 dark:text-green-400" /></Link>
+                                  <Link to="/profile/personal-info"><UserIcon className="w-4 h-4 text-green-600 dark:text-green-400" /></Link>
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent side="left" className="text-xs font-normal"><p>Thông tin cá nhân</p></TooltipContent>
+                              <TooltipContent side="top" className="text-xs font-normal"><p>Thông tin cá nhân</p></TooltipContent>
                             </Tooltip>
                           </div>
-                          <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '160ms' : '0ms' }}>
+                          <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '160ms' : '0ms' }}>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => closeUserMenu()} asChild className="w-8 h-8 bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-white/10 shadow-lg border border-gray-200 dark:border-gray-600 hover:scale-110 transition-all duration-200">
                                   <Link to="/change-password"><KeyIcon className="w-4 h-4 text-green-600 dark:text-green-400" /></Link>
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent side="left" className="text-xs font-normal"><p>Đổi mật khẩu</p></TooltipContent>
+                              <TooltipContent side="top" className="text-xs font-normal"><p>Đổi mật khẩu</p></TooltipContent>
                             </Tooltip>
                           </div>
-                          <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '240ms' : '0ms' }}>
+                          <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '240ms' : '0ms' }}>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => closeUserMenu()} asChild className="w-8 h-8 bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-white/10 shadow-lg border border-gray-200 dark:border-gray-600 hover:scale-110 transition-all duration-200">
                                   <Link to="/settings"><SettingsIcon className="w-4 h-4 text-green-600 dark:text-green-400" /></Link>
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent side="left" className="text-xs font-normal"><p>Cài đặt</p></TooltipContent>
+                              <TooltipContent side="top" className="text-xs font-normal"><p>Cài đặt</p></TooltipContent>
                             </Tooltip>
                           </div>
-                          <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '320ms' : '0ms' }}>
+                          <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '320ms' : '0ms' }}>
                             <AlertDialog>
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -320,7 +330,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                                     </Button>
                                   </AlertDialogTrigger>
                                 </TooltipTrigger>
-                                <TooltipContent side="left" className="text-xs font-normal"><p>Đăng xuất</p></TooltipContent>
+                                <TooltipContent side="top" className="text-xs font-normal"><p>Đăng xuất</p></TooltipContent>
                               </Tooltip>
                               <AlertDialogContent>
                                 <AlertDialogHeader>

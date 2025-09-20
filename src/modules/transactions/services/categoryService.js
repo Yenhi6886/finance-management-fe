@@ -7,6 +7,9 @@ export const categoryService = {
     getCategories: () => {
         return apiService.get('/categories');
     },
+    getCategoryById: (id) => {
+        return apiService.get(`/categories/${id}`);
+    },
     updateCategory: (id, categoryData) => {
         return apiService.put(`/categories/${id}`, categoryData);
     },

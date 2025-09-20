@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useWallet } from '../shared/hooks/useWallet'
+import { useWallet } from '../shared/contexts/WalletContext'
 import { cn } from '../lib/utils.js'
 import AnimatedIcon from './ui/AnimatedIcon'
 import addWalletAnimation from '../assets/icons/addWallet.json'
@@ -12,7 +12,7 @@ import { categoryService } from '../modules/transactions/services/categoryServic
 import { toast } from 'sonner'
 
 const WalletPanel = ({ isOpen, onClose }) => {
-    const { wallets, currentWallet, selectWallet } = useWallet()
+    const { wallets, currentWallet, selectWallet, loading } = useWallet()
     const { settings } = useSettings()
     const navigate = useNavigate()
     const [categories, setCategories] = useState([])
@@ -42,7 +42,7 @@ const WalletPanel = ({ isOpen, onClose }) => {
     }
 
     const handleCategorySelect = (categoryId) => {
-        navigate(`/transactions?viewCategory=${categoryId}`)
+        navigate(`/transactions?tab=categories&viewCategory=${categoryId}`)
         onClose()
     }
 
@@ -65,48 +65,56 @@ const WalletPanel = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4">
-                    {currentWallet && (
-                        <div className="mb-4">
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Ví hiện tại</p>
-                            <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/60 rounded-lg">
-                                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xl">
-                                    <IconComponent name={currentWallet.icon} className="w-5 h-5 text-green-600 dark:text-green-200" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-green-800 dark:text-green-200 truncate">{currentWallet.name}</p>
-                                    <p className="text-sm text-green-600 dark:text-green-400">
-                                        {formatCurrency(currentWallet.balance, currentWallet.currency, settings)}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    <div className="space-y-2">
-                        {wallets.map((wallet) => (
-                            <button
-                                key={wallet.id}
-                                onClick={() => handleSelectWallet(wallet)}
-                                className="w-full flex items-center space-x-3 p-3 rounded-lg transition-colors text-left hover:bg-gray-50 dark:hover:bg-gray-800"
-                            >
-                                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-xl">
-                                    <IconComponent name={wallet.icon} className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-800 dark:text-gray-200 truncate">{wallet.name}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                                        {formatCurrency(wallet.balance, wallet.currency, settings)}
-                                    </p>
-                                </div>
-                                {currentWallet?.id === wallet.id && (
-                                    <Check className="w-5 h-5 text-green-600 shrink-0" />
-                                )}
-                            </button>
-                        ))}
-                    </div>
-                    {wallets.length === 0 && (
+                    {loading ? (
                         <div className="text-center py-4">
-                            <p className="text-gray-500 dark:text-gray-400">Chưa có ví nào</p>
+                            <p className="text-gray-500 dark:text-gray-400">Đang tải danh sách ví...</p>
                         </div>
+                    ) : (
+                        <>
+                            {currentWallet && (
+                                <div className="mb-4">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Ví hiện tại</p>
+                                    <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/60 rounded-lg">
+                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xl">
+                                            <IconComponent name={currentWallet.icon} className="w-5 h-5 text-green-600 dark:text-green-200" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-green-800 dark:text-green-200 truncate">{currentWallet.name}</p>
+                                            <p className="text-sm text-green-600 dark:text-green-400">
+                                                {formatCurrency(currentWallet.balance, currentWallet.currency, settings)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="space-y-2">
+                                {wallets.map((wallet) => (
+                                    <button
+                                        key={wallet.id}
+                                        onClick={() => handleSelectWallet(wallet)}
+                                        className="w-full flex items-center space-x-3 p-3 rounded-lg transition-colors text-left hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    >
+                                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-xl">
+                                            <IconComponent name={wallet.icon} className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-gray-800 dark:text-gray-200 truncate">{wallet.name}</p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                {formatCurrency(wallet.balance, wallet.currency, settings)}
+                                            </p>
+                                        </div>
+                                        {currentWallet?.id === wallet.id && (
+                                            <Check className="w-5 h-5 text-green-600 shrink-0" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                            {wallets.length === 0 && (
+                                <div className="text-center py-4">
+                                    <p className="text-gray-500 dark:text-gray-400">Chưa có ví nào</p>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">

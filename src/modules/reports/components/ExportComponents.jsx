@@ -7,7 +7,8 @@ import { Label } from '../../../components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { Switch } from '../../../components/ui/switch'
 import { toast } from 'sonner'
-import { Download, Mail, FileText, Settings, Send } from 'lucide-react'
+import { Download, Mail, FileText, Settings, Send, Loader2 } from 'lucide-react'
+import { useAuth } from '../../auth/contexts/AuthContext'
 import exportService from '../services/exportService'
 import emailService from '../services/emailService'
 
@@ -83,6 +84,7 @@ const ExportDialog = ({ buildReportRequest, title }) => {
 }
 
 const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
+  const { user } = useAuth() // Lấy thông tin user hiện tại
   const [emailSettings, setEmailSettings] = useState({
     targetEmail: '',
     dailyEnabled: false,
@@ -103,7 +105,7 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
           const data = res.data
           setEmailSettings(prev => ({
             ...prev,
-            targetEmail: data?.targetEmail || '',
+            targetEmail: data?.targetEmail || user?.email || '',
             dailyEnabled: !!data?.dailyEnabled,
             weeklyEnabled: !!data?.weeklyEnabled,
             monthlyEnabled: !!data?.monthlyEnabled,
@@ -112,15 +114,35 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
             weeklyDayOfWeek: data?.weeklyDayOfWeek ?? 1,
             monthlyDayOfMonth: data?.monthlyDayOfMonth ?? 1,
           }))
+        } else {
+          // Nếu chưa có cài đặt, dùng email người dùng làm mặc định
+          setEmailSettings(prev => ({
+            ...prev,
+            targetEmail: user?.email || '',
+          }))
         }
       } catch (e) {
         console.warn('Không thể tải cài đặt email', e)
+        // Nếu có lỗi, vẫn dùng email người dùng làm mặc định
+        setEmailSettings(prev => ({
+          ...prev,
+          targetEmail: user?.email || '',
+        }))
       }
     }
     load()
-  }, [])
+  }, [user?.email, defaultTime.hour, defaultTime.minute])
 
   const handleSaveSettings = async () => {
+    // Kiểm tra email nếu có nhập
+    if (emailSettings.targetEmail && emailSettings.targetEmail.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(emailSettings.targetEmail.trim())) {
+        toast.error('Vui lòng nhập địa chỉ email hợp lệ!')
+        return
+      }
+    }
+
     setLoading(true)
     try {
       await emailService.saveSettings(emailSettings)
@@ -134,6 +156,19 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
   }
 
   const handleSendNow = async () => {
+    // Kiểm tra email trước khi gửi
+    if (!emailSettings.targetEmail || emailSettings.targetEmail.trim() === '') {
+      toast.error('Vui lòng nhập email nhận báo cáo trước khi gửi!')
+      return
+    }
+
+    // Kiểm tra định dạng email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(emailSettings.targetEmail.trim())) {
+      toast.error('Vui lòng nhập địa chỉ email hợp lệ!')
+      return
+    }
+
     setLoading(true)
     try {
       // gửi ngay: cần startDate/endDate từ UI cao hơn; 此处简化，默认 gửi hôm qua
@@ -253,9 +288,16 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
           </div>
 
           <div className="grid grid-cols-2 gap-3 pt-2">
-            <Button onClick={handleSaveSettings} disabled={loading}>Lưu Cài Đặt</Button>
+            <Button onClick={handleSaveSettings} disabled={loading}>
+              {loading ? 'Đang lưu...' : 'Lưu Cài Đặt'}
+            </Button>
             <Button variant="secondary" onClick={handleSendNow} disabled={loading}>
-              <Send className="w-4 h-4 mr-2" /> Gửi Ngay
+              {loading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4 mr-2" />
+              )}
+              {loading ? 'Đang gửi...' : 'Gửi Ngay'}
             </Button>
           </div>
         </div>

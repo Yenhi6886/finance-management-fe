@@ -52,31 +52,26 @@ import { IconComponent } from '../../../shared/config/icons'
 import { useSettings } from '../../../shared/contexts/SettingsContext'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
 import BalanceTrendChart from '../components/BalanceTrendChart'
+import ExpenseByCategoryChart from '../components/ExpenseByCategoryChart'
 
 const WalletDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { refreshWallets } = useContext(WalletContext)
-  const [wallet, setWallet] = useState(null)
+  const [walletDetails, setWalletDetails] = useState(null)
   const [transactions, setTransactions] = useState([])
-  const [balanceHistory, setBalanceHistory] = useState([])
-  const [monthlyStats, setMonthlyStats] = useState(null)
-
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
 
   const [loading, setLoading] = useState(true)
   const [transactionsLoading, setTransactionsLoading] = useState(false)
-  const [chartLoading, setChartLoading] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const { settings } = useSettings()
 
-  const fetchWalletDetails = useCallback(async () => {
+  const fetchWalletData = useCallback(async () => {
     try {
-      const response = await walletService.getWalletById(id)
-      const walletData = response.data.data
-      setWallet(walletData)
-      setMonthlyStats(walletData.monthlyStats || { totalIncome: 0, totalExpense: 0, netChange: 0 })
+      const response = await walletService.getWalletDetails(id)
+      setWalletDetails(response.data.data)
     } catch (error) {
       toast.error(error.response?.data?.message || "Lỗi khi tải dữ liệu ví.")
       navigate('/wallets')
@@ -97,35 +92,22 @@ const WalletDetail = () => {
     }
   }, [id])
 
-  const fetchBalanceHistory = useCallback(async () => {
-    setChartLoading(true)
-    try {
-      const response = await walletService.getBalanceHistory(id)
-      setBalanceHistory(response.data.data || [])
-    } catch (error) {
-      toast.error("Lỗi khi tải dữ liệu biểu đồ.")
-    } finally {
-      setChartLoading(false)
-    }
-  }, [id])
-
   useEffect(() => {
     setLoading(true)
     Promise.all([
-      fetchWalletDetails(),
-      fetchTransactions(page),
-      fetchBalanceHistory()
+      fetchWalletData(),
+      fetchTransactions(page)
     ]).finally(() => setLoading(false))
-  }, [fetchWalletDetails, fetchTransactions, fetchBalanceHistory, page])
+  }, [fetchWalletData, fetchTransactions, page])
 
 
   const handleConfirmDelete = async () => {
-    if (!wallet) return
+    if (!walletDetails?.wallet) return
     try {
-      await walletService.deleteWallet(wallet.id)
+      await walletService.deleteWallet(walletDetails.wallet.id)
       await refreshWallets()
       navigate('/wallets', {
-        state: { message: `Ví "${wallet.name}" đã được xóa thành công.`, type: 'success' }
+        state: { message: `Ví "${walletDetails.wallet.name}" đã được xóa thành công.`, type: 'success' }
       })
     } catch (error) {
       toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi xóa ví.')
@@ -134,14 +116,17 @@ const WalletDetail = () => {
   }
 
   const handleArchiveToggle = async () => {
-    if (!wallet) return
-    const isArchiving = !wallet.isArchived
+    if (!walletDetails?.wallet) return
+    const isArchiving = !walletDetails.wallet.isArchived
     const action = isArchiving ? walletService.archiveWallet : walletService.unarchiveWallet
     const successMessage = isArchiving ? 'lưu trữ' : 'khôi phục'
     try {
-      const response = await action(wallet.id)
-      setWallet(response.data.data)
-      toast.success(`Ví "${wallet.name}" đã được ${successMessage} thành công.`)
+      const response = await action(walletDetails.wallet.id)
+      setWalletDetails(prevDetails => ({
+        ...prevDetails,
+        wallet: response.data.data
+      }))
+      toast.success(`Ví "${walletDetails.wallet.name}" đã được ${successMessage} thành công.`)
       refreshWallets()
     } catch (error) {
       toast.error(error.response?.data?.message || `Lỗi khi ${successMessage} ví.`)
@@ -155,12 +140,14 @@ const WalletDetail = () => {
   }
 
   if (loading) {
-    return <div>Đang tải dữ liệu ví...</div>
+    return <div className="flex h-full items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
   }
 
-  if (!wallet) {
+  if (!walletDetails?.wallet) {
     return <div>Không tìm thấy ví.</div>
   }
+
+  const { wallet, monthlyIncome, monthlyExpense, netChange, balanceHistory, expenseByCategory } = walletDetails
 
   return (
       <div className="space-y-8">
@@ -230,25 +217,25 @@ const WalletDetail = () => {
           </Card>
           <div className="grid grid-cols-1 grid-rows-3 gap-4">
             <Card className="flex items-center p-4">
-              <div className="p-3 bg-green-100 rounded-lg mr-4"><TrendingUp className="w-6 h-6 text-green-600" /></div>
+              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg mr-4"><TrendingUp className="w-6 h-6 text-green-600" /></div>
               <div>
                 <p className="text-muted-foreground text-sm">Thu Nhập Tháng</p>
-                <p className="text-xl font-bold text-green-600">{formatCurrency(monthlyStats?.totalIncome || 0, wallet.currency, settings)}</p>
+                <p className="text-xl font-bold text-green-600">{formatCurrency(monthlyIncome, wallet.currency, settings)}</p>
               </div>
             </Card>
             <Card className="flex items-center p-4">
-              <div className="p-3 bg-red-100 rounded-lg mr-4"><TrendingDown className="w-6 h-6 text-red-600" /></div>
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg mr-4"><TrendingDown className="w-6 h-6 text-red-600" /></div>
               <div>
                 <p className="text-muted-foreground text-sm">Chi Tiêu Tháng</p>
-                <p className="text-xl font-bold text-red-600">{formatCurrency(monthlyStats?.totalExpense || 0, wallet.currency, settings)}</p>
+                <p className="text-xl font-bold text-red-600">{formatCurrency(monthlyExpense, wallet.currency, settings)}</p>
               </div>
             </Card>
             <Card className="flex items-center p-4">
-              <div className="p-3 bg-blue-100 rounded-lg mr-4"><CalendarDays className="w-6 h-6 text-blue-600" /></div>
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-4"><CalendarDays className="w-6 h-6 text-blue-600" /></div>
               <div>
                 <p className="text-muted-foreground text-sm">Thay Đổi Ròng</p>
-                <p className={cn("text-xl font-bold", (monthlyStats?.netChange || 0) >= 0 ? 'text-green-600' : 'text-red-600')}>
-                  {(monthlyStats?.netChange || 0) >= 0 ? '+' : ''}{formatCurrency(monthlyStats?.netChange || 0, wallet.currency, settings)}
+                <p className={cn("text-xl font-bold", netChange >= 0 ? 'text-green-600' : 'text-red-600')}>
+                  {netChange >= 0 ? '+' : ''}{formatCurrency(netChange, wallet.currency, settings)}
                 </p>
               </div>
             </Card>
@@ -259,9 +246,7 @@ const WalletDetail = () => {
           <Card>
             <CardHeader><CardTitle>Xu Hướng Số Dư</CardTitle></CardHeader>
             <CardContent>
-              {chartLoading ? (
-                  <div className="h-64 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
-              ) : balanceHistory.length > 0 ? (
+              {balanceHistory && balanceHistory.length > 0 ? (
                   <BalanceTrendChart data={balanceHistory} currency={wallet.currency} />
               ) : (
                   <div className="h-64 flex flex-col items-center justify-center text-center text-muted-foreground">
@@ -274,10 +259,18 @@ const WalletDetail = () => {
           <Card>
             <CardHeader><CardTitle>Chi Tiêu Theo Danh Mục</CardTitle></CardHeader>
             <CardContent>
-              <div className="h-64 flex flex-col items-center justify-center text-center text-muted-foreground">
-                <PieChart className="w-12 h-12 mb-2"/>
-                <p>Tính năng này sẽ sớm được cập nhật.</p>
-              </div>
+              {expenseByCategory && expenseByCategory.length > 0 ? (
+                  <ExpenseByCategoryChart
+                      data={expenseByCategory}
+                      currency={wallet.currency}
+                      totalExpense={monthlyExpense}
+                  />
+              ) : (
+                  <div className="h-64 flex flex-col items-center justify-center text-center text-muted-foreground">
+                    <PieChart className="w-12 h-12 mb-2"/>
+                    <p>Chưa có dữ liệu chi tiêu theo danh mục.</p>
+                  </div>
+              )}
             </CardContent>
           </Card>
         </div>

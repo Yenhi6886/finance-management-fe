@@ -8,12 +8,13 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { categoryService } from '../services/categoryService';
 import { toast } from 'sonner';
-import { PlusCircle, Trash2, Loader2, BadgePlus, Edit, MoreVertical, TrendingUp, TrendingDown, ArrowRightLeft, ChevronLeft, ChevronRight, EyeIcon, X, FileText, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, BadgePlus, Edit, MoreVertical, TrendingUp, TrendingDown, ArrowRightLeft, ChevronLeft, ChevronRight, EyeIcon, X, FileText, ArrowUpCircle, ArrowDownCircle, PieChart } from 'lucide-react';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
+import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../../../components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../components/ui/tooltip';
-import { DoughnutChart } from '../../../components/charts/ChartComponents';
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { cn } from '../../../lib/utils';
 
 const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => {
@@ -206,6 +207,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const { settings } = useSettings();
+    const { theme } = useTheme();
 
     useEffect(() => {
         const fetchTransactions = async () => {
@@ -234,18 +236,40 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
         }, { totalIncome: 0, totalExpense: 0 });
     }, [transactions]);
 
-    const chartData = {
-        labels: ['Tổng Thu', 'Tổng Chi'],
-        datasets: [
-            {
-                label: 'Số tiền',
-                data: [totalIncome, totalExpense],
-                backgroundColor: ['hsl(var(--chart-1))', 'hsl(var(--destructive))'],
-                borderColor: ['hsl(var(--background))'],
-                borderWidth: 2,
-            },
-        ],
+    const chartData = useMemo(() => {
+        const data = [];
+        if (totalIncome > 0) {
+            data.push({ name: 'Tổng Thu', value: totalIncome });
+        }
+        if (totalExpense > 0) {
+            data.push({ name: 'Tổng Chi', value: totalExpense });
+        }
+        return data;
+    }, [totalIncome, totalExpense]);
+
+    const COLORS = ['#10b981', '#ef4444']; // Green for Income, Red for Expense
+    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const legendTextColor = isDark ? '#a1a1aa' : '#71717a';
+
+    const CustomTooltip = ({ active, payload }) => {
+        if (active && payload && payload.length) {
+            const data = payload[0];
+            const total = totalIncome + totalExpense;
+            const percentage = total > 0 ? ((data.value / total) * 100).toFixed(1) : 0;
+            return (
+                <div className="rounded-lg border bg-background p-2 shadow-sm text-sm">
+                    <p className="font-bold mb-1">{data.name}</p>
+                    <p className="text-foreground">
+                        {formatCurrency(data.value, 'VND', settings)}
+                        <span className="text-muted-foreground"> ({percentage}%)</span>
+                    </p>
+                </div>
+            );
+        }
+        return null;
     };
+
+    const hasChartData = totalIncome > 0 || totalExpense > 0;
 
     return (
         <Card className="mt-6 animate-in fade-in-0 slide-in-from-bottom-5 duration-500">
@@ -288,8 +312,44 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                         </div>
                         <div className="lg:col-span-2 space-y-6">
                             <h3 className="font-semibold mb-4">Tổng quan</h3>
-                            <div className="h-64 relative">
-                                <DoughnutChart data={chartData} />
+                            <div className="h-64 relative flex items-center justify-center">
+                                {hasChartData ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RechartsPieChart>
+                                            <Pie
+                                                data={chartData}
+                                                dataKey="value"
+                                                nameKey="name"
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={50}
+                                                outerRadius={80}
+                                                paddingAngle={5}
+                                                labelLine={false}
+                                            >
+                                                {chartData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <RechartsTooltip content={<CustomTooltip />} />
+                                            <Legend
+                                                verticalAlign="bottom"
+                                                iconSize={10}
+                                                wrapperStyle={{ fontSize: '12px', color: legendTextColor }}
+                                                formatter={(value, entry) => {
+                                                    const total = totalIncome + totalExpense;
+                                                    const percentage = total > 0 ? ((entry.payload.value / total) * 100).toFixed(1) : 0;
+                                                    return <span style={{ color: entry.color }}>{value} ({percentage}%)</span>;
+                                                }}
+                                            />
+                                        </RechartsPieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="text-center text-muted-foreground">
+                                        <PieChart className="w-12 h-12 mx-auto mb-2" />
+                                        <p>Chưa có dữ liệu thu chi.</p>
+                                    </div>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center p-3 bg-muted rounded-md text-sm">
@@ -313,7 +373,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
     );
 };
 
-const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick, initialCategoryIdToView, onCategoryViewed }) => {
+const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick, onViewCategory, initialCategoryIdToView, onCategoryViewed, autoOpenAddModal, onAutoModalOpened }) => {
     const [categories, setCategories] = useState([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -321,6 +381,23 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
     const [detailedCategory, setDetailedCategory] = useState(null);
     const [loading, setLoading] = useState(true);
     const { settings } = useSettings();
+
+    // Generate random soft colors for category borders
+    const generateSoftColor = (id) => {
+        const colors = [
+            'border-t-blue-200 bg-blue-50/30 dark:border-t-blue-400 dark:bg-blue-900/10',
+            'border-t-green-200 bg-green-50/30 dark:border-t-green-400 dark:bg-green-900/10',
+            'border-t-purple-200 bg-purple-50/30 dark:border-t-purple-400 dark:bg-purple-900/10',
+            'border-t-pink-200 bg-pink-50/30 dark:border-t-pink-400 dark:bg-pink-900/10',
+            'border-t-yellow-200 bg-yellow-50/30 dark:border-t-yellow-400 dark:bg-yellow-900/10',
+            'border-t-indigo-200 bg-indigo-50/30 dark:border-t-indigo-400 dark:bg-indigo-900/10',
+            'border-t-red-200 bg-red-50/30 dark:border-t-red-400 dark:bg-red-900/10',
+            'border-t-teal-200 bg-teal-50/30 dark:border-t-teal-400 dark:bg-teal-900/10',
+            'border-t-orange-200 bg-orange-50/30 dark:border-t-orange-400 dark:bg-orange-900/10',
+            'border-t-cyan-200 bg-cyan-50/30 dark:border-t-cyan-400 dark:bg-cyan-900/10',
+        ];
+        return colors[id % colors.length];
+    };
 
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: 'start',
@@ -362,6 +439,13 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
         fetchCategories();
     }, [fetchCategories, refreshTrigger]);
 
+    // Clear local detailed category if parent is handling category viewing
+    useEffect(() => {
+        if (onViewCategory && detailedCategory) {
+            setDetailedCategory(null);
+        }
+    }, [onViewCategory]);
+
     useEffect(() => {
         if (initialCategoryIdToView && categories.length > 0) {
             const categoryToView = categories.find(cat => String(cat.id) === String(initialCategoryIdToView));
@@ -374,6 +458,16 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
         }
     }, [categories, initialCategoryIdToView, onCategoryViewed]);
 
+    useEffect(() => {
+        if (autoOpenAddModal && !loading) {
+            handleOpenEditModal();
+            // Call callback to clean up URL parameters
+            if (onAutoModalOpened) {
+                onAutoModalOpened();
+            }
+        }
+    }, [autoOpenAddModal, loading]);
+
     const handleOpenEditModal = (category = null) => {
         setSelectedCategory(category);
         setIsEditModalOpen(true);
@@ -385,10 +479,16 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
     };
 
     const handleViewDetails = (category) => {
-        if (detailedCategory && detailedCategory.id === category.id) {
-            setDetailedCategory(null);
+        // Use the parent's onViewCategory if available (from Transactions.jsx)
+        if (onViewCategory) {
+            onViewCategory(category);
         } else {
-            setDetailedCategory(category);
+            // Fallback to local state management
+            if (detailedCategory && detailedCategory.id === category.id) {
+                setDetailedCategory(null);
+            } else {
+                setDetailedCategory(category);
+            }
         }
     };
 
@@ -427,7 +527,7 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                                         const showIncomeTracker = hasIncomeTarget || hasEarned;
                                         return (
                                             <div className="embla__slide" key={cat.id}>
-                                                <Card className="flex flex-col h-full">
+                                                <Card className={`flex flex-col h-full border-t-4 ${generateSoftColor(cat.id)}`}>
                                                     <CardHeader className="flex flex-row items-start justify-between">
                                                         <div>
                                                             <CardTitle
@@ -449,39 +549,39 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                     </CardHeader>
-                                                    <CardContent className="space-y-4 flex-grow flex flex-col justify-end">
+                                                    <CardContent className="space-y-4">
                                                         {showExpenseTracker && (
-                                                            <div className="space-y-2">
-                                                                <div className="flex justify-between items-center">
-                                                                    <p className="text-sm font-semibold flex items-center"><TrendingDown className="w-4 h-4 mr-2 text-red-500" /> Ngân sách chi tiêu</p>
-                                                                    <p className="text-sm font-bold">
-                                                                        {hasBudget ? formatCurrency(cat.budgetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">Không đặt</span>}
-                                                                    </p>
+                                                                <div className="space-y-2">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <p className="text-sm font-semibold flex items-center"><TrendingDown className="w-4 h-4 mr-2 text-red-500" /> Ngân sách chi tiêu</p>
+                                                                        <p className="text-sm font-bold">
+                                                                            {hasBudget ? formatCurrency(cat.budgetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">Không đặt</span>}
+                                                                        </p>
+                                                                    </div>
+                                                                    <ProgressBar value={cat.spentAmount} max={hasBudget ? cat.budgetAmount : cat.spentAmount} variant="expense" settings={settings} />
+                                                                    <div className="text-xs text-muted-foreground flex justify-between">
+                                                                        <span>Đã chi: {formatCurrency(cat.spentAmount, 'VND', settings)}</span>
+                                                                        {hasBudget && <span>Còn lại: {formatCurrency(cat.remainingAmount, 'VND', settings)}</span>}
+                                                                    </div>
                                                                 </div>
-                                                                <ProgressBar value={cat.spentAmount} max={hasBudget ? cat.budgetAmount : cat.spentAmount} variant="expense" settings={settings} />
-                                                                <div className="text-xs text-muted-foreground flex justify-between">
-                                                                    <span>Đã chi: {formatCurrency(cat.spentAmount, 'VND', settings)}</span>
-                                                                    {hasBudget && <span>Còn lại: {formatCurrency(cat.remainingAmount, 'VND', settings)}</span>}
+                                                            )}
+                                                            {showIncomeTracker && (
+                                                                <div className="space-y-2">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <p className="text-sm font-semibold flex items-center"><TrendingUp className="w-4 h-4 mr-2 text-green-500" /> Mục tiêu thu nhập</p>
+                                                                        <p className="text-sm font-bold">
+                                                                            {hasIncomeTarget ? formatCurrency(cat.incomeTargetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">Không đặt</span>}
+                                                                        </p>
+                                                                    </div>
+                                                                    <ProgressBar value={cat.earnedAmount} max={hasIncomeTarget ? cat.incomeTargetAmount : cat.earnedAmount} variant="income" settings={settings} />
+                                                                    <div className="text-xs text-muted-foreground flex justify-between">
+                                                                        <span>Đã thu: {formatCurrency(cat.earnedAmount, 'VND', settings)}</span>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        )}
-                                                        {showIncomeTracker && (
-                                                            <div className="space-y-2">
-                                                                <div className="flex justify-between items-center">
-                                                                    <p className="text-sm font-semibold flex items-center"><TrendingUp className="w-4 h-4 mr-2 text-green-500" /> Mục tiêu thu nhập</p>
-                                                                    <p className="text-sm font-bold">
-                                                                        {hasIncomeTarget ? formatCurrency(cat.incomeTargetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">Không đặt</span>}
-                                                                    </p>
-                                                                </div>
-                                                                <ProgressBar value={cat.earnedAmount} max={hasIncomeTarget ? cat.incomeTargetAmount : cat.earnedAmount} variant="income" settings={settings} />
-                                                                <div className="text-xs text-muted-foreground flex justify-between">
-                                                                    <span>Đã thu: {formatCurrency(cat.earnedAmount, 'VND', settings)}</span>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                        {!showExpenseTracker && !showIncomeTracker && (
-                                                            <p className="text-sm text-muted-foreground italic">Chưa đặt ngân sách hoặc mục tiêu</p>
-                                                        )}
+                                                            )}
+                                                            {!showExpenseTracker && !showIncomeTracker && (
+                                                                <p className="text-sm text-muted-foreground italic">Chưa đặt ngân sách hoặc mục tiêu</p>
+                                                            )}
                                                     </CardContent>
                                                 </Card>
                                             </div>
@@ -501,7 +601,8 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
 
             <EditCategoryModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onCategoryUpdated={fetchCategories} category={selectedCategory} />
             <DeleteCategoryDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen} category={selectedCategory} onCategoryDeleted={fetchCategories} />
-            {detailedCategory && (
+            {/* Only show local CategoryDetailView if no parent onViewCategory handler is provided */}
+            {!onViewCategory && detailedCategory && (
                 <CategoryDetailView
                     category={detailedCategory}
                     onClose={() => setDetailedCategory(null)}
@@ -512,4 +613,4 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
     );
 };
 
-export default ManageCategories;
+export default ManageCategories;    

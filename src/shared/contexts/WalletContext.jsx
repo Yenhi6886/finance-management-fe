@@ -17,6 +17,7 @@ export const WalletProvider = ({ children }) => {
       setCurrentWallet(null);
       return;
     }
+    
     setLoading(true)
     try {
       const response = await walletService.getWallets()
@@ -30,20 +31,18 @@ export const WalletProvider = ({ children }) => {
           setCurrentWallet(savedWallet)
         } else {
           setCurrentWallet(walletsData[0])
-          localStorage.setItem('currentWalletId', walletsData[0].id)
+          localStorage.setItem('currentWalletId', walletsData[0].id.toString())
         }
       } else if (walletsData.length > 0) {
-        const currentWalletFromState = currentWallet;
-        if (!currentWalletFromState) {
-          setCurrentWallet(walletsData[0]);
-          localStorage.setItem('currentWalletId', walletsData[0].id);
-        }
-      } else if (walletsData.length === 0) {
+        setCurrentWallet(walletsData[0]);
+        localStorage.setItem('currentWalletId', walletsData[0].id.toString());
+      } else {
         setCurrentWallet(null)
         localStorage.removeItem('currentWalletId')
       }
     } catch (error) {
       console.error('Error fetching wallets:', error)
+      setCurrentWallet(null)
     } finally {
       setLoading(false)
     }
@@ -51,7 +50,11 @@ export const WalletProvider = ({ children }) => {
 
   const selectWallet = (wallet) => {
     setCurrentWallet(wallet)
-    localStorage.setItem('currentWalletId', wallet.id)
+    if (wallet && wallet.id) {
+      localStorage.setItem('currentWalletId', wallet.id.toString())
+    } else {
+      localStorage.removeItem('currentWalletId')
+    }
   }
 
   const getTotalBalance = () => {
@@ -61,6 +64,7 @@ export const WalletProvider = ({ children }) => {
   }
 
   useEffect(() => {
+    // Fetch wallets khi isAuthenticated thay đổi
     fetchWallets()
   }, [fetchWallets])
 

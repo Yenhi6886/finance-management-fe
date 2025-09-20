@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
-import { X, Loader2, FileText, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { X, Loader2, FileText, ArrowUpCircle, ArrowDownCircle, PieChart } from 'lucide-react';
 import { categoryService } from '../services/categoryService';
 import { toast } from 'sonner';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
+import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils';
-import { DoughnutChart } from '../../../components/charts/ChartComponents';
 import { cn } from '../../../lib/utils';
+import { PieChart as RechartsPieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const { settings } = useSettings();
+    const { theme } = useTheme();
 
     useEffect(() => {
         const fetchTransactions = async () => {
@@ -41,23 +43,40 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
         }, { totalIncome: 0, totalExpense: 0 });
     }, [transactions]);
 
-    const chartData = {
-        labels: ['Tổng Thu', 'Tổng Chi'],
-        datasets: [
-            {
-                label: 'Số tiền',
-                data: [totalIncome, totalExpense],
-                backgroundColor: [
-                    '#10b981',
-                    '#ef4444'
-                ],
-                hoverBackgroundColor: [
-                    '#059669',
-                    '#dc2626'
-                ],
-            },
-        ],
+    const chartData = useMemo(() => {
+        const data = [];
+        if (totalIncome > 0) {
+            data.push({ name: 'Tổng Thu', value: totalIncome });
+        }
+        if (totalExpense > 0) {
+            data.push({ name: 'Tổng Chi', value: totalExpense });
+        }
+        return data;
+    }, [totalIncome, totalExpense]);
+
+    const COLORS = ['#10b981', '#ef4444']; // Green for Income, Red for Expense
+    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const legendTextColor = isDark ? '#a1a1aa' : '#71717a';
+
+    const CustomTooltip = ({ active, payload }) => {
+        if (active && payload && payload.length) {
+            const data = payload[0];
+            const total = totalIncome + totalExpense;
+            const percentage = total > 0 ? ((data.value / total) * 100).toFixed(1) : 0;
+            return (
+                <div className="rounded-lg border bg-background p-2 shadow-sm text-sm">
+                    <p className="font-bold mb-1">{data.name}</p>
+                    <p className="text-foreground">
+                        {formatCurrency(data.value, 'VND', settings)}
+                        <span className="text-muted-foreground"> ({percentage}%)</span>
+                    </p>
+                </div>
+            );
+        }
+        return null;
     };
+
+    const hasChartData = totalIncome > 0 || totalExpense > 0;
 
     return (
         <Card className="mt-6 animate-in fade-in-0 slide-in-from-bottom-5 duration-500">
@@ -100,8 +119,44 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                         </div>
                         <div className="lg:col-span-2 space-y-6">
                             <h3 className="font-semibold mb-4">Tổng quan</h3>
-                            <div className="h-64 relative">
-                                <DoughnutChart data={chartData} />
+                            <div className="h-64 relative flex items-center justify-center">
+                                {hasChartData ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RechartsPieChart>
+                                            <Pie
+                                                data={chartData}
+                                                dataKey="value"
+                                                nameKey="name"
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={50}
+                                                outerRadius={80}
+                                                paddingAngle={5}
+                                                labelLine={false}
+                                            >
+                                                {chartData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Legend
+                                                verticalAlign="bottom"
+                                                iconSize={10}
+                                                wrapperStyle={{ fontSize: '12px', color: legendTextColor }}
+                                                formatter={(value, entry) => {
+                                                    const total = totalIncome + totalExpense;
+                                                    const percentage = total > 0 ? ((entry.payload.value / total) * 100).toFixed(1) : 0;
+                                                    return <span style={{ color: entry.color }}>{value} ({percentage}%)</span>;
+                                                }}
+                                            />
+                                        </RechartsPieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="text-center text-muted-foreground">
+                                        <PieChart className="w-12 h-12 mx-auto mb-2" />
+                                        <p>Chưa có dữ liệu thu chi.</p>
+                                    </div>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center p-3 bg-muted rounded-md text-sm">
