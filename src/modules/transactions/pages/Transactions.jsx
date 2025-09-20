@@ -14,7 +14,7 @@ import { formatCurrency, formatRelativeTime} from '../../../shared/utils/formatt
 import AddTransactionModal from '../components/AddTransactionModal';
 import EditTransactionModal from '../components/EditTransactionModal';
 import ManageCategories from '../components/ManageCategories';
-import CategoryDetailView from '../components/CategoryDetailView'; // <-- IMPORT MỚI
+import CategoryDetailView from '../components/CategoryDetailView';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -29,38 +29,38 @@ const Transactions = () => {
     const { refreshWallets } = useWallet();
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
-
-    // State mới để quản lý việc xem chi tiết danh mục
     const [viewingCategory, setViewingCategory] = useState(null);
-
-    const initialCategoryIdToView = searchParams.get('viewCategory');
-    const tabFromUrl = searchParams.get('tab');
     const actionFromUrl = searchParams.get('action');
 
     useEffect(() => {
-        if (tabFromUrl === 'categories') {
-            setActiveTab('categories');
-        }
-    }, [tabFromUrl]);
+        const tab = searchParams.get('tab') || 'transactions';
+        const categoryId = searchParams.get('viewCategory');
 
-    // Tìm và set category để xem chi tiết khi có param trên URL
-    useEffect(() => {
-        const fetchAndSetCategory = async () => {
-            if (initialCategoryIdToView && activeTab === 'categories') {
-                try {
-                    const response = await categoryService.getCategoryById(initialCategoryIdToView);
-                    setViewingCategory(response.data.data);
-                } catch (error) {
-                    toast.error("Không tìm thấy danh mục để xem.");
-                    setSearchParams(params => {
-                        params.delete('viewCategory');
-                        return params;
-                    }, { replace: true });
-                }
+        setActiveTab(tab);
+
+        const fetchAndSetCategory = async (id) => {
+            try {
+                const response = await categoryService.getCategoryById(id);
+                setViewingCategory(response.data.data);
+            } catch (error) {
+                toast.error("Không tìm thấy danh mục để xem.");
+                setViewingCategory(null);
+                setSearchParams(params => {
+                    params.delete('viewCategory');
+                    return params;
+                }, { replace: true });
             }
         };
-        fetchAndSetCategory();
-    }, [initialCategoryIdToView, activeTab, setSearchParams]);
+
+        if (tab === 'categories' && categoryId) {
+            // Only fetch if the category ID in URL is different from the one in state
+            if (viewingCategory?.id?.toString() !== categoryId) {
+                fetchAndSetCategory(categoryId);
+            }
+        } else {
+            setViewingCategory(null);
+        }
+    }, [searchParams]);
 
 
     const handleOpenAddModal = (type, categoryId = null) => {
@@ -77,9 +77,12 @@ const Transactions = () => {
     const handleDataRefresh = useCallback(async () => {
         setRefreshTrigger(prev => prev + 1);
         if (viewingCategory) {
-            // Nếu đang xem chi tiết, refresh lại dữ liệu của category đó
-            const response = await categoryService.getCategoryById(viewingCategory.id);
-            setViewingCategory(response.data.data);
+            try {
+                const response = await categoryService.getCategoryById(viewingCategory.id);
+                setViewingCategory(response.data.data);
+            } catch (error) {
+                handleCloseCategoryView();
+            }
         }
         await refreshWallets();
     }, [refreshWallets, viewingCategory]);
@@ -88,14 +91,29 @@ const Transactions = () => {
         handleOpenAddModal('expense', categoryId);
     };
 
-    // Hàm để xử lý khi click vào 1 danh mục
-    const handleViewCategory = (category) => {
-        setViewingCategory(category);
+    const handleTabChange = (tabName) => {
+        setSearchParams(params => {
+            params.set('tab', tabName);
+            params.delete('viewCategory');
+            return params;
+        }, { replace: true });
     };
 
-    // Hàm để đóng cửa sổ xem chi tiết
+    const handleViewCategory = (category) => {
+        const currentCategoryId = searchParams.get('viewCategory');
+
+        setSearchParams(params => {
+            if (String(category.id) === currentCategoryId) {
+                params.delete('viewCategory');
+            } else {
+                params.set('tab', 'categories');
+                params.set('viewCategory', category.id);
+            }
+            return params;
+        }, { replace: true });
+    };
+
     const handleCloseCategoryView = () => {
-        setViewingCategory(null);
         setSearchParams(params => {
             params.delete('viewCategory');
             return params;
@@ -115,14 +133,14 @@ const Transactions = () => {
             <div className="border-b">
                 <nav className="-mb-px flex space-x-6">
                     <button
-                        onClick={() => setActiveTab('transactions')}
+                        onClick={() => handleTabChange('transactions')}
                         className={cn('whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm',
                             activeTab === 'transactions' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border')}
                     >
                         Giao Dịch
                     </button>
                     <button
-                        onClick={() => setActiveTab('categories')}
+                        onClick={() => handleTabChange('categories')}
                         className={cn('whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm',
                             activeTab === 'categories' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border')}
                     >
@@ -133,22 +151,24 @@ const Transactions = () => {
 
             {activeTab === 'transactions' && <TransactionList onOpenAddModal={handleOpenAddModal} onOpenEditModal={handleOpenEditModal} refreshTrigger={refreshTrigger} />}
             {activeTab === 'categories' && (
-                viewingCategory ? (
-                    <CategoryDetailView
-                        category={viewingCategory}
-                        onClose={handleCloseCategoryView}
-                        onTransactionClick={handleOpenEditModal}
-                    />
-                ) : (
+                <div className="space-y-6">
                     <ManageCategories
                         onAddTransaction={handleAddTransactionFromCategory}
                         refreshTrigger={refreshTrigger}
                         onTransactionClick={handleOpenEditModal}
-                        onViewCategory={handleViewCategory} // <-- Prop mới
+                        onViewCategory={handleViewCategory}
                         autoOpenAddModal={actionFromUrl === 'add'}
                         onAutoModalOpened={onAutoModalOpened}
                     />
-                )
+                    {viewingCategory && (
+                        <CategoryDetailView
+                            key={viewingCategory.id}
+                            category={viewingCategory}
+                            onClose={handleCloseCategoryView}
+                            onTransactionClick={handleOpenEditModal}
+                        />
+                    )}
+                </div>
             )}
 
             <AddTransactionModal

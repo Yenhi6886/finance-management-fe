@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
-import { X, Loader2, FileText, ArrowUpCircle, ArrowDownCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { X, Loader2, FileText, ArrowUpCircle, ArrowDownCircle, PieChart } from 'lucide-react';
 import { categoryService } from '../services/categoryService';
 import { toast } from 'sonner';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
+import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils';
 import { cn } from '../../../lib/utils';
+import { PieChart as RechartsPieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
     const [transactions, setTransactions] = useState([]);
@@ -117,7 +119,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                         </div>
                         <div className="lg:col-span-2 space-y-6">
                             <h3 className="font-semibold mb-4">Tổng quan</h3>
-                            <div className="h-80 relative flex items-center justify-center">
+                            <div className="h-64 relative flex items-center justify-center">
                                 {hasChartData ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RechartsPieChart>
@@ -128,7 +130,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                                                 cx="50%"
                                                 cy="50%"
                                                 innerRadius={50}
-                                                outerRadius={120}
+                                                outerRadius={80}
                                                 paddingAngle={5}
                                                 labelLine={false}
                                             >

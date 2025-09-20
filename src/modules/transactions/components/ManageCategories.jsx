@@ -322,7 +322,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                                                 nameKey="name"
                                                 cx="50%"
                                                 cy="50%"
-                                                innerRadius={60}
+                                                innerRadius={50}
                                                 outerRadius={80}
                                                 paddingAngle={5}
                                                 labelLine={false}
@@ -373,7 +373,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
     );
 };
 
-const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick, initialCategoryIdToView, onCategoryViewed, autoOpenAddModal, onAutoModalOpened }) => {
+const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick, onViewCategory, initialCategoryIdToView, onCategoryViewed, autoOpenAddModal, onAutoModalOpened }) => {
     const [categories, setCategories] = useState([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -381,6 +381,23 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
     const [detailedCategory, setDetailedCategory] = useState(null);
     const [loading, setLoading] = useState(true);
     const { settings } = useSettings();
+
+    // Generate random soft colors for category borders
+    const generateSoftColor = (id) => {
+        const colors = [
+            'border-t-blue-200 bg-blue-50/30 dark:border-t-blue-400 dark:bg-blue-900/10',
+            'border-t-green-200 bg-green-50/30 dark:border-t-green-400 dark:bg-green-900/10',
+            'border-t-purple-200 bg-purple-50/30 dark:border-t-purple-400 dark:bg-purple-900/10',
+            'border-t-pink-200 bg-pink-50/30 dark:border-t-pink-400 dark:bg-pink-900/10',
+            'border-t-yellow-200 bg-yellow-50/30 dark:border-t-yellow-400 dark:bg-yellow-900/10',
+            'border-t-indigo-200 bg-indigo-50/30 dark:border-t-indigo-400 dark:bg-indigo-900/10',
+            'border-t-red-200 bg-red-50/30 dark:border-t-red-400 dark:bg-red-900/10',
+            'border-t-teal-200 bg-teal-50/30 dark:border-t-teal-400 dark:bg-teal-900/10',
+            'border-t-orange-200 bg-orange-50/30 dark:border-t-orange-400 dark:bg-orange-900/10',
+            'border-t-cyan-200 bg-cyan-50/30 dark:border-t-cyan-400 dark:bg-cyan-900/10',
+        ];
+        return colors[id % colors.length];
+    };
 
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: 'start',
@@ -422,6 +439,13 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
         fetchCategories();
     }, [fetchCategories, refreshTrigger]);
 
+    // Clear local detailed category if parent is handling category viewing
+    useEffect(() => {
+        if (onViewCategory && detailedCategory) {
+            setDetailedCategory(null);
+        }
+    }, [onViewCategory]);
+
     useEffect(() => {
         if (initialCategoryIdToView && categories.length > 0) {
             const categoryToView = categories.find(cat => String(cat.id) === String(initialCategoryIdToView));
@@ -455,10 +479,16 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
     };
 
     const handleViewDetails = (category) => {
-        if (detailedCategory && detailedCategory.id === category.id) {
-            setDetailedCategory(null);
+        // Use the parent's onViewCategory if available (from Transactions.jsx)
+        if (onViewCategory) {
+            onViewCategory(category);
         } else {
-            setDetailedCategory(category);
+            // Fallback to local state management
+            if (detailedCategory && detailedCategory.id === category.id) {
+                setDetailedCategory(null);
+            } else {
+                setDetailedCategory(category);
+            }
         }
     };
 
@@ -497,7 +527,7 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                                         const showIncomeTracker = hasIncomeTarget || hasEarned;
                                         return (
                                             <div className="embla__slide" key={cat.id}>
-                                                <Card className="flex flex-col h-full">
+                                                <Card className={`flex flex-col h-full border-t-4 ${generateSoftColor(cat.id)}`}>
                                                     <CardHeader className="flex flex-row items-start justify-between">
                                                         <div>
                                                             <CardTitle
@@ -519,39 +549,39 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                     </CardHeader>
-                                                    <CardContent className="space-y-4 flex-grow flex flex-col justify-end">
+                                                    <CardContent className="space-y-4">
                                                         {showExpenseTracker && (
-                                                            <div className="space-y-2">
-                                                                <div className="flex justify-between items-center">
-                                                                    <p className="text-sm font-semibold flex items-center"><TrendingDown className="w-4 h-4 mr-2 text-red-500" /> Ngân sách chi tiêu</p>
-                                                                    <p className="text-sm font-bold">
-                                                                        {hasBudget ? formatCurrency(cat.budgetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">Không đặt</span>}
-                                                                    </p>
+                                                                <div className="space-y-2">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <p className="text-sm font-semibold flex items-center"><TrendingDown className="w-4 h-4 mr-2 text-red-500" /> Ngân sách chi tiêu</p>
+                                                                        <p className="text-sm font-bold">
+                                                                            {hasBudget ? formatCurrency(cat.budgetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">Không đặt</span>}
+                                                                        </p>
+                                                                    </div>
+                                                                    <ProgressBar value={cat.spentAmount} max={hasBudget ? cat.budgetAmount : cat.spentAmount} variant="expense" settings={settings} />
+                                                                    <div className="text-xs text-muted-foreground flex justify-between">
+                                                                        <span>Đã chi: {formatCurrency(cat.spentAmount, 'VND', settings)}</span>
+                                                                        {hasBudget && <span>Còn lại: {formatCurrency(cat.remainingAmount, 'VND', settings)}</span>}
+                                                                    </div>
                                                                 </div>
-                                                                <ProgressBar value={cat.spentAmount} max={hasBudget ? cat.budgetAmount : cat.spentAmount} variant="expense" settings={settings} />
-                                                                <div className="text-xs text-muted-foreground flex justify-between">
-                                                                    <span>Đã chi: {formatCurrency(cat.spentAmount, 'VND', settings)}</span>
-                                                                    {hasBudget && <span>Còn lại: {formatCurrency(cat.remainingAmount, 'VND', settings)}</span>}
+                                                            )}
+                                                            {showIncomeTracker && (
+                                                                <div className="space-y-2">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <p className="text-sm font-semibold flex items-center"><TrendingUp className="w-4 h-4 mr-2 text-green-500" /> Mục tiêu thu nhập</p>
+                                                                        <p className="text-sm font-bold">
+                                                                            {hasIncomeTarget ? formatCurrency(cat.incomeTargetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">Không đặt</span>}
+                                                                        </p>
+                                                                    </div>
+                                                                    <ProgressBar value={cat.earnedAmount} max={hasIncomeTarget ? cat.incomeTargetAmount : cat.earnedAmount} variant="income" settings={settings} />
+                                                                    <div className="text-xs text-muted-foreground flex justify-between">
+                                                                        <span>Đã thu: {formatCurrency(cat.earnedAmount, 'VND', settings)}</span>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        )}
-                                                        {showIncomeTracker && (
-                                                            <div className="space-y-2">
-                                                                <div className="flex justify-between items-center">
-                                                                    <p className="text-sm font-semibold flex items-center"><TrendingUp className="w-4 h-4 mr-2 text-green-500" /> Mục tiêu thu nhập</p>
-                                                                    <p className="text-sm font-bold">
-                                                                        {hasIncomeTarget ? formatCurrency(cat.incomeTargetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">Không đặt</span>}
-                                                                    </p>
-                                                                </div>
-                                                                <ProgressBar value={cat.earnedAmount} max={hasIncomeTarget ? cat.incomeTargetAmount : cat.earnedAmount} variant="income" settings={settings} />
-                                                                <div className="text-xs text-muted-foreground flex justify-between">
-                                                                    <span>Đã thu: {formatCurrency(cat.earnedAmount, 'VND', settings)}</span>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                        {!showExpenseTracker && !showIncomeTracker && (
-                                                            <p className="text-sm text-muted-foreground italic">Chưa đặt ngân sách hoặc mục tiêu</p>
-                                                        )}
+                                                            )}
+                                                            {!showExpenseTracker && !showIncomeTracker && (
+                                                                <p className="text-sm text-muted-foreground italic">Chưa đặt ngân sách hoặc mục tiêu</p>
+                                                            )}
                                                     </CardContent>
                                                 </Card>
                                             </div>
@@ -571,7 +601,8 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
 
             <EditCategoryModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onCategoryUpdated={fetchCategories} category={selectedCategory} />
             <DeleteCategoryDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen} category={selectedCategory} onCategoryDeleted={fetchCategories} />
-            {detailedCategory && (
+            {/* Only show local CategoryDetailView if no parent onViewCategory handler is provided */}
+            {!onViewCategory && detailedCategory && (
                 <CategoryDetailView
                     category={detailedCategory}
                     onClose={() => setDetailedCategory(null)}
@@ -582,4 +613,4 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
     );
 };
 
-export default ManageCategories;
+export default ManageCategories;    
