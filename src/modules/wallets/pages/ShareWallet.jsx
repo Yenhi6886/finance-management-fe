@@ -39,6 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../../components/ui/dialog"
+import { toast } from 'sonner'
 
 const ShareWallet = () => {
   const { user } = useAuth(); // Get current user info
@@ -160,10 +161,19 @@ const ShareWallet = () => {
     try {
       await walletService.shareWalletByInvitation(payload)
       setSuccessMessage('Lời mời chia sẻ ví đã được gửi thành công!')
+      toast.success('Lời mời chia sẻ ví đã được gửi thành công!', {
+        duration: 3000,
+        position: 'top-right'
+      })
       resetForm()
       fetchSharedByMe(false)
     } catch (err) {
-      setError(err.response?.data?.message || 'Đã có lỗi xảy ra khi gửi lời mời.')
+      const errorMessage = err.response?.data?.message || 'Đã có lỗi xảy ra khi gửi lời mời.'
+      setError(errorMessage)
+      toast.error(errorMessage, {
+        duration: 4000,
+        position: 'top-right'
+      })
     } finally {
       setIsSubmitting(false)
       setShowPageLoading(false)
@@ -187,9 +197,18 @@ const ShareWallet = () => {
     try {
       await walletService.revokeWalletShare(shareToRevoke.id)
       setSuccessMessage('Thu hồi/xóa chia sẻ thành công.')
+      toast.success('Thu hồi/xóa chia sẻ thành công!', {
+        duration: 3000,
+        position: 'top-right'
+      })
       fetchSharedByMe(false)
     } catch (err) {
-      setError(err.response?.data?.message || 'Không thể thực hiện hành động này.')
+      const errorMessage = err.response?.data?.message || 'Không thể thực hiện hành động này.'
+      setError(errorMessage)
+      toast.error(errorMessage, {
+        duration: 4000,
+        position: 'top-right'
+      })
     } finally {
       setLoading(false)
       setShareToRevoke(null)
@@ -202,9 +221,18 @@ const ShareWallet = () => {
     try {
       await walletService.updateSharePermission(shareId, newPermission)
       setSuccessMessage('Cập nhật quyền thành công.')
+      toast.success('Cập nhật quyền thành công!', {
+        duration: 3000,
+        position: 'top-right'
+      })
       fetchSharedByMe(false)
     } catch (err) {
-      setError(err.response?.data?.message || 'Không thể cập nhật quyền.')
+      const errorMessage = err.response?.data?.message || 'Không thể cập nhật quyền.'
+      setError(errorMessage)
+      toast.error(errorMessage, {
+        duration: 4000,
+        position: 'top-right'
+      })
       fetchSharedByMe(false)
     }
   }

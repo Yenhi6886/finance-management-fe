@@ -171,7 +171,7 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
 
     setLoading(true)
     try {
-      // gửi ngay: cần startDate/endDate từ UI cao hơn; 此处简化，默认 gửi hôm qua
+      // gửi ngay: cần startDate/endDate từ UI cao hơn; ở đây đơn giản hóa, mặc định gửi hôm qua
       const now = new Date()
       const start = new Date(now)
       start.setDate(now.getDate() - 1)
