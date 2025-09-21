@@ -10,11 +10,12 @@ import { useNotification } from '../../../shared/contexts/NotificationContext';
 import { categoryService } from '../services/categoryService';
 import { transactionService } from '../services/transactionService';
 import { toast } from 'sonner';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { cn } from '../../../lib/utils';
 import { IconComponent } from '../../../shared/config/icons';
+import { validateTransaction, validateField } from '../../../shared/utils/validationUtils';
 
 const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transaction }) => {
     const { wallets } = useWallet();
@@ -62,13 +63,69 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
     if (!transaction) return null;
 
     const validate = () => {
-        const newErrors = {};
-        if (!amount || parseFloat(amount) <= 0) newErrors.amount = 'Số tiền phải lớn hơn 0.';
-        if (!categoryId) newErrors.categoryId = 'Vui lòng chọn danh mục.';
-        if (!walletId) newErrors.walletId = 'Vui lòng chọn ví.';
-        if (!date) newErrors.date = 'Vui lòng chọn thời gian.';
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        const formData = {
+            amount,
+            description,
+            date,
+            categoryId,
+            walletId,
+            type: transaction.type
+        };
+
+        const validationOptions = {
+            categories,
+            wallets,
+            amountOptions: {
+                min: 0,
+                max: 999999999,
+                decimalPlaces: 2,
+                allowZero: false
+            },
+            descriptionOptions: {
+                maxLength: 500,
+                minLength: 0,
+                allowSpecialChars: true,
+                required: false,
+                allowNewLines: true,
+                allowEmojis: true,
+                fieldName: 'Ghi chú'
+            },
+            dateOptions: {
+                allowFuture: true,
+                allowPast: true,
+                maxFutureDays: 365,
+                maxPastDays: 3650,
+                required: true
+            }
+        };
+
+        const validation = validateTransaction(formData, validationOptions);
+        setErrors(validation.errors);
+        return validation.isValid;
+    };
+
+    // Hàm xác thực thời gian thực
+    const validateFieldRealTime = (fieldName, value) => {
+        const options = {
+            categories,
+            wallets,
+            transactionType: transaction.type,
+            amount: parseFloat(amount) || 0
+        };
+
+        const validation = validateField(fieldName, value, options);
+        if (!validation.isValid) {
+            setErrors(prev => ({
+                ...prev,
+                [fieldName]: validation.errors[0]
+            }));
+        } else {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[fieldName];
+                return newErrors;
+            });
+        }
     };
 
     const handleUpdate = async () => {
@@ -129,12 +186,36 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor={`amount-edit`}>Số tiền *</Label>
-                        <Input id={`amount-edit`} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
-                        {errors.amount && <p className="text-sm text-red-500">{errors.amount}</p>}
+                        <Input 
+                            id={`amount-edit`} 
+                            type="number" 
+                            value={amount} 
+                            onChange={(e) => {
+                                setAmount(e.target.value);
+                                validateFieldRealTime('amount', e.target.value);
+                            }}
+                            onBlur={(e) => validateFieldRealTime('amount', e.target.value)}
+                            placeholder="0" 
+                            step="0.01"
+                            min="0"
+                            max="999999999"
+                        />
+                        {errors.amount && (
+                            <div className="flex items-center gap-1 text-sm text-red-500">
+                                <AlertTriangle className="h-3 w-3" />
+                                {errors.amount}
+                            </div>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor={`category-edit`}>Danh mục *</Label>
-                        <Select onValueChange={setCategoryId} value={categoryId}>
+                        <Select 
+                            onValueChange={(value) => {
+                                setCategoryId(value);
+                                validateFieldRealTime('categoryId', value);
+                            }} 
+                            value={categoryId}
+                        >
                             <SelectTrigger><SelectValue placeholder="Chọn danh mục" /></SelectTrigger>
                             <SelectContent>
                                 {categories.map(cat => (
@@ -142,11 +223,22 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                                 ))}
                             </SelectContent>
                         </Select>
-                        {errors.categoryId && <p className="text-sm text-red-500">{errors.categoryId}</p>}
+                        {errors.categoryId && (
+                            <div className="flex items-center gap-1 text-sm text-red-500">
+                                <AlertTriangle className="h-3 w-3" />
+                                {errors.categoryId}
+                            </div>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor={`wallet-edit`}>Ví *</Label>
-                        <Select onValueChange={setWalletId} value={walletId}>
+                        <Select 
+                            onValueChange={(value) => {
+                                setWalletId(value);
+                                validateFieldRealTime('walletId', value);
+                            }} 
+                            value={walletId}
+                        >
                             <SelectTrigger>
                                 <SelectValue placeholder="Chọn ví">
                                     {walletId && wallets.find(w => w.id.toString() === walletId) && (
@@ -168,16 +260,65 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                                 ))}
                             </SelectContent>
                         </Select>
-                        {errors.walletId && <p className="text-sm text-red-500">{errors.walletId}</p>}
+                        {errors.walletId && (
+                            <div className="flex items-center gap-1 text-sm text-red-500">
+                                <AlertTriangle className="h-3 w-3" />
+                                {errors.walletId}
+                            </div>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor={`description-edit`}>Ghi chú</Label>
-                        <Input id={`description-edit`} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ghi chú về giao dịch..." />
+                        <Input 
+                            id={`description-edit`} 
+                            value={description} 
+                            onChange={(e) => {
+                                setDescription(e.target.value);
+                                validateFieldRealTime('description', e.target.value);
+                            }}
+                            onBlur={(e) => validateFieldRealTime('description', e.target.value)}
+                            placeholder="Ghi chú về giao dịch..." 
+                            maxLength={500}
+                        />
+                        <div className="flex justify-between text-xs text-gray-500">
+                            <div className="flex flex-col">
+                                <span>Nhập tối đa 500 ký tự, có thể xuống dòng</span>
+                                <span className="text-gray-400">Hỗ trợ emoji và ký tự đặc biệt</span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                                <span className={description.length > 450 ? 'text-orange-500' : description.length > 480 ? 'text-red-500' : ''}>
+                                    {description.length}/500
+                                </span>
+                                <span className="text-gray-400">
+                                    {description.split(/\s+/).filter(word => word.length > 0).length} từ
+                                </span>
+                            </div>
+                        </div>
+                        {errors.description && (
+                            <div className="flex items-center gap-1 text-sm text-red-500">
+                                <AlertTriangle className="h-3 w-3" />
+                                {errors.description}
+                            </div>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor={`date-edit`}>Thời gian *</Label>
-                        <Input id={`date-edit`} type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} />
-                        {errors.date && <p className="text-sm text-red-500">{errors.date}</p>}
+                        <Input 
+                            id={`date-edit`} 
+                            type="datetime-local" 
+                            value={date} 
+                            onChange={(e) => {
+                                setDate(e.target.value);
+                                validateFieldRealTime('date', e.target.value);
+                            }}
+                            onBlur={(e) => validateFieldRealTime('date', e.target.value)}
+                        />
+                        {errors.date && (
+                            <div className="flex items-center gap-1 text-sm text-red-500">
+                                <AlertTriangle className="h-3 w-3" />
+                                {errors.date}
+                            </div>
+                        )}
                     </div>
                     <DialogFooter className="pt-4 sm:justify-between">
                         <AlertDialog>

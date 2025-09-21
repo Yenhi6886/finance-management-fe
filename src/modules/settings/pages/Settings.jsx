@@ -101,7 +101,7 @@ const LanguageSettings = () => {
     const languages = [
         { code: 'vn', name: 'Tiếng Việt', native: 'Vietnamese', flag: 'VN' },
         { code: 'us', name: 'English', native: 'English', flag: 'US' },
-        { code: 'jp', name: 'Tiếng Nhật', native: '日本語', flag: 'JP' },
+        { code: 'jp', name: 'Tiếng Nhật', native: 'Tiếng Nhật', flag: 'JP' },
         { code: 'kr', name: 'Tiếng Hàn', native: '한국어', flag: 'KR' },
     ]
     return (

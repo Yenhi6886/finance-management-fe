@@ -22,13 +22,15 @@ import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtil
 import { toast } from 'sonner'
 import { IconComponent } from '../../../shared/config/icons'
 import { useWallet } from '../../../shared/hooks/useWallet'
+import { validateDescription } from '../../../shared/utils/validationUtils'
+import { AlertTriangle } from 'lucide-react'
 
 const AddMoney = () => {
   const { currentWallet } = useWallet();
   const [wallets, setWallets] = useState([])
   const [selectedWallet, setSelectedWallet] = useState('')
   const [amount, setAmount] = useState('')
-  const [addMethod, setAddMethod] = useState('Ngân hàng')
+  const [addMethod, setAddMethod] = useState('')
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
@@ -74,9 +76,51 @@ const AddMoney = () => {
     if (!addMethod) {
       newErrors.addMethod = 'Vui lòng chọn phương thức nạp tiền'
     }
+    
+    // Xác thực ghi chú
+    const noteValidation = validateDescription(note, {
+      maxLength: 500,
+      minLength: 0,
+      allowSpecialChars: true,
+      required: false,
+      allowNewLines: true,
+      allowEmojis: true,
+      fieldName: 'Ghi chú'
+    });
+    
+    if (!noteValidation.isValid) {
+      newErrors.note = noteValidation.errors[0];
+    }
+    
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
+
+  // Xác thực ghi chú thời gian thực
+  const validateNoteRealTime = (value) => {
+    const validation = validateDescription(value, {
+      maxLength: 500,
+      minLength: 0,
+      allowSpecialChars: true,
+      required: false,
+      allowNewLines: true,
+      allowEmojis: true,
+      fieldName: 'Ghi chú'
+    });
+    
+    if (!validation.isValid) {
+      setErrors(prev => ({
+        ...prev,
+        note: validation.errors[0]
+      }));
+    } else {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.note;
+        return newErrors;
+      });
+    }
+  };
 
   const handleOpenConfirm = () => {
     if (validateForm()) {
@@ -88,7 +132,7 @@ const AddMoney = () => {
     setSelectedWallet('');
     setAmount('');
     setNote('');
-    setAddMethod('Ngân hàng');
+    setAddMethod('');
     setErrors({});
   };
 
@@ -99,7 +143,7 @@ const AddMoney = () => {
       const transactionData = {
         amount: parseFloat(amount),
         method: addMethod,
-        description: note.trim() || `Nạp tiền qua ${addMethod}`,
+        description: note.trim() || '',
       };
 
       await walletService.addMoney(selectedWallet, transactionData)
@@ -196,8 +240,57 @@ const AddMoney = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor="addMethod">Phương thức nạp tiền <span className="text-red-500">*</span></Label>
+                      <Select onValueChange={setAddMethod} value={addMethod}>
+                        <SelectTrigger className={`w-full h-12 ${errors.addMethod ? 'border-red-500' : 'border-border'}`}>
+                          <SelectValue placeholder="Chọn phương thức nạp tiền" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Ngân hàng">Ngân hàng</SelectItem>
+                          <SelectItem value="Ví điện tử">Ví điện tử</SelectItem>
+                          <SelectItem value="Thẻ tín dụng">Thẻ tín dụng</SelectItem>
+                          <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
+                          <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
+                          <SelectItem value="Khác">Khác</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.addMethod && <p className="text-sm text-red-500">{errors.addMethod}</p>}
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="note">Ghi chú</Label>
-                      <textarea id="note" placeholder="Ghi chú về giao dịch này..." value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground resize-none" />
+                      <textarea 
+                        id="note" 
+                        placeholder="Ghi chú về giao dịch này..." 
+                        value={note} 
+                        onChange={(e) => {
+                          setNote(e.target.value);
+                          validateNoteRealTime(e.target.value);
+                        }}
+                        onBlur={(e) => validateNoteRealTime(e.target.value)}
+                        rows={3} 
+                        maxLength={500}
+                        className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground resize-none" 
+                      />
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <div className="flex flex-col">
+                          <span>Nhập tối đa 500 ký tự, có thể xuống dòng</span>
+                          <span className="text-gray-400">Hỗ trợ emoji và ký tự đặc biệt</span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className={note.length > 450 ? 'text-orange-500' : note.length > 480 ? 'text-red-500' : ''}>
+                            {note.length}/500
+                          </span>
+                          <span className="text-gray-400">
+                            {note.split(/\s+/).filter(word => word.length > 0).length} từ
+                          </span>
+                        </div>
+                      </div>
+                      {errors.note && (
+                        <div className="flex items-center gap-1 text-sm text-red-500">
+                          <AlertTriangle className="h-3 w-3" />
+                          {errors.note}
+                        </div>
+                      )}
                     </div>
                     <div className="pt-6">
                       <Button onClick={handleOpenConfirm} disabled={loading} className="w-full h-12 bg-green-600 hover:bg-green-700 text-white rounded-lg">

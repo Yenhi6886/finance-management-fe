@@ -25,6 +25,8 @@ import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtil
 import { toast } from 'sonner'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { IconComponent } from '../../../shared/config/icons'
+import { validateDescription } from '../../../shared/utils/validationUtils'
+import { AlertTriangle } from 'lucide-react'
 
 const TransferFormSkeleton = () => (
     <div className="p-8">
@@ -130,9 +132,50 @@ const TransferMoney = () => {
       newErrors.amount = 'Số dư không đủ để thực hiện giao dịch'
     }
 
+    // Xác thực ghi chú
+    const descriptionValidation = validateDescription(description, {
+      maxLength: 500,
+      minLength: 0,
+      allowSpecialChars: true,
+      required: false,
+      allowNewLines: true,
+      allowEmojis: true,
+      fieldName: 'Ghi chú'
+    });
+    
+    if (!descriptionValidation.isValid) {
+      newErrors.description = descriptionValidation.errors[0];
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
+
+  // Xác thực ghi chú thời gian thực
+  const validateDescriptionRealTime = (value) => {
+    const validation = validateDescription(value, {
+      maxLength: 500,
+      minLength: 0,
+      allowSpecialChars: true,
+      required: false,
+      allowNewLines: true,
+      allowEmojis: true,
+      fieldName: 'Ghi chú'
+    });
+    
+    if (!validation.isValid) {
+      setErrors(prev => ({
+        ...prev,
+        description: validation.errors[0]
+      }));
+    } else {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.description;
+        return newErrors;
+      });
+    }
+  };
 
   const handleSwapWallets = () => {
     setFromWallet(toWallet)
@@ -275,7 +318,39 @@ const TransferMoney = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Ghi chú (tùy chọn)</Label>
-              <textarea id="description" placeholder="Nhập ghi chú cho giao dịch..." value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary border-border bg-background resize-none" />
+              <textarea 
+                id="description" 
+                placeholder="Nhập ghi chú cho giao dịch..." 
+                value={description} 
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  validateDescriptionRealTime(e.target.value);
+                }}
+                onBlur={(e) => validateDescriptionRealTime(e.target.value)}
+                rows={3} 
+                maxLength={500}
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary border-border bg-background resize-none" 
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <div className="flex flex-col">
+                  <span>Nhập tối đa 500 ký tự, có thể xuống dòng</span>
+                  <span className="text-gray-400">Hỗ trợ emoji và ký tự đặc biệt</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className={description.length > 450 ? 'text-orange-500' : description.length > 480 ? 'text-red-500' : ''}>
+                    {description.length}/500
+                  </span>
+                  <span className="text-gray-400">
+                    {description.split(/\s+/).filter(word => word.length > 0).length} từ
+                  </span>
+                </div>
+              </div>
+              {errors.description && (
+                <div className="flex items-center gap-1 text-sm text-red-500">
+                  <AlertTriangle className="h-3 w-3" />
+                  {errors.description}
+                </div>
+              )}
             </div>
             <div className="pt-6"><Button onClick={handleOpenConfirm} disabled={isSubmitting || !fromWallet || !toWallet || !amount} className="w-full h-12 rounded-lg">{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isSubmitting ? 'Đang chuyển...' : 'Chuyển Tiền'}</Button></div>
           </div>

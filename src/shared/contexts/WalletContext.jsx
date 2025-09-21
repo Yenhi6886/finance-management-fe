@@ -20,22 +20,31 @@ export const WalletProvider = ({ children }) => {
     
     setLoading(true)
     try {
-      const response = await walletService.getWallets()
-      const walletsData = response.data.data || []
-      setWallets(walletsData)
+      // Lấy cả ví của user và ví được chia sẻ
+      const [myWalletsResponse, sharedWalletsResponse] = await Promise.all([
+        walletService.getWallets(),
+        walletService.getWalletsSharedWithMe()
+      ])
+      
+      const myWallets = myWalletsResponse.data.data || []
+      const sharedWallets = sharedWalletsResponse.data.data || []
+      
+      // Kết hợp cả hai danh sách
+      const allWallets = [...myWallets, ...sharedWallets]
+      setWallets(allWallets)
 
       const savedWalletId = localStorage.getItem('currentWalletId')
-      if (savedWalletId && walletsData.length > 0) {
-        const savedWallet = walletsData.find(w => w.id.toString() === savedWalletId)
+      if (savedWalletId && allWallets.length > 0) {
+        const savedWallet = allWallets.find(w => w.id.toString() === savedWalletId)
         if (savedWallet) {
           setCurrentWallet(savedWallet)
         } else {
-          setCurrentWallet(walletsData[0])
-          localStorage.setItem('currentWalletId', walletsData[0].id.toString())
+          setCurrentWallet(allWallets[0])
+          localStorage.setItem('currentWalletId', allWallets[0].id.toString())
         }
-      } else if (walletsData.length > 0) {
-        setCurrentWallet(walletsData[0]);
-        localStorage.setItem('currentWalletId', walletsData[0].id.toString());
+      } else if (allWallets.length > 0) {
+        setCurrentWallet(allWallets[0]);
+        localStorage.setItem('currentWalletId', allWallets[0].id.toString());
       } else {
         setCurrentWallet(null)
         localStorage.removeItem('currentWalletId')
