@@ -1,11 +1,17 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { validationUtils } from '../../../shared/utils/validationUtils.js'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
-import { EyeIcon, EyeOffIcon } from 'lucide-react'
+import { EyeIcon, EyeOffIcon, AlertTriangle } from 'lucide-react'
+import { 
+    validateName, 
+    validateUsername, 
+    isValidEmail, 
+    validatePhoneNumber, 
+    validatePassword 
+} from '../../../shared/utils/validationUtils'
 
 // Google Icon Component
 const GoogleIcon = ({ className = "w-5 h-5" }) => (
@@ -38,6 +44,92 @@ const Register = () => {
     const handleChange = (e) => {
         const { name, value } = e.target
         setFormData(prev => ({ ...prev, [name]: value }))
+        
+        // Xác thực real-time
+        validateFieldRealTime(name, value)
+    }
+
+    const validateFieldRealTime = (fieldName, value) => {
+        let error = ''
+        
+        switch (fieldName) {
+            case 'firstName':
+            case 'lastName':
+                const nameErrors = validateName(value)
+                error = nameErrors.length > 0 ? nameErrors[0] : ''
+                break
+            case 'username':
+                const usernameErrors = validateUsername(value)
+                error = usernameErrors.length > 0 ? usernameErrors[0] : ''
+                break
+            case 'email':
+                if (value && !isValidEmail(value)) {
+                    error = 'Email không hợp lệ'
+                }
+                break
+            case 'phoneNumber':
+                if (value) {
+                    const phoneErrors = validatePhoneNumber(value)
+                    error = phoneErrors.length > 0 ? phoneErrors[0] : ''
+                }
+                break
+            case 'password':
+                const passwordErrors = validatePassword(value)
+                error = passwordErrors.length > 0 ? passwordErrors[0] : ''
+                break
+            case 'confirmPassword':
+                if (value && value !== formData.password) {
+                    error = 'Mật khẩu xác nhận không khớp'
+                }
+                break
+        }
+        
+        setErrors(prev => ({ ...prev, [fieldName]: error }))
+    }
+
+    const validateForm = () => {
+        const newErrors = {}
+        
+        // Xác thực họ
+        const lastNameErrors = validateName(formData.lastName)
+        if (lastNameErrors.length > 0) {
+            newErrors.lastName = lastNameErrors[0]
+        }
+        
+        // Xác thực tên
+        const firstNameErrors = validateName(formData.firstName)
+        if (firstNameErrors.length > 0) {
+            newErrors.firstName = firstNameErrors[0]
+        }
+        
+        // Xác thực tên đăng nhập
+        const usernameErrors = validateUsername(formData.username)
+        if (usernameErrors.length > 0) {
+            newErrors.username = usernameErrors[0]
+        }
+        
+        // Xác thực email
+        if (!formData.email) {
+            newErrors.email = 'Email là bắt buộc'
+        } else if (!isValidEmail(formData.email)) {
+            newErrors.email = 'Email không hợp lệ'
+        }
+        
+        // Xác thực mật khẩu
+        const passwordErrors = validatePassword(formData.password)
+        if (passwordErrors.length > 0) {
+            newErrors.password = passwordErrors[0]
+        }
+        
+        // Xác thực xác nhận mật khẩu
+        if (!formData.confirmPassword) {
+            newErrors.confirmPassword = 'Xác nhận mật khẩu là bắt buộc'
+        } else if (formData.confirmPassword !== formData.password) {
+            newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp'
+        }
+        
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
     }
 
     const handleSubmit = async (e) => {
@@ -45,6 +137,11 @@ const Register = () => {
         
         if (!agreedToTerms) {
             setErrors({ terms: 'Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo mật để tiếp tục.' })
+            return
+        }
+        
+        // Xác thực form trước khi submit
+        if (!validateForm()) {
             return
         }
         
@@ -106,8 +203,17 @@ const Register = () => {
                                 placeholder="Họ"
                                 value={formData.lastName}
                                 onChange={handleChange}
-                                className="h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200"
+                                onBlur={(e) => validateFieldRealTime('lastName', e.target.value)}
+                                className={`h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200 ${
+                                    errors.lastName ? 'border-red-500 focus:border-red-500' : ''
+                                }`}
                             />
+                            {errors.lastName && (
+                                <div className="flex items-center gap-1 text-sm text-red-500 mt-1">
+                                    <AlertTriangle className="h-3 w-3" />
+                                    {errors.lastName}
+                                </div>
+                            )}
                         </div>
                         <div>
                             <Label htmlFor="firstName" className="text-sm text-muted-foreground mb-1 block">Tên <span className="text-red-500">*</span></Label>
@@ -117,8 +223,17 @@ const Register = () => {
                                 placeholder="Tên"
                                 value={formData.firstName}
                                 onChange={handleChange}
-                                className="h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200"
+                                onBlur={(e) => validateFieldRealTime('firstName', e.target.value)}
+                                className={`h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200 ${
+                                    errors.firstName ? 'border-red-500 focus:border-red-500' : ''
+                                }`}
                             />
+                            {errors.firstName && (
+                                <div className="flex items-center gap-1 text-sm text-red-500 mt-1">
+                                    <AlertTriangle className="h-3 w-3" />
+                                    {errors.firstName}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -130,8 +245,17 @@ const Register = () => {
                             placeholder="Tên đăng nhập"
                             value={formData.username}
                             onChange={handleChange}
-                            className="h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200"
+                            onBlur={(e) => validateFieldRealTime('username', e.target.value)}
+                            className={`h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200 ${
+                                errors.username ? 'border-red-500 focus:border-red-500' : ''
+                            }`}
                         />
+                        {errors.username && (
+                            <div className="flex items-center gap-1 text-sm text-red-500 mt-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                {errors.username}
+                            </div>
+                        )}
                     </div>
 
                     <div>
@@ -143,8 +267,17 @@ const Register = () => {
                             placeholder="Email"
                             value={formData.email}
                             onChange={handleChange}
-                            className="h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200"
+                            onBlur={(e) => validateFieldRealTime('email', e.target.value)}
+                            className={`h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200 ${
+                                errors.email ? 'border-red-500 focus:border-red-500' : ''
+                            }`}
                         />
+                        {errors.email && (
+                            <div className="flex items-center gap-1 text-sm text-red-500 mt-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                {errors.email}
+                            </div>
+                        )}
                     </div>
 
                     <div>
@@ -157,7 +290,10 @@ const Register = () => {
                                 placeholder="Nhập mật khẩu"
                                 value={formData.password}
                                 onChange={handleChange}
-                                className="h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200 pr-10"
+                                onBlur={(e) => validateFieldRealTime('password', e.target.value)}
+                                className={`h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200 pr-10 ${
+                                    errors.password ? 'border-red-500 focus:border-red-500' : ''
+                                }`}
                             />
                             <button
                                 type="button"
@@ -167,6 +303,12 @@ const Register = () => {
                                 {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
                             </button>
                         </div>
+                        {errors.password && (
+                            <div className="flex items-center gap-1 text-sm text-red-500 mt-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                {errors.password}
+                            </div>
+                        )}
                     </div>
 
                     <div>
@@ -179,7 +321,10 @@ const Register = () => {
                                 placeholder="Xác nhận lại mật khẩu"
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
-                                className="h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200 pr-10"
+                                onBlur={(e) => validateFieldRealTime('confirmPassword', e.target.value)}
+                                className={`h-12 border-border bg-muted/50 placeholder:text-muted-foreground focus:bg-background focus:border-primary focus:ring-0 rounded-md text-sm transition-all duration-200 pr-10 ${
+                                    errors.confirmPassword ? 'border-red-500 focus:border-red-500' : ''
+                                }`}
                             />
                             <button
                                 type="button"
@@ -189,6 +334,12 @@ const Register = () => {
                                 {showConfirmPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
                             </button>
                         </div>
+                        {errors.confirmPassword && (
+                            <div className="flex items-center gap-1 text-sm text-red-500 mt-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                {errors.confirmPassword}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-start space-x-2 py-2 mt-4">
