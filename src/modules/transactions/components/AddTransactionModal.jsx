@@ -193,14 +193,17 @@ const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded,
         const response = await transactionService.createTransaction(transactionData);
         const newTransaction = response.data.data;
 
-        toast.success(`Thêm khoản ${newTransaction.type === 'INCOME' ? 'thu' : 'chi'} thành công!`);
+        if (newTransaction.type === 'EXPENSE' && newTransaction.budgetExceeded) {
 
-        if (newTransaction.budgetExceeded) {
             toast.warning(`Bạn đã chi tiêu vượt ngân sách cho danh mục '${newTransaction.category}'.`, {
                 icon: <AlertTriangle className="w-4 h-4" />,
                 duration: 5000,
                 closeButton: true,
             });
+        } else if (newTransaction.type === 'INCOME' && newTransaction.incomeTargetReached) {
+            toast.success('Chúc mừng! Bạn đã đạt mục tiêu thu nhập cho danh mục này.');
+        } else {
+            toast.success(`Thêm khoản ${newTransaction.type === 'INCOME' ? 'thu' : 'chi'} thành công!`);
         }
 
         await refreshWallets();

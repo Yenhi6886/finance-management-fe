@@ -117,6 +117,10 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout API error:', error)
     } finally {
       clearAuthData()
+      // Reset initial loading để lần đăng nhập sau sẽ hiển thị lại pagaload
+      if (window.resetInitialLoading) {
+        window.resetInitialLoading()
+      }
       errorHandler.showSuccess('Đăng xuất thành công!')
     }
   }

@@ -1,7 +1,7 @@
 import React from 'react'
 import Lottie from 'lottie-react'
 import { cn } from '../lib/utils.js'
-import loadingAnimation from '/pagaload.json'
+import loadingAnimation from '../assets/loading.json'
 
 const LoadingSpinner = ({ size = 'md', className }) => {
   const sizeClasses = {

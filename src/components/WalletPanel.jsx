@@ -138,7 +138,7 @@ const WalletPanel = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="p-4">
                     <div className="grid grid-cols-2 gap-2">
                         <button onClick={() => handleNavigate('/wallets/add')} className="flex items-center justify-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
                             <AnimatedIcon animationData={addWalletAnimation} size={16} className="mr-1" play={true} loop={true} />

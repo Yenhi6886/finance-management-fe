@@ -63,12 +63,20 @@ export const walletService = {
     return apiService.post(`/wallets/${walletId}/add-money`, data)
   },
 
-  shareWalletByEmail: async (shareData) => {
-    return apiService.post('/wallet-shares', shareData)
+  shareWalletByInvitation: async (shareData) => {
+    return apiService.post('/wallet-shares/invite', shareData)
   },
 
-  createShareLink: async (shareData) => {
-    return apiService.post('/wallet-shares/create-link', shareData)
+  verifyInvitation: async (token) => {
+    return apiService.get(`/wallet-shares/verify?token=${token}`)
+  },
+
+  acceptInvitation: async (token) => {
+    return apiService.post(`/wallet-shares/accept?token=${token}`)
+  },
+
+  rejectInvitation: async (token) => {
+    return apiService.post(`/wallet-shares/reject?token=${token}`)
   },
 
   getWalletsSharedByMe: async () => {
@@ -83,7 +91,7 @@ export const walletService = {
     return apiService.delete(`/wallet-shares/${shareId}`)
   },
 
-  updateSharePermission: async (walletId, userId, permission) => {
-    return apiService.put(`/wallet-shares/${walletId}/users/${userId}/permission?permission=${permission}`)
+  updateSharePermission: async (shareId, permission) => {
+    return apiService.put(`/wallet-shares/${shareId}/permission?permission=${permission}`)
   }
 }

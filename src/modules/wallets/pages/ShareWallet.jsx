@@ -6,7 +6,6 @@ import {
   ArrowLeftIcon,
   Settings2Icon,
   UsersIcon,
-  LinkIcon,
   MailIcon,
   EyeIcon,
   Edit3Icon,
@@ -18,44 +17,50 @@ import {
   Trash2Icon,
   AlertCircleIcon,
   CheckCircle2Icon,
-  CopyIcon,
-  XIcon
+  XIcon,
+  ClockIcon,
+  CheckIcon,
+  XCircleIcon,
+  BanIcon
 } from 'lucide-react'
 import { cn } from '../../../lib/utils'
 import { walletService } from '../services/walletService'
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
-import { LoadingScreen } from "../../../components/Loading.jsx";
+import { LoadingSpinner as Loading, LottieLoader } from "../../../components/Loading.jsx";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { IconComponent } from '../../../shared/config/icons'
+import { Badge } from '../../../components/ui/badge'
+import { useAuth } from '../../auth/contexts/AuthContext'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
-  DialogTitle
-} from "../../../components/ui/dialog.jsx";
+  DialogTitle,
+} from "../../../components/ui/dialog"
 
 const ShareWallet = () => {
+  const { user } = useAuth(); // Get current user info
   const [myWallets, setMyWallets] = useState([])
   const [selectedWallet, setSelectedWallet] = useState('')
   const [permissionLevel, setPermissionLevel] = useState('VIEW')
-  const [shareMethod, setShareMethod] = useState('email')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
-  const [expiryDate, setExpiryDate] = useState('')
 
   const [loading, setLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPageLoading, setShowPageLoading] = useState(false)
   const [error, setError] = useState(null)
   const [successMessage, setSuccessMessage] = useState(null)
-  const [dateError, setDateError] = useState(null)
+
+  // Modal states
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [shareToRevoke, setShareToRevoke] = useState(null)
 
   const [sharedByMe, setSharedByMe] = useState([])
   const [sharedWithMe, setSharedWithMe] = useState([])
   const [activeTab, setActiveTab] = useState('share')
-
-  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false)
-  const [shareLink, setShareLink] = useState('')
-  const [copyButtonText, setCopyButtonText] = useState('Sao chép')
 
   const fetchMyWallets = useCallback(async () => {
     try {
@@ -70,41 +75,44 @@ const ShareWallet = () => {
     }
   }, [])
 
-  const fetchSharedByMe = useCallback(async () => {
+  const fetchSharedByMe = useCallback(async (showLoading = true) => {
+    if (!user) return; // Wait until user info is available
     try {
-      setLoading(true)
+      if (showLoading) setLoading(true)
       const response = await walletService.getWalletsSharedByMe()
-      setSharedByMe(response.data.data || [])
+      const allShares = response.data.data || [];
+      // Filter out shares to the owner themselves
+      setSharedByMe(allShares.filter(share => share.sharedWithEmail !== user.email));
     } catch (err) {
       setError('Không thể tải danh sách ví đã chia sẻ.')
     } finally {
-      setLoading(false)
+      if (showLoading) setLoading(false)
     }
-  }, [])
+  }, [user])
 
-  const fetchSharedWithMe = useCallback(async () => {
+  const fetchSharedWithMe = useCallback(async (showLoading = true) => {
+    if (!user) return; // Wait until user info is available
     try {
-      setLoading(true)
+      if (showLoading) setLoading(true)
       const response = await walletService.getWalletsSharedWithMe()
-      setSharedWithMe(response.data.data || [])
+      const allShares = response.data.data || [];
+      // Filter out wallets owned by the current user
+      setSharedWithMe(allShares.filter(share => share.ownerEmail !== user.email));
     } catch (err) {
       setError('Không thể tải danh sách ví được chia sẻ.')
     } finally {
-      setLoading(false)
+      if (showLoading) setLoading(false)
     }
-  }, [])
+  }, [user])
 
   useEffect(() => {
-    fetchMyWallets()
-  }, [fetchMyWallets])
-
-  useEffect(() => {
-    if (activeTab === 'sharedByMe') {
-      fetchSharedByMe()
-    } else if (activeTab === 'sharedWithMe') {
-      fetchSharedWithMe()
-    }
-  }, [activeTab, fetchSharedByMe, fetchSharedWithMe])
+    setLoading(true);
+    Promise.all([
+      fetchMyWallets(),
+      fetchSharedByMe(false),
+      fetchSharedWithMe(false)
+    ]).finally(() => setLoading(false));
+  }, [fetchMyWallets, fetchSharedByMe, fetchSharedWithMe])
 
   useEffect(() => {
     let timer;
@@ -112,180 +120,113 @@ const ShareWallet = () => {
       timer = setTimeout(() => {
         setSuccessMessage(null);
         setError(null);
-      }, 10000);
+      }, 5000);
     }
     return () => clearTimeout(timer);
   }, [successMessage, error]);
 
-  const formatCurrency = (amount) => {
-    const formatted = new Intl.NumberFormat('vi-VN').format(amount)
-    return `${formatted} ₫`
+  const formatCurrency = (amount, currency) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: currency || 'VND' }).format(amount);
   }
 
   const resetForm = () => {
     setEmail('')
     setMessage('')
-    setExpiryDate('')
     setPermissionLevel('VIEW')
-    setDateError(null)
     if (myWallets.length > 0) {
       setSelectedWallet(myWallets[0].id)
     }
   }
 
-  const validateDate = (date) => {
-    if (!date) return true // Empty date is allowed
-    
-    const selectedDate = new Date(date)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // Reset time to compare only dates
-    
-    if (selectedDate < today) {
-      setDateError('Ngày hết hạn không được nhỏ hơn ngày hiện tại')
-      return false
-    }
-    
-    setDateError(null)
-    return true
-  }
-
-  const handleDateChange = (e) => {
-    const newDate = e.target.value
-    setExpiryDate(newDate)
-    validateDate(newDate)
-  }
-
   const handleShare = async () => {
     setError(null)
     setSuccessMessage(null)
-    setDateError(null)
-    
-    // Validate date before proceeding
-    if (expiryDate && !validateDate(expiryDate)) {
-      return
-    }
-    
-    setLoading(true)
 
-    // Convert date to proper format for backend
-    let formattedExpiryDate = null
-    if (expiryDate) {
-      // Convert YYYY-MM-DD to LocalDateTime format (end of day)
-      const date = new Date(expiryDate)
-      date.setHours(23, 59, 59, 999) // Set to end of day
-      formattedExpiryDate = date.toISOString()
+    if (!email) {
+      setError('Vui lòng nhập email người nhận.')
+      return;
     }
+
+    setIsSubmitting(true)
+    setShowPageLoading(true)
 
     const payload = {
       walletId: selectedWallet,
       permissionLevel,
       message,
-      expiryDate: formattedExpiryDate
+      email
     }
 
     try {
-      if (shareMethod === 'email') {
-        if (!email) {
-          setError('Vui lòng nhập email người nhận.')
-          setLoading(false)
-          return
-        }
-        await walletService.shareWalletByEmail({ ...payload, email })
-        setSuccessMessage('Chia sẻ ví thành công. Một email thông báo đã được gửi tới người nhận.')
-        resetForm()
-        fetchSharedByMe()
-      } else if (shareMethod === 'link') {
-        const response = await walletService.createShareLink(payload)
-        const token = response.data.data.shareToken
-        const link = `${window.location.origin}/wallets/accept-share?token=${token}`
-        setShareLink(link)
-        setIsLinkModalOpen(true)
-        setSuccessMessage('Tạo link chia sẻ thành công!')
-        resetForm()
-      }
+      await walletService.shareWalletByInvitation(payload)
+      setSuccessMessage('Lời mời chia sẻ ví đã được gửi thành công!')
+      resetForm()
+      fetchSharedByMe(false)
     } catch (err) {
-      // Handle specific error messages
-      let errorMessage = 'Đã có lỗi xảy ra.'
-      
-      if (err.response?.data?.message) {
-        const serverMessage = err.response.data.message
-        
-        // Handle common date-related errors
-        if (serverMessage.includes('LocalDateTime') || serverMessage.includes('parse')) {
-          errorMessage = 'Định dạng ngày không hợp lệ. Vui lòng chọn lại ngày hết hạn.'
-        } else if (serverMessage.includes('past') || serverMessage.includes('expired')) {
-          errorMessage = 'Ngày hết hạn phải là ngày trong tương lai.'
-        } else if (serverMessage.includes('email')) {
-          errorMessage = 'Email không hợp lệ hoặc không tồn tại.'
-        } else if (serverMessage.includes('permission')) {
-          errorMessage = 'Bạn không có quyền chia sẻ ví này.'
-        } else if (serverMessage.includes('wallet')) {
-          errorMessage = 'Ví được chọn không tồn tại hoặc đã bị xóa.'
-        } else {
-          errorMessage = serverMessage
-        }
-      }
-      
-      setError(errorMessage)
+      setError(err.response?.data?.message || 'Đã có lỗi xảy ra khi gửi lời mời.')
     } finally {
-      setLoading(false)
+      setIsSubmitting(false)
+      setShowPageLoading(false)
     }
   }
 
   const handleRevoke = async (shareId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn thu hồi quyền truy cập vào ví này không?')) {
-      return
-    }
+    const shareItem = sharedByMe.find(share => share.id === shareId)
+    setShareToRevoke(shareItem)
+    setShowConfirmModal(true)
+  }
+
+  const confirmRevoke = async () => {
+    if (!shareToRevoke) return
 
     setError(null)
     setSuccessMessage(null)
     setLoading(true)
+    setShowConfirmModal(false)
+    
     try {
-      await walletService.revokeWalletShare(shareId)
-      setSuccessMessage('Thu hồi quyền truy cập thành công.')
-      fetchSharedByMe()
+      await walletService.revokeWalletShare(shareToRevoke.id)
+      setSuccessMessage('Thu hồi/xóa chia sẻ thành công.')
+      fetchSharedByMe(false)
     } catch (err) {
-      setError(err.response?.data?.message || 'Không thể thu hồi quyền truy cập.')
+      setError(err.response?.data?.message || 'Không thể thực hiện hành động này.')
     } finally {
       setLoading(false)
+      setShareToRevoke(null)
     }
   }
 
-  const handlePermissionChange = async (walletId, userId, newPermission) => {
+  const handlePermissionChange = async (shareId, newPermission) => {
     setError(null)
     setSuccessMessage(null)
     try {
-      await walletService.updateSharePermission(walletId, userId, newPermission)
+      await walletService.updateSharePermission(shareId, newPermission)
       setSuccessMessage('Cập nhật quyền thành công.')
-      setSharedByMe(prevShares =>
-          prevShares.map(share =>
-              share.walletId === walletId && share.sharedWithUserId === userId
-                  ? { ...share, permissionLevel: newPermission }
-                  : share
-          )
-      )
+      fetchSharedByMe(false)
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể cập nhật quyền.')
+      fetchSharedByMe(false)
     }
   }
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareLink).then(() => {
-      setCopyButtonText('Đã sao chép!')
-      setTimeout(() => setCopyButtonText('Sao chép'), 2000)
-    })
+  const permissionDisplay = {
+    VIEW: { text: 'Chỉ xem', icon: EyeIcon, color: 'text-blue-600' },
+    EDIT: { text: 'Chỉnh sửa', icon: Edit3Icon, color: 'text-amber-600' },
+    OWNER: { text: 'Chủ sở hữu', icon: CrownIcon, color: 'text-red-600' }
   }
 
-  const permissionDisplay = {
-    VIEW: { text: 'Chỉ xem', color: 'text-gray-500' },
-    EDIT: { text: 'Chỉnh sửa', color: 'text-yellow-500' },
-    OWNER: { text: 'Chủ sở hữu', color: 'text-red-500' }
+  const statusDisplay = {
+    PENDING: { text: 'Đang chờ', icon: ClockIcon, color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
+    ACCEPTED: { text: 'Đã chấp nhận', icon: CheckIcon, color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
+    REJECTED: { text: 'Đã từ chối', icon: XCircleIcon, color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+    REVOKED: { text: 'Đã thu hồi', icon: BanIcon, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
+    EXPIRED: { text: 'Đã hết hạn', icon: ClockIcon, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
   }
 
   const renderSharedByMeList = () => {
-    if (loading) return <LoadingScreen />
+    if (loading) return <div className="flex justify-center py-8"><Loading /></div>
     if (sharedByMe.length === 0) {
-      return <p className="text-center text-gray-500 dark:text-gray-400 py-8">Bạn chưa chia sẻ ví nào.</p>
+      return <p className="text-center text-muted-foreground py-8">Bạn chưa chia sẻ ví nào cho người khác.</p>
     }
     return (
         <div className="space-y-4">
@@ -293,36 +234,42 @@ const ShareWallet = () => {
               <div key={share.id} className="bg-background border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex-1">
                   <p className="font-semibold text-card-foreground">{share.walletName}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Đã chia sẻ cho: <span className="font-medium text-primary">{share.sharedWithEmail}</span>
+                  <p className="text-sm text-muted-foreground">
+                    Chia sẻ tới: <span className="font-medium text-primary">{share.sharedWithEmail}</span>
                   </p>
                   {share.createdAt && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      Chia sẻ lúc: {new Date(share.createdAt).toLocaleString('vi-VN', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Ngày gửi: {new Date(share.createdAt).toLocaleString('vi-VN')}
+                      </p>
                   )}
                 </div>
-                <div className="flex items-center gap-4">
-                  <select
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <Badge variant="outline" className={cn("py-2 px-3 text-xs w-full sm:w-auto justify-center", statusDisplay[share.status]?.color)}>
+                    {React.createElement(statusDisplay[share.status]?.icon, { className: 'w-4 h-4 mr-2 flex-shrink-0' })}
+                    {statusDisplay[share.status]?.text}
+                  </Badge>
+                  <Select
                       value={share.permissionLevel}
-                      onChange={(e) => handlePermissionChange(share.walletId, share.sharedWithUserId, e.target.value)}
-                      className="text-sm font-medium px-2 py-1 rounded bg-background border border-border focus:ring-2 focus:ring-primary dark:bg-card"
+                      onValueChange={(value) => handlePermissionChange(share.id, value)}
+                      disabled={share.status !== 'ACCEPTED'}
                   >
-                    {Object.entries(permissionDisplay).map(([key, value]) => (
-                        <option key={key} value={key}>
-                          {value.text}
-                        </option>
-                    ))}
-                  </select>
-                  <Button variant="destructive" size="sm" onClick={() => handleRevoke(share.id)}>
-                    <Trash2Icon className="w-4 h-4 mr-2" />
-                    Thu hồi
+                    <SelectTrigger className="w-full sm:w-40 h-10 text-sm font-medium">
+                      <SelectValue placeholder="Chọn quyền"/>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(permissionDisplay).map(([key, {text, icon: Icon, color}]) => (
+                          <SelectItem key={key} value={key}>
+                            <div className="flex items-center space-x-2">
+                              <Icon className={cn("w-4 h-4", color)} />
+                              <span className={cn("font-medium", color)}>{text}</span>
+                            </div>
+                          </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="destructive" size="sm" className="h-10 px-4" onClick={() => handleRevoke(share.id)}>
+                    <Trash2Icon className="w-4 h-4 mr-0 sm:mr-2" />
+                    <span className="hidden sm:inline">Thu hồi</span>
                   </Button>
                 </div>
               </div>
@@ -332,35 +279,29 @@ const ShareWallet = () => {
   }
 
   const renderSharedWithMeList = () => {
-    if (loading) return <LoadingScreen />
+    if (loading) return <div className="flex justify-center py-8"><Loading /></div>
     if (sharedWithMe.length === 0) {
-      return <p className="text-center text-gray-500 dark:text-gray-400 py-8">Không có ví nào được chia sẻ với bạn.</p>
+      return <p className="text-center text-muted-foreground py-8">Không có ví nào được chia sẻ với bạn.</p>
     }
     return (
         <div className="space-y-4">
           {sharedWithMe.map((share) => (
               <div key={share.id} className="bg-background border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex-1">
-                  <p className="font-semibold text-card-foreground">{share.name}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Được chia sẻ bởi: <span className="font-medium text-primary">{share.ownerName} ({share.ownerEmail})</span>
-                  </p>
-                  {share.sharedAt && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      Chia sẻ lúc: {new Date(share.sharedAt).toLocaleString('vi-VN', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="bg-muted p-3 rounded-full">
+                    <IconComponent name={share.icon} className="h-6 w-6 text-primary"/>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-card-foreground">{share.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Từ: <span className="font-medium text-primary">{share.ownerName}</span>
                     </p>
-                  )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-4">
-              <span className={cn('text-sm font-medium px-2 py-1 rounded', permissionDisplay[share.permissionLevel]?.color)}>
-                {permissionDisplay[share.permissionLevel]?.text || share.permissionLevel}
-              </span>
+                  <Badge className={cn("py-2 px-3", permissionDisplay[share.permissionLevel]?.color)}>
+                    {permissionDisplay[share.permissionLevel]?.text || share.permissionLevel}
+                  </Badge>
                 </div>
               </div>
           ))}
@@ -370,93 +311,36 @@ const ShareWallet = () => {
 
   return (
       <div>
-        <Dialog open={isLinkModalOpen} onOpenChange={setIsLinkModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Link Chia Sẻ Ví</DialogTitle>
-              <DialogDescription>
-                Sao chép và gửi link này cho người bạn muốn chia sẻ. Link sẽ có hiệu lực cho đến khi bạn thu hồi hoặc hết hạn.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex items-center space-x-2">
-              <div className="grid flex-1 gap-2">
-                <Label htmlFor="link" className="sr-only">
-                  Link
-                </Label>
-                <Input
-                    id="link"
-                    defaultValue={shareLink}
-                    readOnly
-                />
-              </div>
-              <Button type="submit" size="sm" className="px-3" onClick={handleCopyLink}>
-                <span className="sr-only">Copy</span>
-                <CopyIcon className="h-4 w-4" />
-                {copyButtonText}
-              </Button>
+        {/* Page Loading Overlay with Backdrop Blur */}
+        {showPageLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/20 backdrop-blur-sm">
+            <div className="text-center">
+              <LottieLoader size="lg" />
+              <p className="mt-4 text-sm text-foreground/70 font-medium">Đang gửi lời mời...</p>
             </div>
-          </DialogContent>
-        </Dialog>
-
+          </div>
+        )}
+        
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-green-600">
-              Chia Sẻ Ví
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Chia sẻ ví với người khác và quản lý quyền truy cập
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-green-600">Chia Sẻ Ví</h1>
+            <p className="text-muted-foreground mt-1">Gửi lời mời và quản lý quyền truy cập các ví của bạn.</p>
           </div>
-          <div className="mt-4 sm:mt-0">
-            <Button
-              onClick={() => window.history.back()}
-              variant="ghost"
-              size="sm"
-              className="h-10 px-4 text-sm font-light bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-800/30 text-green-600 dark:text-green-400 rounded-sm border-0"
-            >
-              <ArrowLeftIcon className="w-4 h-4 mr-1" />
-              Quay lại
-            </Button>
-          </div>
+          <Button onClick={() => window.history.back()} variant="ghost" size="sm">
+            <ArrowLeftIcon className="w-4 h-4 mr-1" /> Quay lại
+          </Button>
         </div>
 
-        <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-          <nav className="-mb-px flex space-x-6">
-            <button
-                onClick={() => setActiveTab('share')}
-                className={cn(
-                    'flex items-center py-3 px-1 border-b-2 font-medium text-sm',
-                    activeTab === 'share'
-                        ? 'border-green-500 text-green-600 dark:text-green-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                )}
-            >
-              <UploadCloudIcon className="w-5 h-5 mr-2" />
-              Chia Sẻ Ví
+        <div className="border-b border-border mb-6">
+          <nav className="-mb-px flex space-x-6 overflow-x-auto">
+            <button onClick={() => setActiveTab('share')} className={cn('flex items-center py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap', activeTab === 'share' ? 'border-green-500 text-green-600' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+              <UploadCloudIcon className="w-5 h-5 mr-2" /> Gửi Lời Mời
             </button>
-            <button
-                onClick={() => setActiveTab('sharedByMe')}
-                className={cn(
-                    'flex items-center py-3 px-1 border-b-2 font-medium text-sm',
-                    activeTab === 'sharedByMe'
-                        ? 'border-green-500 text-green-600 dark:text-green-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                )}
-            >
-              <Settings2Icon className="w-5 h-5 mr-2" />
-              Ví Đã Chia Sẻ ({sharedByMe.length})
+            <button onClick={() => setActiveTab('sharedByMe')} className={cn('flex items-center py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap', activeTab === 'sharedByMe' ? 'border-green-500 text-green-600' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+              <Settings2Icon className="w-5 h-5 mr-2" /> Ví Đã Chia Sẻ ({sharedByMe.length})
             </button>
-            <button
-                onClick={() => setActiveTab('sharedWithMe')}
-                className={cn(
-                    'flex items-center py-3 px-1 border-b-2 font-medium text-sm',
-                    activeTab === 'sharedWithMe'
-                        ? 'border-green-500 text-green-600 dark:text-green-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                )}
-            >
-              <UsersIcon className="w-5 h-5 mr-2" />
-              Ví Được Chia Sẻ ({sharedWithMe.length})
+            <button onClick={() => setActiveTab('sharedWithMe')} className={cn('flex items-center py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap', activeTab === 'sharedWithMe' ? 'border-green-500 text-green-600' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+              <UsersIcon className="w-5 h-5 mr-2" /> Ví Được Chia Sẻ ({sharedWithMe.length})
             </button>
           </nav>
         </div>
@@ -466,9 +350,7 @@ const ShareWallet = () => {
               <AlertCircleIcon className="h-4 w-4" />
               <AlertTitle>Lỗi</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
-              <button onClick={() => setError(null)} className="absolute top-1.5 right-1.5 p-1 rounded-md hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
-                <XIcon className="h-4 w-4" />
-              </button>
+              <button onClick={() => setError(null)} className="absolute top-1.5 right-1.5 p-1"><XIcon className="h-4 w-4" /></button>
             </Alert>
         )}
         {successMessage && (
@@ -476,9 +358,7 @@ const ShareWallet = () => {
               <CheckCircle2Icon className="h-4 w-4" />
               <AlertTitle>Thành công</AlertTitle>
               <AlertDescription>{successMessage}</AlertDescription>
-              <button onClick={() => setSuccessMessage(null)} className="absolute top-1.5 right-1.5 p-1 rounded-md hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
-                <XIcon className="h-4 w-4" />
-              </button>
+              <button onClick={() => setSuccessMessage(null)} className="absolute top-1.5 right-1.5 p-1"><XIcon className="h-4 w-4" /></button>
             </Alert>
         )}
 
@@ -486,213 +366,100 @@ const ShareWallet = () => {
           {activeTab === 'share' && (
               <>
                 <div className="lg:col-span-2">
-                  <div className="bg-white dark:bg-card rounded-lg border border-border p-6">
-                    <div className="flex items-center space-x-3 mb-6">
-                      <h2 className="text-2xl font-semibold text-card-foreground">Chia Sẻ Ví</h2>
-                    </div>
-
+                  <div className={cn("bg-card rounded-lg border p-6 relative transition-opacity", isSubmitting && "opacity-50 pointer-events-none")}>
+                    {isSubmitting && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10 rounded-lg">
+                          <Loading />
+                        </div>
+                    )}
+                    <h2 className="text-2xl font-semibold text-card-foreground mb-6">Gửi lời mời chia sẻ ví</h2>
                     <div className="space-y-6">
                       <div>
-                        <Label htmlFor="walletSelect" className="font-medium">
-                          Chọn ví để chia sẻ <span className="text-red-500">*</span>
-                        </Label>
+                        <Label htmlFor="walletSelect" className="font-medium">Chọn ví <span className="text-red-500">*</span></Label>
                         <Select onValueChange={setSelectedWallet} value={selectedWallet} disabled={myWallets.length === 0}>
-                          <SelectTrigger className="mt-1 h-10 text-base border-2 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-gray-400 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                            <SelectValue placeholder="Chọn ví để chia sẻ">
-                              {selectedWallet && myWallets.find(w => w.id === selectedWallet) && (
-                                <div className="flex items-center space-x-2">
-                                  <IconComponent name={myWallets.find(w => w.id === selectedWallet).icon} className="w-4 h-4" />
-                                  <span>{myWallets.find(w => w.id === selectedWallet).name} - {formatCurrency(myWallets.find(w => w.id === selectedWallet).balance, myWallets.find(w => w.id === selectedWallet).currency)}</span>
-                                </div>
-                              )}
-                            </SelectValue>
+                          <SelectTrigger className="mt-1 h-11 text-base">
+                            <SelectValue placeholder="Chọn một ví để chia sẻ" />
                           </SelectTrigger>
                           <SelectContent>
-                            {myWallets.length > 0 ? (
-                                myWallets.map(wallet => (
-                                    <SelectItem key={wallet.id} value={wallet.id}>
-                                      <div className="flex items-center space-x-2">
-                                        <IconComponent name={wallet.icon} className="w-4 h-4" />
-                                        <span>{wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}</span>
-                                      </div>
-                                    </SelectItem>
-                                ))
-                            ) : (
-                                <SelectItem value="" disabled>Không có ví nào để chia sẻ</SelectItem>
-                            )}
+                            {myWallets.map(wallet => (
+                                <SelectItem key={wallet.id} value={wallet.id}>
+                                  <div className="flex items-center space-x-2">
+                                    <IconComponent name={wallet.icon} className="w-4 h-4" />
+                                    <span>{wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}</span>
+                                  </div>
+                                </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div>
-                        <Label className="font-medium">
-                          Loại quyền truy cập <span className="text-red-500">*</span>
-                        </Label>
+                        <Label className="font-medium">Loại quyền truy cập <span className="text-red-500">*</span></Label>
                         <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4">
                           {[
-                            { type: 'VIEW', icon: EyeIcon, title: 'Người Xem', description: 'Chỉ có thể xem thông tin ví và lịch sử giao dịch' },
-                            { type: 'EDIT', icon: Edit3Icon, title: 'Chỉnh Sửa', description: 'Thêm/sửa ghi chú, phân loại giao dịch. Không thể chuyển tiền' },
-                            { type: 'OWNER', icon: CrownIcon, title: 'Chủ Sở Hữu', description: 'Có thể thực hiện mọi thao tác như chủ ví' }
+                            { type: 'VIEW', icon: EyeIcon, title: 'Người Xem', description: 'Chỉ xem thông tin, không thể chỉnh sửa.' },
+                            { type: 'EDIT', icon: Edit3Icon, title: 'Chỉnh Sửa', description: 'Thêm, sửa, xóa giao dịch.' },
+                            { type: 'OWNER', icon: CrownIcon, title: 'Chủ Sở Hữu', description: 'Toàn quyền như bạn.' }
                           ].map(({ type, icon: Icon, title, description }) => (
-                              <div
-                                  key={type}
-                                  onClick={() => setPermissionLevel(type)}
-                                  className={cn(
-                                      'border rounded-lg p-4 cursor-pointer transition-all',
-                                      permissionLevel === type
-                                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
-                                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-400'
-                                  )}
-                              >
+                              <div key={type} onClick={() => setPermissionLevel(type)} className={cn('border rounded-lg p-4 cursor-pointer transition-all', permissionLevel === type ? 'border-green-500 bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500' : 'border-border hover:border-muted-foreground/50')}>
                                 <div className="flex items-center space-x-3 mb-2">
-                                  <Icon className={`w-5 h-5 ${permissionLevel === type ? 'text-green-600' : 'text-gray-500'}`} />
-                                  <span className="font-semibold text-card-foreground flex items-center">{title}</span>
+                                  <Icon className={cn('w-5 h-5', permissionLevel === type ? 'text-green-600' : 'text-muted-foreground')} />
+                                  <span className="font-semibold text-card-foreground">{title}</span>
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
+                                <p className="text-xs text-muted-foreground">{description}</p>
                               </div>
                           ))}
                         </div>
                       </div>
 
                       <div>
-                        <Label className="font-medium">Phương thức chia sẻ</Label>
-                        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div
-                              onClick={() => setShareMethod('email')}
-                              className={cn(
-                                  'border rounded-lg p-4 cursor-pointer transition-all flex items-center space-x-4',
-                                  shareMethod === 'email' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-400'
-                              )}
-                          >
-                            <MailIcon className={`w-6 h-6 ${shareMethod === 'email' ? 'text-green-600' : 'text-gray-500'}`} />
-                            <div>
-                              <p className="font-semibold text-card-foreground">Email</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Gửi lời mời qua email</p>
-                            </div>
-                          </div>
-                          <div
-                              onClick={() => setShareMethod('link')}
-                              className={cn(
-                                  'border rounded-lg p-4 cursor-pointer transition-all flex items-center space-x-4',
-                                  shareMethod === 'link' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-400'
-                              )}
-                          >
-                            <LinkIcon className={`w-6 h-6 ${shareMethod === 'link' ? 'text-green-600' : 'text-gray-500'}`} />
-                            <div>
-                              <p className="font-semibold text-card-foreground">Link Chia Sẻ</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Tạo link để chia sẻ</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {shareMethod === 'link' && (
-                          <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-300 rounded-lg p-4 flex items-start space-x-3 text-sm">
-                            <LinkIcon className="w-5 h-5 flex-shrink-0 mt-0.5"/>
-                            <p>Tạo link chia sẻ để gửi cho bất kỳ ai. Link sẽ có thể truy cập được cho đến khi bạn thu hồi hoặc hết hạn.</p>
-                          </div>
-                      )}
-
-                      {shareMethod === 'email' && (
-                          <div>
-                            <Label htmlFor="emailInput">Email người nhận</Label>
-                            <Input id="emailInput" type="email" placeholder="Nhập email..." className="mt-1" value={email} onChange={(e) => setEmail(e.target.value)} />
-                          </div>
-                      )}
-
-                      <div>
-                        <Label htmlFor="message">Tin nhắn (tùy chọn)</Label>
-                        <textarea
-                            id="message"
-                            placeholder="Thêm tin nhắn cá nhân..."
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            rows={3}
-                            className="mt-1 w-full p-2 text-sm border rounded-md bg-background border-gray-300 dark:border-gray-600 resize-none"
-                            maxLength={500}
-                        />
-                        <p className="text-xs text-gray-500 text-right mt-1">
-                          {message.length}/500 ký tự
-                        </p>
+                        <Label htmlFor="emailInput">Email người nhận <span className="text-red-500">*</span></Label>
+                        <Input id="emailInput" type="email" placeholder="example@email.com" className="mt-1 h-11" value={email} onChange={(e) => setEmail(e.target.value)} />
                       </div>
 
                       <div>
-                        <Label htmlFor="expiryDate">Ngày hết hạn (tùy chọn)</Label>
-                        <Input
-                            id="expiryDate"
-                            type="date"
-                            value={expiryDate}
-                            onChange={handleDateChange}
-                            min={new Date().toISOString().split('T')[0]}
-                            className={`mt-1 ${dateError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
-                        />
-                        {dateError && (
-                          <p className="text-xs text-red-500 mt-1 flex items-center">
-                            <AlertCircleIcon className="w-3 h-3 mr-1" />
-                            {dateError}
-                          </p>
-                        )}
-                        {!dateError && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            Để trống nếu không muốn đặt thời hạn
-                          </p>
-                        )}
+                        <Label htmlFor="message">Lời nhắn (tùy chọn)</Label>
+                        <textarea id="message" placeholder="Gửi lời nhắn cho người nhận..." value={message} onChange={(e) => setMessage(e.target.value)} rows={3} className="mt-1 w-full p-2 text-sm border rounded-md bg-transparent border-border resize-none" maxLength={250} />
+                        <p className="text-xs text-muted-foreground text-right mt-1">{message.length}/250 ký tự</p>
                       </div>
 
-                      <div className="pt-2">
-                        <Button
-                            onClick={handleShare}
-                            disabled={!selectedWallet || !permissionLevel || loading}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          {loading ? <LoadingScreen/> : <LinkIcon className="w-4 h-4 mr-2" />}
-                          {shareMethod === 'link' ? 'Tạo Link Chia Sẻ' : 'Gửi Lời Mời'}
-                        </Button>
-                      </div>
+                      <Button onClick={handleShare} disabled={!selectedWallet || isSubmitting} className="w-full h-11 text-base">
+                        {isSubmitting ? <Loading /> : <><MailIcon className="w-4 h-4 mr-2" /> Gửi Lời Mời</>}
+                      </Button>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <div className="bg-white dark:bg-card rounded-lg border border-border p-6">
+                  <div className="bg-card rounded-lg border p-6">
                     <div className="flex items-center space-x-3 mb-4">
                       <StarIcon className="w-5 h-5 text-yellow-500" />
-                      <h3 className="text-base font-semibold text-card-foreground">Mẹo Chia Sẻ</h3>
+                      <h3 className="text-base font-semibold text-card-foreground">Mẹo Chia Sẻ An Toàn</h3>
                     </div>
-                    <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
-                      <li className="flex items-start"><ShieldCheckIcon className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" /><span>Chỉ chia sẻ với những người bạn tin tưởng</span></li>
-                      <li className="flex items-start"><ShieldCheckIcon className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" /><span>Đặt thời hạn cho liên kết để tăng bảo mật</span></li>
-                      <li className="flex items-start"><ShieldCheckIcon className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" /><span>Kiểm tra quyền truy cập thường xuyên</span></li>
-                      <li className="flex items-start"><ShieldCheckIcon className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" /><span>Sử dụng quyền chỉ xem cho hầu hết trường hợp</span></li>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li className="flex items-start"><ShieldCheckIcon className="w-4 h-4 text-green-500 mr-2 mt-0.5" /><span>Chỉ chia sẻ với người bạn hoàn toàn tin tưởng.</span></li>
+                      <li className="flex items-start"><ShieldCheckIcon className="w-4 h-4 text-green-500 mr-2 mt-0.5" /><span>Bắt đầu với quyền "Người Xem" và nâng cấp sau nếu cần.</span></li>
+                      <li className="flex items-start"><ShieldCheckIcon className="w-4 h-4 text-green-500 mr-2 mt-0.5" /><span>Thường xuyên kiểm tra danh sách "Ví Đã Chia Sẻ".</span></li>
                     </ul>
                   </div>
 
-                  <div className="bg-white dark:bg-card rounded-lg border border-border p-6">
+                  <div className="bg-card rounded-lg border p-6">
                     <div className="flex items-center space-x-3 mb-4">
                       <LockIcon className="w-5 h-5 text-blue-500" />
-                      <h3 className="text-base font-semibold text-card-foreground">Hướng Dẫn Quyền</h3>
+                      <h3 className="text-base font-semibold text-card-foreground">Giải Thích Quyền</h3>
                     </div>
                     <div className="space-y-3 text-sm">
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-md p-3">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <EyeIcon className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium text-card-foreground">Chỉ Xem</span>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Xem số dư, lịch sử giao dịch. Không thể thay đổi gì.</p>
+                      <div className="p-3 border-l-4 border-blue-500 bg-muted">
+                        <p className="font-medium text-card-foreground">Người Xem</p>
+                        <p className="text-xs text-muted-foreground">Xem số dư, lịch sử giao dịch. Không thể thay đổi.</p>
                       </div>
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-md p-3">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Edit3Icon className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium text-card-foreground">Chỉnh Sửa</span>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Thêm/sửa ghi chú, phân loại giao dịch. Không thể chuyển tiền.</p>
+                      <div className="p-3 border-l-4 border-amber-500 bg-muted">
+                        <p className="font-medium text-card-foreground">Chỉnh Sửa</p>
+                        <p className="text-xs text-muted-foreground">Toàn quyền xem, thêm/sửa/xóa giao dịch.</p>
                       </div>
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-md p-3">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <CrownIcon className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium text-card-foreground">Toàn Quyền</span>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Có thể thực hiện mọi thao tác như chủ ví.</p>
+                      <div className="p-3 border-l-4 border-red-500 bg-muted">
+                        <p className="font-medium text-card-foreground">Chủ Sở Hữu</p>
+                        <p className="text-xs text-muted-foreground">Mọi quyền của bạn, bao gồm cả chia sẻ và xóa ví.</p>
                       </div>
                     </div>
                   </div>
@@ -700,18 +467,75 @@ const ShareWallet = () => {
               </>
           )}
 
-          {activeTab === 'sharedByMe' && (
-              <div className="lg:col-span-3 bg-white dark:bg-card rounded-lg border border-border p-6">
-                {renderSharedByMeList()}
-              </div>
-          )}
-
-          {activeTab === 'sharedWithMe' && (
-              <div className="lg:col-span-3 bg-white dark:bg-card rounded-lg border border-border p-6">
-                {renderSharedWithMeList()}
+          {activeTab !== 'share' && (
+              <div className="lg:col-span-3 bg-card rounded-lg border p-6">
+                {activeTab === 'sharedByMe' ? renderSharedByMeList() : renderSharedWithMeList()}
               </div>
           )}
         </div>
+
+        {/* Confirmation Modal */}
+        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30">
+                  <AlertCircleIcon className="w-6 h-6 text-red-600" />
+                </div>
+                <span>Xác nhận thu hồi chia sẻ</span>
+              </DialogTitle>
+              <DialogDescription className="text-left">
+                {shareToRevoke && (
+                  <div className="mt-4 p-4 bg-muted rounded-lg">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+                        <IconComponent name="wallet" className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{shareToRevoke.walletName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Chia sẻ với: <span className="font-medium text-primary">{shareToRevoke.sharedWithEmail}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <p className="mb-2">Bạn có chắc chắn muốn thu hồi chia sẻ này không?</p>
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3">
+                        <p className="text-yellow-800 dark:text-yellow-200 text-xs">
+                          ⚠️ Người dùng sẽ mất quyền truy cập vào ví này ngay lập tức và không thể khôi phục.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1"
+              >
+                Hủy bỏ
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={confirmRevoke}
+                disabled={loading}
+                className="flex-1"
+              >
+                {loading ? (
+                  <Loading size="sm" />
+                ) : (
+                  <>
+                    <Trash2Icon className="w-4 h-4 mr-2" />
+                    Xác nhận thu hồi
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
   )
 }

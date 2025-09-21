@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
 import { AreaChart, BarChart } from '../../../components/charts/ChartComponents'
 import { LoadingScreen } from '../../../components/Loading.jsx'
+import InitialLoadingScreen from '../../../components/InitialLoadingScreen'
+import { useInitialLoading } from '../../../shared/contexts/InitialLoadingContext'
 import { dashboardService } from '../services/dashboardService.js'
 import { WalletContext } from '../../../shared/contexts/WalletContext'
 import {
@@ -33,6 +35,7 @@ import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/aler
 const Dashboard = () => {
   const navigate = useNavigate();
   const { wallets, loading: walletLoading } = useContext(WalletContext);
+  const { showInitialLoading, hideInitialLoading, isInitialLoading, hasShownInitialLoading } = useInitialLoading();
 
   const [selectedWalletId, setSelectedWalletId] = useState('all');
   const [dashboardData, setDashboardData] = useState(null);
@@ -41,6 +44,11 @@ const Dashboard = () => {
   const abortController = useRef(null);
 
   useEffect(() => {
+    // Show initial loading if first time accessing dashboard
+    if (!hasShownInitialLoading && showInitialLoading()) {
+      return;
+    }
+
     if (walletLoading) {
       return;
     }
@@ -85,7 +93,17 @@ const Dashboard = () => {
         controller.abort();
       }
     };
-  }, [selectedWalletId, walletLoading]);
+  }, [selectedWalletId, walletLoading, hasShownInitialLoading, showInitialLoading]);
+
+  // Handle initial loading screen completion
+  const handleInitialLoadingComplete = () => {
+    hideInitialLoading();
+  };
+
+  // Show initial loading screen
+  if (isInitialLoading) {
+    return <InitialLoadingScreen onComplete={handleInitialLoadingComplete} />;
+  }
 
   const formatCurrencyShort = (amount) => {
     if (typeof amount !== 'number') return '0 ₫';

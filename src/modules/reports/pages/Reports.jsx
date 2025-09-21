@@ -26,6 +26,7 @@ import { LoadingSpinner as Loading } from '../../../components/Loading';
 import emailService from '../services/emailService';
 import { toast } from 'sonner';
 import { cn } from '../../../lib/utils';
+import { IconComponent } from '../../../shared/config/icons';
 
 const PAGE_SIZE = 10;
 
@@ -61,7 +62,7 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
 
 const SlidingTabsReports = ({ activeTab, onTabChange }) => {
     const tabOptions = [
-        { value: 'period-report', label: 'Theo Khoảng Thời Gian' },
+        { value: 'period-report', label: 'Giao Dịch' },
         { value: 'today-report', label: 'Hôm Nay' },
         { value: 'budget-report', label: 'Ngân Sách' },
         { value: 'email-settings', label: 'Báo Cáo Email' }
@@ -83,9 +84,10 @@ const SlidingTabsReports = ({ activeTab, onTabChange }) => {
                 <button
                     key={tab.value}
                     onClick={() => onTabChange(tab.value)}
-                    className={`relative z-10 w-1/4 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-colors duration-300 ${
+                    className={cn(
+                        'relative z-10 w-1/4 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-colors duration-300',
                         activeTab === tab.value ? 'text-white' : 'text-muted-foreground'
-                    }`}
+                    )}
                 >
                     {tab.label}
                 </button>
@@ -99,13 +101,24 @@ const TransactionMobileCard = ({ transaction, settings }) => {
     return (
         <div className="p-4 bg-card border rounded-lg flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 overflow-hidden">
-                {isIncome ? <ArrowUpCircle className="w-8 h-8 text-green-500 flex-shrink-0" /> : <ArrowDownCircle className="w-8 h-8 text-red-500 flex-shrink-0" />}
+                {isIncome ? (
+                    <ArrowUpCircle className="w-8 h-8 text-green-500 flex-shrink-0" />
+                ) : (
+                    <ArrowDownCircle className="w-8 h-8 text-red-500 flex-shrink-0" />
+                )}
                 <div className="overflow-hidden">
-                    <p className="font-semibold truncate">{transaction.description || (isIncome ? 'Khoản thu' : 'Khoản chi')}</p>
-                    <p className="text-sm text-muted-foreground">{transaction.walletName} • {format(new Date(transaction.date), 'dd/MM/yyyy')}</p>
+                    <p className="font-semibold truncate">
+                        {transaction.description || (isIncome ? 'Khoản thu' : 'Khoản chi')}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                        {transaction.walletName} • {format(new Date(transaction.date), 'dd/MM/yyyy')}
+                    </p>
                 </div>
             </div>
-            <p className={cn("text-base font-bold text-right flex-shrink-0", isIncome ? 'text-green-600' : 'text-red-600')}>
+            <p className={cn(
+                "text-base font-bold text-right flex-shrink-0",
+                isIncome ? 'text-green-600' : 'text-red-600'
+            )}>
                 {isIncome ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
             </p>
         </div>
@@ -125,6 +138,7 @@ const Reports = () => {
         startDate: format(new Date(), 'yyyy-MM-dd'),
         endDate: format(new Date(), 'yyyy-MM-dd')
     });
+    const [amountRange, setAmountRange] = useState({ minAmount: '', maxAmount: '' });
     const [selectedPeriodWallet, setSelectedPeriodWallet] = useState('all');
     const [selectedTodayWallet, setSelectedTodayWallet] = useState('all');
     const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
@@ -248,7 +262,9 @@ const Reports = () => {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-green-600">Báo Cáo & Thống Kê</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-green-600">
+                    Báo Cáo & Thống Kê
+                </h1>
                 <p className="text-muted-foreground mt-1">
                     Phân tích chi tiêu và theo dõi tình hình tài chính của bạn
                 </p>
@@ -259,22 +275,111 @@ const Reports = () => {
             <Tabs defaultValue="today-report" value={activeTab} className="space-y-6">
                 <TabsContent value="period-report" className="space-y-6">
                     <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2"><Calendar className="w-5 h-5" />Thống Kê Theo Khoảng Thời Gian</CardTitle></CardHeader>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Filter className="w-5 h-5" />
+                                Lọc Giao Dịch
+                            </CardTitle>
+                        </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div><Label>Từ ngày</Label><Input type="date" value={dateRange.startDate} onChange={(e) => setDateRange(prev => ({...prev, startDate: e.target.value}))}/></div>
-                                <div><Label>Đến ngày</Label><Input type="date" value={dateRange.endDate} onChange={(e) => setDateRange(prev => ({...prev, endDate: e.target.value}))}/></div>
-                                <div><Label>Ví</Label><Select value={selectedPeriodWallet} onValueChange={setSelectedPeriodWallet}><SelectTrigger><SelectValue placeholder="Chọn ví" /></SelectTrigger><SelectContent><SelectItem value="all">Tất cả ví</SelectItem>{wallets.map(wallet => (<SelectItem key={wallet.id} value={wallet.id.toString()}>{wallet.name}</SelectItem>))}</SelectContent></Select></div>
+                                <div>
+                                    <Label>Từ ngày</Label>
+                                    <Input type="date" value={dateRange.startDate} onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))} />
+                                </div>
+                                <div>
+                                    <Label>Đến ngày</Label>
+                                    <Input type="date" value={dateRange.endDate} onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))} />
+                                </div>
+                                <div>
+                                    <Label>Ví</Label>
+                                    <Select value={selectedPeriodWallet} onValueChange={setSelectedPeriodWallet}>
+                                        <SelectTrigger><SelectValue placeholder="Chọn ví" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Tất cả ví</SelectItem>
+                                            {wallets.map(wallet => (
+                                                <SelectItem key={wallet.id} value={wallet.id.toString()}>
+                                                    <div className="flex items-center gap-2">
+                                                        <IconComponent name={wallet.icon} className="h-4 w-4" />
+                                                        <span>{wallet.name}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2"><Button size="sm" onClick={handleFilterPeriod} disabled={isPeriodLoading}>{isPeriodLoading ? <Loading /> : <><Filter className="w-4 h-4 mr-2" /> Lọc Dữ Liệu</>}</Button><ExportDialog title="Báo Cáo Theo Khoảng Thời Gian" buildReportRequest={buildReportRequest} /></div>
-                            {periodData && (<Badge variant="secondary">Tổng: {formatCurrency(totalAmountPeriod, 'VND', settings)}</Badge>)}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <Label>Từ số tiền</Label>
+                                    <Input
+                                        type="number"
+                                        placeholder="0"
+                                        value={amountRange.minAmount}
+                                        onChange={(e) => setAmountRange(prev => ({ ...prev, minAmount: e.target.value }))}
+                                    />
+                                </div>
+                                <div>
+                                    <Label>Đến số tiền</Label>
+                                    <Input
+                                        type="number"
+                                        placeholder="Không giới hạn"
+                                        value={amountRange.maxAmount}
+                                        onChange={(e) => setAmountRange(prev => ({ ...prev, maxAmount: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button size="sm" onClick={handleFilterPeriod} disabled={isPeriodLoading}>
+                                    {isPeriodLoading ? <Loading /> : <><Filter className="w-4 h-4 mr-2" /> Lọc Dữ Liệu</>}
+                                </Button>
+                                <ExportDialog title="Báo Cáo Giao Dịch" buildReportRequest={buildReportRequest} />
+                            </div>
+                            {periodData && (
+                                <Badge variant="secondary">Tổng: {formatCurrency(totalAmountPeriod, 'VND', settings)}</Badge>
+                            )}
 
-                            <div className="hidden lg:block border rounded-lg"><table className="w-full">
-                                <thead className="border-b bg-muted/50"><tr><th className="p-3 text-left">STT</th><th className="p-3 text-left">Ngày Thu Chi</th><th className="p-3 text-left">Số Tiền</th><th className="p-3 text-left">Ghi Chú</th><th className="p-3 text-left">Ví</th></tr></thead>
-                                <tbody>{isPeriodLoading ? (<tr><td colSpan="5" className="p-6 text-center"><Loading /></td></tr>) : transactions.length > 0 ? (transactions.map((transaction, index) => (<tr key={transaction.id} className="border-b"><td className="p-3">{(periodPage * PAGE_SIZE) + index + 1}</td><td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td><td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>{transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}</td><td className="p-3">{transaction.description}</td><td className="p-3">{transaction.walletName}</td></tr>))) : (<tr><td colSpan="5" className="p-6 text-center text-muted-foreground">Không có dữ liệu</td></tr>)}</tbody>
-                            </table></div>
-                            <div className="space-y-3 lg:hidden">{isPeriodLoading ? <div className="p-6 text-center"><Loading /></div> : transactions.length > 0 ? (transactions.map((tx) => <TransactionMobileCard key={tx.id} transaction={tx} settings={settings} />)) : <p className="p-6 text-center text-muted-foreground">Không có dữ liệu</p>}</div>
-
+                            <div className="hidden lg:block border rounded-lg">
+                                <table className="w-full">
+                                    <thead className="border-b bg-muted/50">
+                                    <tr>
+                                        <th className="p-3 text-left">STT</th>
+                                        <th className="p-3 text-left">Ngày Thu Chi</th>
+                                        <th className="p-3 text-left">Số Tiền</th>
+                                        <th className="p-3 text-left">Ghi Chú</th>
+                                        <th className="p-3 text-left">Ví</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {isPeriodLoading ? (
+                                        <tr><td colSpan="5" className="p-6 text-center"><Loading /></td></tr>
+                                    ) : transactions.length > 0 ? (
+                                        transactions.map((transaction, index) => (
+                                            <tr key={transaction.id} className="border-b">
+                                                <td className="p-3">{(periodPage * PAGE_SIZE) + index + 1}</td>
+                                                <td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td>
+                                                <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
+                                                </td>
+                                                <td className="p-3">{transaction.description}</td>
+                                                <td className="p-3">{transaction.walletName}</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr><td colSpan="5" className="p-6 text-center text-muted-foreground">Không có dữ liệu</td></tr>
+                                    )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="space-y-3 lg:hidden">
+                                {isPeriodLoading ? (
+                                    <div className="p-6 text-center"><Loading /></div>
+                                ) : transactions.length > 0 ? (
+                                    transactions.map((tx) => <TransactionMobileCard key={tx.id} transaction={tx} settings={settings} />)
+                                ) : (
+                                    <p className="p-6 text-center text-muted-foreground">Không có dữ liệu</p>
+                                )}
+                            </div>
                             <PaginationControls currentPage={periodPage} totalPages={periodTotalPages} onPageChange={fetchPeriodData} />
                         </CardContent>
                     </Card>
@@ -284,20 +389,73 @@ const Reports = () => {
                     <Card>
                         <CardHeader>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                <CardTitle className="flex items-center gap-2"><Calendar className="w-5 h-5" />Thống Kê Hôm Nay ({formatDate(new Date(), settings)})</CardTitle>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Calendar className="w-5 h-5" />
+                                    Thống Kê Hôm Nay ({formatDate(new Date(), settings)})
+                                </CardTitle>
                                 <div className="flex w-full sm:w-auto items-center gap-4">
-                                    <Select value={selectedTodayWallet} onValueChange={setSelectedTodayWallet}><SelectTrigger className="flex-1 sm:w-48"><SelectValue placeholder="Chọn ví" /></SelectTrigger><SelectContent><SelectItem value="all">Tất cả ví</SelectItem>{wallets.map(wallet => (<SelectItem key={wallet.id} value={wallet.id.toString()}>{wallet.name}</SelectItem>))}</SelectContent></Select>
-                                    {todayData && (<Badge variant="secondary" className="text-base font-semibold">Tổng: {formatCurrency(totalAmountToday, 'VND', settings)}</Badge>)}
+                                    <Select value={selectedTodayWallet} onValueChange={setSelectedTodayWallet}>
+                                        <SelectTrigger className="flex-1 sm:w-48"><SelectValue placeholder="Chọn ví" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Tất cả ví</SelectItem>
+                                            {wallets.map(wallet => (
+                                                <SelectItem key={wallet.id} value={wallet.id.toString()}>
+                                                    <div className="flex items-center gap-2">
+                                                        <IconComponent name={wallet.icon} className="h-4 w-4" />
+                                                        <span>{wallet.name}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {todayData && (
+                                        <Badge variant="secondary" className="text-base font-semibold">
+                                            Tổng: {formatCurrency(totalAmountToday, 'VND', settings)}
+                                        </Badge>
+                                    )}
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="hidden lg:block border rounded-lg"><table className="w-full">
-                                <thead className="border-b bg-muted/50"><tr><th className="p-3 text-left">STT</th><th className="p-3 text-left">Số Tiền</th><th className="p-3 text-left">Ghi Chú</th><th className="p-3 text-left">Ví</th></tr></thead>
-                                <tbody>{isTodayLoading ? (<tr><td colSpan="4" className="p-6 text-center"><Loading /></td></tr>) : todayTransactions.length > 0 ? (todayTransactions.map((transaction, index) => (<tr key={transaction.id} className="border-b"><td className="p-3">{(todayPage * PAGE_SIZE) + index + 1}</td><td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>{transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}</td><td className="p-3">{transaction.description}</td><td className="p-3">{transaction.walletName}</td></tr>))) : (<tr><td colSpan="4" className="p-6 text-center text-muted-foreground">Không có giao dịch nào hôm nay</td></tr>)}</tbody>
-                            </table></div>
-                            <div className="space-y-3 lg:hidden">{isTodayLoading ? <div className="p-6 text-center"><Loading /></div> : todayTransactions.length > 0 ? (todayTransactions.map((tx) => <TransactionMobileCard key={tx.id} transaction={tx} settings={settings} />)) : <p className="p-6 text-center text-muted-foreground">Không có giao dịch nào hôm nay</p>}</div>
-
+                            <div className="hidden lg:block border rounded-lg">
+                                <table className="w-full">
+                                    <thead className="border-b bg-muted/50">
+                                    <tr>
+                                        <th className="p-3 text-left">STT</th>
+                                        <th className="p-3 text-left">Số Tiền</th>
+                                        <th className="p-3 text-left">Ghi Chú</th>
+                                        <th className="p-3 text-left">Ví</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {isTodayLoading ? (
+                                        <tr><td colSpan="4" className="p-6 text-center"><Loading /></td></tr>
+                                    ) : todayTransactions.length > 0 ? (
+                                        todayTransactions.map((transaction, index) => (
+                                            <tr key={transaction.id} className="border-b">
+                                                <td className="p-3">{(todayPage * PAGE_SIZE) + index + 1}</td>
+                                                <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
+                                                </td>
+                                                <td className="p-3">{transaction.description}</td>
+                                                <td className="p-3">{transaction.walletName}</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr><td colSpan="4" className="p-6 text-center text-muted-foreground">Không có giao dịch nào hôm nay</td></tr>
+                                    )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="space-y-3 lg:hidden">
+                                {isTodayLoading ? (
+                                    <div className="p-6 text-center"><Loading /></div>
+                                ) : todayTransactions.length > 0 ? (
+                                    todayTransactions.map((tx) => <TransactionMobileCard key={tx.id} transaction={tx} settings={settings} />)
+                                ) : (
+                                    <p className="p-6 text-center text-muted-foreground">Không có giao dịch nào hôm nay</p>
+                                )}
+                            </div>
                             <PaginationControls currentPage={todayPage} totalPages={todayTotalPages} onPageChange={fetchTodayData} />
                         </CardContent>
                     </Card>
@@ -305,23 +463,103 @@ const Reports = () => {
 
                 <TabsContent value="budget-report" className="space-y-6">
                     <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2"><PieChart className="w-5 h-5" />Thống Kê Ngân Sách Tháng</CardTitle></CardHeader>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <PieChart className="w-5 h-5" />
+                                Thống Kê Ngân Sách Tháng
+                            </CardTitle>
+                        </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className='flex items-center gap-2'><Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="mt-1" /><Button size="sm" onClick={handleFilterBudget} disabled={isBudgetLoading}>{isBudgetLoading ? <Loading /> : 'Xem'}</Button><EmailSettingsDialog /></div>
-                            {isBudgetLoading ? <Loading /> : budgetData ? (<>
-                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ngân sách</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(budgetData.totalBudget, 'VND', settings)}</div></CardContent></Card>
-                                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Đã thu</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-green-500">{formatCurrency(budgetData.totalIncome, 'VND', settings)}</div></CardContent></Card>
-                                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Đã chi</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-red-500">{formatCurrency(budgetData.totalExpense, 'VND', settings)}</div></CardContent></Card>
-                                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Còn lại</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(budgetData.remainingAmount, 'VND', settings)}</div></CardContent></Card>
-                                </div>
-                                <div className="hidden lg:block border rounded-lg"><table className="w-full">
-                                    <thead className="border-b bg-muted/50"><tr><th className="p-3 text-left">STT</th><th className="p-3 text-left">Ngày Thu Chi</th><th className="p-3 text-left">Số Tiền</th><th className="p-3 text-left">Ghi Chú</th><th className="p-3 text-left">Ví</th></tr></thead>
-                                    <tbody>{isBudgetLoading ? (<tr><td colSpan="5" className="p-6 text-center"><Loading /></td></tr>) : budgetTransactions.length > 0 ? (budgetTransactions.map((transaction, index) => (<tr key={transaction.id} className="border-b"><td className="p-3">{(budgetPage * PAGE_SIZE) + index + 1}</td><td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td><td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>{transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}</td><td className="p-3">{transaction.description}</td><td className="p-3">{transaction.walletName}</td></tr>))) : (<tr><td colSpan="5" className="p-6 text-center text-muted-foreground">Không có dữ liệu</td></tr>)}</tbody>
-                                </table></div>
-                                <div className="space-y-3 lg:hidden">{isBudgetLoading ? <div className="p-6 text-center"><Loading /></div> : budgetTransactions.length > 0 ? (budgetTransactions.map((tx) => <TransactionMobileCard key={tx.id} transaction={tx} settings={settings} />)) : <p className="p-6 text-center text-muted-foreground">Không có dữ liệu</p>}</div>
-                                <PaginationControls currentPage={budgetPage} totalPages={budgetTotalPages} onPageChange={fetchBudgetData} />
-                            </>) : (<div className="p-6 text-center text-muted-foreground">Chưa có dữ liệu ngân sách cho tháng này</div>)}
+                            <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-2'>
+                                <Input
+                                    type="month"
+                                    value={selectedMonth}
+                                    onChange={(e) => setSelectedMonth(e.target.value)}
+                                    className="mt-1"
+                                />
+                                <Button size="sm" onClick={handleFilterBudget} disabled={isBudgetLoading}>
+                                    {isBudgetLoading ? <Loading /> : 'Xem'}
+                                </Button>
+                                <EmailSettingsDialog />
+                            </div>
+
+                            {isBudgetLoading ? (
+                                <Loading />
+                            ) : budgetData ? (
+                                <>
+                                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Ngân sách</CardTitle>
+                                            </CardHeader>
+                                            <CardContent><div className="text-2xl font-bold">{formatCurrency(budgetData.totalBudget, 'VND', settings)}</div></CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Đã thu</CardTitle>
+                                            </CardHeader>
+                                            <CardContent><div className="text-2xl font-bold text-green-500">{formatCurrency(budgetData.totalIncome, 'VND', settings)}</div></CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Đã chi</CardTitle>
+                                            </CardHeader>
+                                            <CardContent><div className="text-2xl font-bold text-red-500">{formatCurrency(budgetData.totalExpense, 'VND', settings)}</div></CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Còn lại</CardTitle>
+                                            </CardHeader>
+                                            <CardContent><div className="text-2xl font-bold">{formatCurrency(budgetData.remainingAmount, 'VND', settings)}</div></CardContent>
+                                        </Card>
+                                    </div>
+
+                                    <div className="hidden lg:block border rounded-lg">
+                                        <table className="w-full">
+                                            <thead className="border-b bg-muted/50">
+                                            <tr>
+                                                <th className="p-3 text-left">STT</th>
+                                                <th className="p-3 text-left">Ngày Thu Chi</th>
+                                                <th className="p-3 text-left">Số Tiền</th>
+                                                <th className="p-3 text-left">Ghi Chú</th>
+                                                <th className="p-3 text-left">Ví</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {isBudgetLoading ? (
+                                                <tr><td colSpan="5" className="p-6 text-center"><Loading /></td></tr>
+                                            ) : budgetTransactions.length > 0 ? (
+                                                budgetTransactions.map((transaction, index) => (
+                                                    <tr key={transaction.id} className="border-b">
+                                                        <td className="p-3">{(budgetPage * PAGE_SIZE) + index + 1}</td>
+                                                        <td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td>
+                                                        <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
+                                                            {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
+                                                        </td>
+                                                        <td className="p-3">{transaction.description}</td>
+                                                        <td className="p-3">{transaction.walletName}</td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr><td colSpan="5" className="p-6 text-center text-muted-foreground">Không có dữ liệu</td></tr>
+                                            )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="space-y-3 lg:hidden">
+                                        {isBudgetLoading ? (
+                                            <div className="p-6 text-center"><Loading /></div>
+                                        ) : budgetTransactions.length > 0 ? (
+                                            budgetTransactions.map((tx) => <TransactionMobileCard key={tx.id} transaction={tx} settings={settings} />)
+                                        ) : (
+                                            <p className="p-6 text-center text-muted-foreground">Không có dữ liệu</p>
+                                        )}
+                                    </div>
+                                    <PaginationControls currentPage={budgetPage} totalPages={budgetTotalPages} onPageChange={fetchBudgetData} />
+                                </>
+                            ) : (
+                                <div className="p-6 text-center text-muted-foreground">Chưa có dữ liệu ngân sách cho tháng này</div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -330,16 +568,100 @@ const Reports = () => {
                     <Card>
                         <CardHeader><CardTitle>Cài Đặt Báo Cáo Email</CardTitle></CardHeader>
                         <CardContent>
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="text-sm text-muted-foreground">{isEmailLoading ? 'Đang tải cài đặt...' : (emailSettings ? (<><div>Email nhận: <span className="font-medium">{emailSettings.targetEmail || user?.email || 'Chưa cài đặt'}</span></div><div>Giờ gửi: {emailSettings.sendHour ?? 8}h{String(emailSettings.sendMinute ?? 0).padStart(2,'0')}</div></>) : (<><div>Email nhận: <span className="font-medium">{user?.email || 'Chưa cài đặt'}</span></div><div>Giờ gửi: 8h00 (mặc định)</div></>))}</div>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+                                <div className="text-sm text-muted-foreground">
+                                    {isEmailLoading ? 'Đang tải cài đặt...' : (emailSettings ? (
+                                        <>
+                                            <div>Email nhận: <span className="font-medium">{emailSettings.targetEmail || user?.email || 'Chưa cài đặt'}</span></div>
+                                            <div>Giờ gửi: {emailSettings.sendHour ?? 8}h{String(emailSettings.sendMinute ?? 0).padStart(2, '0')}</div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div>Email nhận: <span className="font-medium">{user?.email || 'Chưa cài đặt'}</span></div>
+                                            <div>Giờ gửi: 8h00 (mặc định)</div>
+                                        </>
+                                    ))}
+                                </div>
                                 <EmailSettingsDialog />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <Card><CardHeader><CardTitle className="text-base">Báo Cáo Hàng Ngày</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground mb-3">Nhận báo cáo tổng quan thu chi mỗi ngày</p><Button variant={emailSettings?.dailyEnabled ? 'secondary' : 'default'} onClick={async () => { const next = { ...(emailSettings || {}), dailyEnabled: !(emailSettings?.dailyEnabled) }; try { await emailService.saveSettings(next); setEmailSettings(next); toast.success(next.dailyEnabled ? 'Đã kích hoạt báo cáo hàng ngày' : 'Đã tắt báo cáo hàng ngày'); } catch (e) { toast.error('Không thể lưu cài đặt'); } }}>{emailSettings?.dailyEnabled ? 'Tắt' : 'Kích Hoạt'}</Button></CardContent></Card>
-                                <Card><CardHeader><CardTitle className="text-base">Báo Cáo Hàng Tuần</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground mb-3">Nhận báo cáo tổng hợp mỗi tuần</p><Button variant={emailSettings?.weeklyEnabled ? 'secondary' : 'default'} onClick={async () => { const next = { ...(emailSettings || {}), weeklyEnabled: !(emailSettings?.weeklyEnabled) }; try { await emailService.saveSettings(next); setEmailSettings(next); toast.success(next.weeklyEnabled ? 'Đã kích hoạt báo cáo hàng tuần' : 'Đã tắt báo cáo hàng tuần'); } catch (e) { toast.error('Không thể lưu cài đặt'); } }}>{emailSettings?.weeklyEnabled ? 'Tắt' : 'Kích Hoạt'}</Button></CardContent></Card>
-                                <Card><CardHeader><CardTitle className="text-base">Báo Cáo Hàng Tháng</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground mb-3">Nhận báo cáo chi tiết mỗi tháng</p><Button variant={emailSettings?.monthlyEnabled ? 'secondary' : 'default'} onClick={async () => { const next = { ...(emailSettings || {}), monthlyEnabled: !(emailSettings?.monthlyEnabled) }; try { await emailService.saveSettings(next); setEmailSettings(next); toast.success(next.monthlyEnabled ? 'Đã kích hoạt báo cáo hàng tháng' : 'Đã tắt báo cáo hàng tháng'); } catch (e) { toast.error('Không thể lưu cài đặt'); } }}>{emailSettings?.monthlyEnabled ? 'Tắt' : 'Kích Hoạt'}</Button></CardContent></Card>
+                                <Card>
+                                    <CardHeader><CardTitle className="text-base">Báo Cáo Hàng Ngày</CardTitle></CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground mb-3">Nhận báo cáo tổng quan thu chi mỗi ngày</p>
+                                        <Button
+                                            variant={emailSettings?.dailyEnabled ? 'secondary' : 'default'}
+                                            onClick={async () => {
+                                                const next = { ...(emailSettings || {}), dailyEnabled: !(emailSettings?.dailyEnabled) };
+                                                try {
+                                                    await emailService.saveSettings(next);
+                                                    setEmailSettings(next);
+                                                    toast.success(next.dailyEnabled ? 'Đã kích hoạt báo cáo hàng ngày' : 'Đã tắt báo cáo hàng ngày');
+                                                } catch (e) {
+                                                    toast.error('Không thể lưu cài đặt');
+                                                }
+                                            }}
+                                        >
+                                            {emailSettings?.dailyEnabled ? 'Tắt' : 'Kích Hoạt'}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader><CardTitle className="text-base">Báo Cáo Hàng Tuần</CardTitle></CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground mb-3">Nhận báo cáo tổng hợp mỗi tuần</p>
+                                        <Button
+                                            variant={emailSettings?.weeklyEnabled ? 'secondary' : 'default'}
+                                            onClick={async () => {
+                                                const next = { ...(emailSettings || {}), weeklyEnabled: !(emailSettings?.weeklyEnabled) };
+                                                try {
+                                                    await emailService.saveSettings(next);
+                                                    setEmailSettings(next);
+                                                    toast.success(next.weeklyEnabled ? 'Đã kích hoạt báo cáo hàng tuần' : 'Đã tắt báo cáo hàng tuần');
+                                                } catch (e) {
+                                                    toast.error('Không thể lưu cài đặt');
+                                                }
+                                            }}
+                                        >
+                                            {emailSettings?.weeklyEnabled ? 'Tắt' : 'Kích Hoạt'}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader><CardTitle className="text-base">Báo Cáo Hàng Tháng</CardTitle></CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground mb-3">Nhận báo cáo chi tiết mỗi tháng</p>
+                                        <Button
+                                            variant={emailSettings?.monthlyEnabled ? 'secondary' : 'default'}
+                                            onClick={async () => {
+                                                const next = { ...(emailSettings || {}), monthlyEnabled: !(emailSettings?.monthlyEnabled) };
+                                                try {
+                                                    await emailService.saveSettings(next);
+                                                    setEmailSettings(next);
+                                                    toast.success(next.monthlyEnabled ? 'Đã kích hoạt báo cáo hàng tháng' : 'Đã tắt báo cáo hàng tháng');
+                                                } catch (e) {
+                                                    toast.error('Không thể lưu cài đặt');
+                                                }
+                                            }}
+                                        >
+                                            {emailSettings?.monthlyEnabled ? 'Tắt' : 'Kích Hoạt'}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
                             </div>
-                            <div className="mt-6"><Card><CardHeader><CardTitle className="text-base">Nội Dung Báo Cáo Email</CardTitle></CardHeader><CardContent><ul className="text-sm list-disc pl-5 space-y-2 text-muted-foreground"><li>Tổng số tiền ban đầu trong kỳ</li><li>Tổng số tiền còn lại hiện tại</li><li>Danh sách chi tiết các giao dịch đã thực hiện</li><li>Phân tích xu hướng chi tiêu</li></ul></CardContent></Card></div>
+                            <div className="mt-6">
+                                <Card>
+                                    <CardHeader><CardTitle className="text-base">Nội Dung Báo Cáo Email</CardTitle></CardHeader>
+                                    <CardContent>
+                                        <ul className="text-sm list-disc pl-5 space-y-2 text-muted-foreground">
+                                            <li>Tổng số tiền ban đầu trong kỳ</li>
+                                            <li>Tổng số tiền còn lại hiện tại</li>
+                                            <li>Danh sách chi tiết các giao dịch đã thực hiện</li>
+                                            <li>Phân tích xu hướng chi tiêu</li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
