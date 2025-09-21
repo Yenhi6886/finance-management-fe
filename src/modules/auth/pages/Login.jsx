@@ -83,7 +83,7 @@ const Login = () => {
           )}
 
           <div className="mb-6">
-            <a href="https://api.mozu.media/api/auth/oauth2/google" className="w-full">
+            <a href="http://localhost:8080/api/auth/oauth2/google" className="w-full">
               <Button variant="outline" className="w-full h-12 bg-green-50 hover:bg-green-100 border-green-200 text-green-700 hover:text-green-800 transition-colors">
                 <GoogleIcon className="w-5 h-5 mr-2" />
                 Đăng nhập với Google
