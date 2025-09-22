@@ -69,8 +69,23 @@ const AddMoney = () => {
       newErrors.amount = `Số tiền phai lớn hơn ${formatCurrency(0, 'VND', settings)}`
     } else if (parseFloat(amount) < 1000) {
       newErrors.amount = `Số tiền tối thiểu là ${formatCurrency(1000, 'VND', settings)}`
-    } else if (parseFloat(amount) > 100000000) {
-      newErrors.amount = `Số tiền tối đa là ${formatCurrency(100000000, 'VND', settings)}`
+    } else if (parseFloat(amount) > 1000000000) {
+      newErrors.amount = `Số tiền nạp mỗi lần tối đa là ${formatCurrency(1000000000, 'VND', settings)} (1 tỉ)`
+    }
+    
+    // Kiểm tra số dư ví sau khi nạp không vượt quá 999 tỉ
+    if (selectedWallet && amount) {
+      const selectedWalletObj = wallets.find(w => w.id.toString() === selectedWallet)
+      if (selectedWalletObj) {
+        const currentBalance = parseFloat(selectedWalletObj.balance)
+        const addAmount = parseFloat(amount)
+        const newBalance = currentBalance + addAmount
+        const maxBalance = 999000000000 // 999 tỉ
+        
+        if (newBalance > maxBalance) {
+          newErrors.amount = `Số dư ví sau khi nạp sẽ là ${formatCurrency(newBalance, 'VND', settings)}, vượt quá giới hạn ${formatCurrency(maxBalance, 'VND', settings)} (999 tỉ)`
+        }
+      }
     }
     
     // Xác thực ghi chú
@@ -219,7 +234,7 @@ const AddMoney = () => {
                     <div className="space-y-2">
                       <Label htmlFor="amount">Số tiền <span className="text-red-500">*</span></Label>
                       <div className="relative">
-                        <Input id="amount" type="number" placeholder="Nhập số tiền" value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 pl-4 pr-12 ${errors.amount ? 'border-red-500' : ''}`} min="1000" max="100000" step="1000" />
+                        <Input id="amount" type="number" placeholder="Nhập số tiền" value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 pl-4 pr-12 ${errors.amount ? 'border-red-500' : ''}`} min="1000" max="1000000000" step="1000" />
                         <span className="text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2">₫</span>
                       </div>
                       {errors.amount && <p className="text-sm text-red-500">{errors.amount}</p>}
@@ -227,7 +242,7 @@ const AddMoney = () => {
                     <div className="space-y-2">
                       <Label>Số tiền nhanh</Label>
                       <div className="grid grid-cols-4 gap-3">
-                        {[100000, 500000, 1000000, 5000000].map(quickAmount => (
+                        {[100000, 500000, 1000000, 1000000000].map(quickAmount => (
                             <Button key={quickAmount} variant="ghost" size="sm" onClick={() => setAmount(quickAmount.toString())} className="h-10 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg">
                               {formatCurrency(quickAmount, 'VND', settings)}
                             </Button>

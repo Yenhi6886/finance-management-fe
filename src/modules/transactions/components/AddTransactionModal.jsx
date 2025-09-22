@@ -5,6 +5,7 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog';
 import { useWallet } from '../../../shared/hooks/useWallet';
 import { useNotification } from '../../../shared/contexts/NotificationContext';
 import { categoryService } from '../services/categoryService';
@@ -17,7 +18,7 @@ import { cn } from '../../../lib/utils';
 import { IconComponent } from '../../../shared/config/icons';
 import { validateTransaction, validateField } from '../../../shared/utils/validationUtils';
 
-const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
+const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateConfirm }) => {
     const { wallets, currentWallet } = useWallet();
     const { settings } = useSettings();
     const [amount, setAmount] = useState('');
@@ -36,6 +37,8 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
+    const [showFutureDateConfirm, setShowFutureDateConfirm] = useState(false);
+    const [pendingTransactionData, setPendingTransactionData] = useState(null);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -55,6 +58,25 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
             setCategoryId(initialCategoryId);
         }
     }, [initialCategoryId]);
+
+    // Hàm kiểm tra ngày tương lai
+    const isFutureDate = (dateString) => {
+        const selectedDate = new Date(dateString);
+        const now = new Date();
+        return selectedDate > now;
+    };
+
+    // Hàm format ngày để hiển thị
+    const formatDateForDisplay = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
 
     const validate = () => {
         const formData = {
@@ -94,8 +116,23 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
         };
 
         const validation = validateTransaction(formData, validationOptions);
-        setErrors(validation.errors);
-        return validation.isValid;
+        let errors = validation.errors;
+
+        // Thêm validation cho số tiền không vượt quá số dư ví (cho cả khoản thu và chi)
+        if (amount && walletId) {
+            const selectedWallet = wallets.find(w => w.id.toString() === walletId);
+            if (selectedWallet) {
+                const amountValue = parseFloat(amount);
+                const walletBalance = parseFloat(selectedWallet.balance);
+                
+                if (amountValue > walletBalance) {
+                    errors.amount = `Số tiền không được vượt quá số dư hiện tại (${formatCurrency(walletBalance, 'VND', settings)})`;
+                }
+            }
+        }
+
+        setErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     // Hàm xác thực thời gian thực
@@ -108,10 +145,29 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
         };
 
         const validation = validateField(fieldName, value, options);
+        let errorMessage = null;
+
         if (!validation.isValid) {
+            errorMessage = validation.errors[0];
+        } else {
+            // Thêm validation cho số tiền không vượt quá số dư ví (cho cả khoản thu và chi)
+            if (fieldName === 'amount' && value && walletId) {
+                const selectedWallet = wallets.find(w => w.id.toString() === walletId);
+                if (selectedWallet) {
+                    const amountValue = parseFloat(value);
+                    const walletBalance = parseFloat(selectedWallet.balance);
+                    
+                    if (amountValue > walletBalance) {
+                        errorMessage = `Số tiền không được vượt quá số dư hiện tại (${formatCurrency(walletBalance, 'VND', settings)})`;
+                    }
+                }
+            }
+        }
+
+        if (errorMessage) {
             setErrors(prev => ({
                 ...prev,
-                [fieldName]: validation.errors[0]
+                [fieldName]: errorMessage
             }));
         } else {
             setErrors(prev => {
@@ -125,10 +181,32 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validate()) return;
+
+        // Kiểm tra ngày tương lai
+        if (isFutureDate(date)) {
+            const transactionData = {
+                amount: parseFloat(amount),
+                type: type.toUpperCase(),
+                walletId: parseInt(walletId),
+                categoryId: parseInt(categoryId),
+                description: description.trim(),
+                date: date,
+            };
+            if (onFutureDateConfirm) {
+                onFutureDateConfirm(transactionData);
+            }
+            return;
+        }
+
+        // Tiến hành submit nếu không phải ngày tương lai
+        await submitTransaction();
+    };
+
+    const submitTransaction = async () => {
         setLoading(true);
         try {
             // Sửa lỗi múi giờ - chuyển đổi đúng cách
-            const localDate = new Date(date);
+            const localDate = new Date(pendingTransactionData?.date || date);
             const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
 
             const transactionData = {
@@ -207,6 +285,10 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId }) => {
                     onValueChange={(value) => {
                         setWalletId(value);
                         validateFieldRealTime('walletId', value);
+                        // Validate lại số tiền khi thay đổi ví (cho cả khoản thu và chi)
+                        if (amount) {
+                            validateFieldRealTime('amount', amount);
+                        }
                     }} 
                     value={walletId}
                 >
@@ -311,12 +393,32 @@ const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded,
     const [activeTab, setActiveTab] = useState(initialType);
     const { refreshWallets } = useWallet();
     const { refreshNotifications } = useNotification();
+    const [showFutureDateConfirm, setShowFutureDateConfirm] = useState(false);
+    const [pendingTransactionData, setPendingTransactionData] = useState(null);
 
     useEffect(() => {
         if(isOpen) {
             setActiveTab(initialType);
         }
     }, [isOpen, initialType]);
+
+    // Hàm xử lý confirm ngày tương lai
+    const handleFutureDateConfirm = (transactionData) => {
+        setPendingTransactionData(transactionData);
+        setShowFutureDateConfirm(true);
+    };
+
+    // Hàm format ngày để hiển thị
+    const formatDateForDisplay = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
 
     const handleFormSubmit = async (transactionData) => {
         const response = await transactionService.createTransaction(transactionData);
@@ -351,10 +453,47 @@ const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded,
                     </div>
                 </DialogHeader>
                 <div className="py-4">
-                    {activeTab === 'expense' && <TransactionForm type="expense" onFormSubmit={handleFormSubmit} initialCategoryId={initialCategoryId} />}
-                    {activeTab === 'income' && <TransactionForm type="income" onFormSubmit={handleFormSubmit} initialCategoryId={initialCategoryId} />}
+                    {activeTab === 'expense' && <TransactionForm type="expense" onFormSubmit={handleFormSubmit} initialCategoryId={initialCategoryId} onFutureDateConfirm={handleFutureDateConfirm} />}
+                    {activeTab === 'income' && <TransactionForm type="income" onFormSubmit={handleFormSubmit} initialCategoryId={initialCategoryId} onFutureDateConfirm={handleFutureDateConfirm} />}
                 </div>
             </DialogContent>
+            
+            {/* Confirm Dialog cho ngày tương lai */}
+            <AlertDialog open={showFutureDateConfirm} onOpenChange={setShowFutureDateConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xác nhận ngày tương lai</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bạn đang tạo giao dịch với ngày <strong>{pendingTransactionData && formatDateForDisplay(pendingTransactionData.date)}</strong> (ngày tương lai).
+                            <br />
+                            <br />
+                            <strong>Thông tin giao dịch:</strong>
+                            <br />
+                            • Loại: {pendingTransactionData?.type === 'INCOME' ? 'Khoản thu' : 'Khoản chi'}
+                            <br />
+                            • Số tiền: {pendingTransactionData && formatCurrency(pendingTransactionData.amount, 'VND', {})}
+                            <br />
+                            • Ngày: {pendingTransactionData && formatDateForDisplay(pendingTransactionData.date)}
+                            <br />
+                            <br />
+                            Bạn có chắc chắn muốn tiếp tục?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={async () => {
+                                setShowFutureDateConfirm(false);
+                                if (pendingTransactionData) {
+                                    await handleFormSubmit(pendingTransactionData);
+                                }
+                            }}
+                        >
+                            Xác nhận
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Dialog>
     );
 };

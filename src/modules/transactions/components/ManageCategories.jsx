@@ -23,6 +23,8 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
     const [budgetAmount, setBudgetAmount] = useState('');
     const [incomeTargetAmount, setIncomeTargetAmount] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [pendingData, setPendingData] = useState(null);
 
     useEffect(() => {
         if (category) {
@@ -33,22 +35,79 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
         }
     }, [category]);
 
+    // Hàm kiểm tra số tiền lớn và hiển thị confirm dialog
+    const checkLargeAmount = (amount, fieldName) => {
+        const amountValue = parseFloat(amount);
+        const LARGE_AMOUNT_THRESHOLD = 100000000000; // 100 tỉ
+        
+        if (amountValue > LARGE_AMOUNT_THRESHOLD) {
+            return {
+                isLarge: true,
+                message: `${fieldName} của bạn là ${amountValue.toLocaleString('vi-VN')} VND (hơn 100 tỉ). Bạn có chắc chắn muốn tiếp tục?`
+            };
+        }
+        return { isLarge: false };
+    };
+
     const handleSubmit = async () => {
         if (!name.trim()) {
             toast.warning('Tên danh mục không được để trống.');
             return;
         }
-        setLoading(true);
+
         const budgetValue = budgetAmount ? parseFloat(budgetAmount) : null;
         const incomeTargetValue = incomeTargetAmount ? parseFloat(incomeTargetAmount) : null;
 
-        const requestData = {
+        // Kiểm tra số tiền lớn
+        let needsConfirmation = false;
+        let confirmMessage = '';
+
+        if (budgetValue) {
+            const budgetCheck = checkLargeAmount(budgetValue, 'Ngân sách chi tiêu');
+            if (budgetCheck.isLarge) {
+                needsConfirmation = true;
+                confirmMessage = budgetCheck.message;
+            }
+        }
+
+        if (incomeTargetValue && !needsConfirmation) {
+            const incomeCheck = checkLargeAmount(incomeTargetValue, 'Mục tiêu thu nhập');
+            if (incomeCheck.isLarge) {
+                needsConfirmation = true;
+                confirmMessage = incomeCheck.message;
+            }
+        }
+
+        // Nếu cần xác nhận, hiển thị dialog
+        if (needsConfirmation) {
+            setPendingData({
+                name,
+                description,
+                budgetAmount: budgetValue,
+                incomeTargetAmount: incomeTargetValue
+            });
+            setShowConfirmDialog(true);
+            return;
+        }
+
+        // Tiến hành submit nếu không cần xác nhận
+        await submitData({
             name,
             description,
             budgetAmount: budgetValue,
-            budgetPeriod: budgetValue ? 'MONTHLY' : null,
-            incomeTargetAmount: incomeTargetValue,
-            incomeTargetPeriod: incomeTargetValue ? 'MONTHLY' : null,
+            incomeTargetAmount: incomeTargetValue
+        });
+    };
+
+    const submitData = async (data) => {
+        setLoading(true);
+        const requestData = {
+            name: data.name,
+            description: data.description,
+            budgetAmount: data.budgetAmount,
+            budgetPeriod: data.budgetAmount ? 'MONTHLY' : null,
+            incomeTargetAmount: data.incomeTargetAmount,
+            incomeTargetPeriod: data.incomeTargetAmount ? 'MONTHLY' : null,
         };
 
         try {
@@ -73,6 +132,8 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
         setDescription('');
         setBudgetAmount('');
         setIncomeTargetAmount('');
+        setShowConfirmDialog(false);
+        setPendingData(null);
         onClose();
     };
 
@@ -106,6 +167,41 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
                     </Button>
                 </DialogFooter>
             </DialogContent>
+            
+            {/* Confirm Dialog cho số tiền lớn */}
+            <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xác nhận số tiền lớn</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {pendingData && (
+                                <>
+                                    {pendingData.budgetAmount && pendingData.budgetAmount > 100000000000 && (
+                                        <p>Ngân sách chi tiêu: {pendingData.budgetAmount.toLocaleString('vi-VN')} VND</p>
+                                    )}
+                                    {pendingData.incomeTargetAmount && pendingData.incomeTargetAmount > 100000000000 && (
+                                        <p>Mục tiêu thu nhập: {pendingData.incomeTargetAmount.toLocaleString('vi-VN')} VND</p>
+                                    )}
+                                    <p className="mt-2">Bạn có chắc chắn muốn tiếp tục với số tiền này?</p>
+                                </>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={async () => {
+                                setShowConfirmDialog(false);
+                                if (pendingData) {
+                                    await submitData(pendingData);
+                                }
+                            }}
+                        >
+                            Xác nhận
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Dialog>
     );
 };
