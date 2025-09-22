@@ -2,7 +2,72 @@
  * Các hàm công cụ xác thực dữ liệu chung
  */
 
-// Xác thực số tiền
+// Xác thực số tiền với tùy chọn confirm cho số tiền lớn
+export const validateAmountWithConfirm = (amount, options = {}) => {
+  const {
+    min = 0,
+    max = 999999999,
+    decimalPlaces = 2,
+    allowZero = false,
+    largeAmountThreshold = 100000000000, // 100 tỉ
+    fieldName = 'Số tiền'
+  } = options;
+
+  const errors = [];
+  let needsConfirmation = false;
+  let confirmMessage = '';
+
+  // Kiểm tra có trống không
+  if (!amount || amount.toString().trim() === '') {
+    errors.push('Số tiền không được để trống');
+    return { isValid: false, errors, needsConfirmation: false };
+  }
+
+  // Chuyển đổi thành số
+  const numAmount = parseFloat(amount);
+  
+  // Kiểm tra có phải số hợp lệ không
+  if (isNaN(numAmount)) {
+    errors.push('Số tiền phải là một số hợp lệ');
+    return { isValid: false, errors, needsConfirmation: false };
+  }
+
+  // Kiểm tra có phải số âm không
+  if (numAmount < 0) {
+    errors.push('Số tiền không được âm');
+  }
+
+  // Kiểm tra giá trị tối thiểu
+  if (!allowZero && numAmount <= min) {
+    errors.push(`Số tiền phải lớn hơn ${min.toLocaleString('vi-VN')}`);
+  } else if (allowZero && numAmount < min) {
+    errors.push(`Số tiền không được nhỏ hơn ${min.toLocaleString('vi-VN')}`);
+  }
+
+  // Kiểm tra số tiền lớn - thay vì error, sẽ cần confirm
+  if (numAmount > largeAmountThreshold) {
+    needsConfirmation = true;
+    confirmMessage = `${fieldName} của bạn là ${numAmount.toLocaleString('vi-VN')} VND (hơn ${(largeAmountThreshold / 1000000000).toFixed(0)} tỉ). Bạn có chắc chắn muốn tiếp tục?`;
+  } else if (numAmount > max) {
+    errors.push(`Số tiền không được vượt quá ${max.toLocaleString('vi-VN')}`);
+  }
+
+  // Kiểm tra số chữ số thập phân
+  const decimalPart = amount.toString().split('.')[1];
+  if (decimalPart && decimalPart.length > decimalPlaces) {
+    errors.push(`Số tiền chỉ được có tối đa ${decimalPlaces} chữ số thập phân`);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    value: numAmount,
+    needsConfirmation,
+    confirmMessage
+  };
+};
+
+// Xác thực số tiền (hàm gốc để tương thích ngược)
 export const validateAmount = (amount, options = {}) => {
   const {
     min = 0,

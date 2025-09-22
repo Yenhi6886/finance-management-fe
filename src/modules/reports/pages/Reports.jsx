@@ -30,6 +30,15 @@ import { IconComponent } from '../../../shared/config/icons';
 
 const PAGE_SIZE = 10;
 
+// Helper function to format transaction description
+const formatTransactionDescription = (transaction) => {
+    // Check if it's a deposit transaction (INCOME type and description contains "Nạp tiền")
+    if (transaction.type === 'INCOME' && transaction.description && transaction.description.includes('Nạp tiền')) {
+        return `Nạp tiền vào ví ${transaction.walletName}`;
+    }
+    return transaction.description || (transaction.type === 'INCOME' ? 'Khoản thu' : 'Khoản chi');
+};
+
 const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
     if (totalPages <= 1) return null;
 
@@ -108,7 +117,7 @@ const TransactionMobileCard = ({ transaction, settings }) => {
                 )}
                 <div className="overflow-hidden">
                     <p className="font-semibold truncate">
-                        {transaction.description || (isIncome ? 'Khoản thu' : 'Khoản chi')}
+                        {formatTransactionDescription(transaction)}
                     </p>
                     <p className="text-sm text-muted-foreground">
                         {transaction.walletName} • {format(new Date(transaction.date), 'dd/MM/yyyy')}
@@ -361,7 +370,7 @@ const Reports = () => {
                                                 <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                                                     {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
                                                 </td>
-                                                <td className="p-3">{transaction.description}</td>
+                                                <td className="p-3">{formatTransactionDescription(transaction)}</td>
                                                 <td className="p-3">{transaction.walletName}</td>
                                             </tr>
                                         ))
@@ -437,7 +446,7 @@ const Reports = () => {
                                                 <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                                                     {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
                                                 </td>
-                                                <td className="p-3">{transaction.description}</td>
+                                                <td className="p-3">{formatTransactionDescription(transaction)}</td>
                                                 <td className="p-3">{transaction.walletName}</td>
                                             </tr>
                                         ))
@@ -536,7 +545,7 @@ const Reports = () => {
                                                         <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                                                             {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
                                                         </td>
-                                                        <td className="p-3">{transaction.description}</td>
+                                                        <td className="p-3">{formatTransactionDescription(transaction)}</td>
                                                         <td className="p-3">{transaction.walletName}</td>
                                                     </tr>
                                                 ))

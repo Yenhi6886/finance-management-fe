@@ -29,6 +29,8 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
+    const [showFutureDateConfirm, setShowFutureDateConfirm] = useState(false);
+    const [pendingTransactionData, setPendingTransactionData] = useState(null);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -41,6 +43,25 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
         };
         fetchCategories();
     }, []);
+
+    // Hàm kiểm tra ngày tương lai
+    const isFutureDate = (dateString) => {
+        const selectedDate = new Date(dateString);
+        const now = new Date();
+        return selectedDate > now;
+    };
+
+    // Hàm format ngày để hiển thị
+    const formatDateForDisplay = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
 
     useEffect(() => {
         if (transaction) {
@@ -100,8 +121,23 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
         };
 
         const validation = validateTransaction(formData, validationOptions);
-        setErrors(validation.errors);
-        return validation.isValid;
+        let errors = validation.errors;
+
+        // Thêm validation cho số tiền không vượt quá số dư ví (cho cả khoản thu và chi)
+        if (amount && walletId) {
+            const selectedWallet = wallets.find(w => w.id.toString() === walletId);
+            if (selectedWallet) {
+                const amountValue = parseFloat(amount);
+                const walletBalance = parseFloat(selectedWallet.balance);
+                
+                if (amountValue > walletBalance) {
+                    errors.amount = `Số tiền không được vượt quá số dư hiện tại (${formatCurrency(walletBalance, 'VND', settings)})`;
+                }
+            }
+        }
+
+        setErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     // Hàm xác thực thời gian thực
@@ -114,10 +150,29 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
         };
 
         const validation = validateField(fieldName, value, options);
+        let errorMessage = null;
+
         if (!validation.isValid) {
+            errorMessage = validation.errors[0];
+        } else {
+            // Thêm validation cho số tiền không vượt quá số dư ví (cho cả khoản thu và chi)
+            if (fieldName === 'amount' && value && walletId) {
+                const selectedWallet = wallets.find(w => w.id.toString() === walletId);
+                if (selectedWallet) {
+                    const amountValue = parseFloat(value);
+                    const walletBalance = parseFloat(selectedWallet.balance);
+                    
+                    if (amountValue > walletBalance) {
+                        errorMessage = `Số tiền không được vượt quá số dư hiện tại (${formatCurrency(walletBalance, 'VND', settings)})`;
+                    }
+                }
+            }
+        }
+
+        if (errorMessage) {
             setErrors(prev => ({
                 ...prev,
-                [fieldName]: validation.errors[0]
+                [fieldName]: errorMessage
             }));
         } else {
             setErrors(prev => {
@@ -151,6 +206,23 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validate()) return;
+
+        // Kiểm tra ngày tương lai
+        if (isFutureDate(date)) {
+            const transactionData = {
+                amount: parseFloat(amount),
+                type: transaction.type,
+                walletId: parseInt(walletId),
+                categoryId: parseInt(categoryId),
+                description: description.trim(),
+                date: date,
+            };
+            setPendingTransactionData(transactionData);
+            setShowFutureDateConfirm(true);
+            return;
+        }
+
+        // Tiến hành update nếu không phải ngày tương lai
         setLoading(true);
         await handleUpdate();
         setLoading(false);
@@ -236,6 +308,10 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                             onValueChange={(value) => {
                                 setWalletId(value);
                                 validateFieldRealTime('walletId', value);
+                                // Validate lại số tiền khi thay đổi ví (cho cả khoản thu và chi)
+                                if (amount) {
+                                    validateFieldRealTime('amount', amount);
+                                }
                             }} 
                             value={walletId}
                         >
@@ -347,6 +423,43 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                     </DialogFooter>
                 </form>
             </DialogContent>
+            
+            {/* Confirm Dialog cho ngày tương lai */}
+            <AlertDialog open={showFutureDateConfirm} onOpenChange={setShowFutureDateConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xác nhận ngày tương lai</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bạn đang cập nhật giao dịch với ngày <strong>{formatDateForDisplay(date)}</strong> (ngày tương lai).
+                            <br />
+                            <br />
+                            <strong>Thông tin giao dịch:</strong>
+                            <br />
+                            • Loại: {transaction?.type === 'INCOME' ? 'Khoản thu' : 'Khoản chi'}
+                            <br />
+                            • Số tiền: {formatCurrency(parseFloat(amount), 'VND', settings)}
+                            <br />
+                            • Ngày: {formatDateForDisplay(date)}
+                            <br />
+                            <br />
+                            Bạn có chắc chắn muốn tiếp tục?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={async () => {
+                                setShowFutureDateConfirm(false);
+                                setLoading(true);
+                                await handleUpdate();
+                                setLoading(false);
+                            }}
+                        >
+                            Xác nhận
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Dialog>
     );
 };
