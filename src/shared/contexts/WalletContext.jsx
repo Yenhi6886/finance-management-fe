@@ -20,17 +20,21 @@ export const WalletProvider = ({ children }) => {
     
     setLoading(true)
     try {
-      // Lấy cả ví của user và ví được chia sẻ
+      // Tránh trùng lặp: chỉ lấy "ví của tôi" + "ví được chia sẻ", rồi dedupe theo id
       const [myWalletsResponse, sharedWalletsResponse] = await Promise.all([
-        walletService.getWallets(),
+        walletService.getMyWallets(),
         walletService.getWalletsSharedWithMe()
       ])
-      
-      const myWallets = myWalletsResponse.data.data || []
-      const sharedWallets = sharedWalletsResponse.data.data || []
-      
-      // Kết hợp cả hai danh sách
-      const allWallets = [...myWallets, ...sharedWallets]
+
+      const myWallets = myWalletsResponse?.data?.data || []
+      const sharedWallets = sharedWalletsResponse?.data?.data || []
+
+      // Dedupe theo id để tránh hiện 2 lần trong select
+      const walletMap = new Map()
+      ;[...myWallets, ...sharedWallets].forEach(w => {
+        if (w && w.id != null) walletMap.set(w.id, w)
+      })
+      const allWallets = Array.from(walletMap.values())
       setWallets(allWallets)
 
       const savedWalletId = localStorage.getItem('currentWalletId')

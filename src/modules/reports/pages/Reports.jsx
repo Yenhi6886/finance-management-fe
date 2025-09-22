@@ -210,9 +210,14 @@ const Reports = () => {
         try {
             const startDate = `${dateRange.startDate}T00:00:00`;
             const endDate = `${dateRange.endDate}T23:59:59`;
+            const minAmount = amountRange.minAmount && amountRange.minAmount.trim() !== '' ? amountRange.minAmount : null;
+            const maxAmount = amountRange.maxAmount && amountRange.maxAmount.trim() !== '' ? amountRange.maxAmount : null;
+            
+            console.log('Fetching with filters:', { startDate, endDate, minAmount, maxAmount, selectedPeriodWallet });
+            
             const response = selectedPeriodWallet === 'all'
-                ? await reportService.getTransactionsByTime(startDate, endDate, page, PAGE_SIZE)
-                : await reportService.getTransactionsByWalletIdandByTime(selectedPeriodWallet, startDate, endDate, page, PAGE_SIZE);
+                ? await reportService.getTransactionsByTime(startDate, endDate, page, PAGE_SIZE, minAmount, maxAmount)
+                : await reportService.getTransactionsByWalletIdandByTime(selectedPeriodWallet, startDate, endDate, page, PAGE_SIZE, minAmount, maxAmount);
 
             if (response.data.success) {
                 setPeriodData(response.data.data);
@@ -243,6 +248,17 @@ const Reports = () => {
     };
 
     const handleFilterPeriod = () => {
+        setPeriodPage(0);
+        fetchPeriodData(0);
+    };
+
+    const handleClearFilters = () => {
+        setAmountRange({ minAmount: '', maxAmount: '' });
+        setDateRange({
+            startDate: format(new Date(), 'yyyy-MM-dd'),
+            endDate: format(new Date(), 'yyyy-MM-dd')
+        });
+        setSelectedPeriodWallet('all');
         setPeriodPage(0);
         fetchPeriodData(0);
     };
@@ -346,10 +362,20 @@ const Reports = () => {
                                 <Button size="sm" onClick={handleFilterPeriod} disabled={isPeriodLoading}>
                                     {isPeriodLoading ? <Loading /> : <><Filter className="w-4 h-4 mr-2" /> Lọc Dữ Liệu</>}
                                 </Button>
+                                <Button size="sm" variant="outline" onClick={handleClearFilters}>
+                                    Xóa Bộ Lọc
+                                </Button>
                                 <ExportDialog title="Báo Cáo Giao Dịch" buildReportRequest={buildReportRequest} />
                             </div>
                             {periodData && (
-                                <Badge variant="secondary">Tổng: {formatCurrency(totalAmountPeriod, 'VND', settings)}</Badge>
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="secondary">Tổng: {formatCurrency(totalAmountPeriod, 'VND', settings)}</Badge>
+                                    {(amountRange.minAmount || amountRange.maxAmount) && (
+                                        <Badge variant="outline" className="text-blue-600 border-blue-600">
+                                            Đã lọc theo số tiền: {amountRange.minAmount ? `${formatCurrency(amountRange.minAmount, 'VND', settings)}` : '0'} - {amountRange.maxAmount ? formatCurrency(amountRange.maxAmount, 'VND', settings) : '∞'}
+                                        </Badge>
+                                    )}
+                                </div>
                             )}
 
                             <div className="hidden lg:block border rounded-lg">

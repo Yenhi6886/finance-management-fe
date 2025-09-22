@@ -140,17 +140,20 @@ const WalletList = () => {
       icon: addWalletAnimation,
       path: '/wallets/add'
     },
+    // Hai hành động sau sẽ được ẩn/disable nếu ví hiện tại không có quyền ADD_TRANSACTION
     {
       title: 'Chuyển Tiền',
       description: 'Di chuyển số dư giữa các ví của bạn',
       icon: transferAnimation,
-      path: '/wallets/transfer'
+      path: '/wallets/transfer',
+      requiresAddPermission: true
     },
     {
       title: 'Nạp Tiền Vào Ví',
       description: 'Ghi nhận một khoản thu nhập hoặc nạp tiền',
       icon: moneyAnimation,
-      path: '/wallets/add-money'
+      path: '/wallets/add-money',
+      requiresAddPermission: true
     },
     {
       title: 'Chia Sẻ Ví',
@@ -287,24 +290,29 @@ const WalletList = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {walletActions.map((action) => (
+                {walletActions.map((action) => {
+                  const canAdd = !action.requiresAddPermission || (currentWallet && (currentWallet.permissionLevel === 'OWNER' || currentWallet.permissionLevel === 'EDIT'));
+                  const disabledStyle = !canAdd ? 'opacity-50 cursor-not-allowed' : '';
+                  return (
                     <div
                         key={action.title}
-                        onClick={() => action.path ? navigate(action.path) : action.action()}
-                        onMouseEnter={() => setHoveredAction(action.title)}
+                        onClick={() => canAdd ? (action.path ? navigate(action.path) : action.action()) : undefined}
+                        onMouseEnter={() => canAdd && setHoveredAction(action.title)}
                         onMouseLeave={() => setHoveredAction(null)}
-                        className="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors hover:bg-muted"
+                        className={`flex items-center justify-between p-4 rounded-lg transition-colors ${canAdd ? 'cursor-pointer hover:bg-muted' : disabledStyle}`}
+                        aria-disabled={!canAdd}
                     >
                       <div className="flex items-center gap-4">
                         {action.isIconComponent ? <action.icon className="w-10 h-10 text-primary" /> : <AnimatedIcon animationData={action.icon} size={40} play={hoveredAction === action.title} />}
                         <div>
                           <h3 className="font-semibold">{action.title}</h3>
-                          <p className="text-sm text-muted-foreground">{action.description}</p>
+                          <p className="text-sm text-muted-foreground">{!canAdd && action.requiresAddPermission ? 'Bạn không có quyền thực hiện thao tác này' : action.description}</p>
                         </div>
                       </div>
                       <ArrowRight className="w-5 h-5 text-muted-foreground" />
                     </div>
-                ))}
+                  )
+                })}
               </CardContent>
             </Card>
           </div>
