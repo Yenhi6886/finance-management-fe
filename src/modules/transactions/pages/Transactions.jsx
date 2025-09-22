@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/button.jsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card.jsx';
 import { Label } from '../../../components/ui/label.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx';
+import { FMDatePicker } from '../../../components/ui/fm-date-picker.jsx';
 import { cn } from '../../../lib/utils.js';
 import { PlusCircle, FileText, ArrowUpCircle, ArrowDownCircle, Loader2, MinusCircle, X, BarChart3Icon } from 'lucide-react';
 import { transactionService } from '../services/transactionService.js';
@@ -309,17 +310,11 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
                         <div className="space-y-2">
                             <Label>Lọc theo ngày</Label>
                             <div className="flex gap-2">
-                                <input
-                                    type="date"
-                                    value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
-                                    onChange={(e) => {
-                                        if (e.target.value) {
-                                            setSelectedDate(new Date(e.target.value));
-                                        } else {
-                                            setSelectedDate(null);
-                                        }
-                                    }}
-                                    className="flex-1 px-3 py-2 border border-input bg-background text-sm ring-offset-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                <FMDatePicker
+                                    value={selectedDate}
+                                    onChange={(selectedDate) => setSelectedDate(selectedDate)}
+                                    placeholder="Chọn ngày"
+                                    className="flex-1"
                                 />
                                 <Select value={quickSelectValue || undefined} onValueChange={(value) => {
                                     setQuickSelectValue(value);

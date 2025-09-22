@@ -5,6 +5,7 @@ import { Input } from '../../../components/ui/input.jsx';
 import { Label } from '../../../components/ui/label.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx';
 import { Textarea } from '../../../components/ui/textarea.jsx';
+import { FMDatePicker } from '../../../components/ui/fm-date-picker.jsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog.jsx';
 import { useWallet } from '../../../shared/hooks/useWallet.js';
 import { useNotification } from '../../../shared/contexts/NotificationContext.jsx';
@@ -363,15 +364,19 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
             </div>
             <div className="space-y-2">
                 <Label htmlFor={`date-${type}`}>Thời gian *</Label>
-                <Input 
-                    id={`date-${type}`} 
-                    type="datetime-local" 
-                    value={date} 
-                    onChange={(e) => {
-                        setDate(e.target.value);
-                        validateFieldRealTime('date', e.target.value);
+                <FMDatePicker
+                    value={date ? new Date(date) : null}
+                    onChange={(selectedDate) => {
+                        if (selectedDate) {
+                            const dateString = selectedDate.toISOString().slice(0, 16);
+                            setDate(dateString);
+                            validateFieldRealTime('date', dateString);
+                        } else {
+                            setDate('');
+                            validateFieldRealTime('date', '');
+                        }
                     }}
-                    onBlur={(e) => validateFieldRealTime('date', e.target.value)}
+                    placeholder="Chọn ngày và giờ"
                 />
                 {errors.date && (
                     <div className="flex items-center gap-1 text-sm text-red-500">

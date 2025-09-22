@@ -8,7 +8,7 @@ import { Input } from '../../../components/ui/input.jsx';
 import { Label } from '../../../components/ui/label.jsx';
 import { categoryService } from '../services/categoryService.js';
 import { toast } from 'sonner';
-import { PlusCircle, Trash2, Loader2, BadgePlus, Edit, MoreVertical, TrendingUp, TrendingDown, ArrowRightLeft, ChevronLeft, ChevronRight, EyeIcon, X, FileText, ArrowUpCircle, ArrowDownCircle, PieChart } from 'lucide-react';
+import { PlusCircle, Trash2, BadgePlus, Edit, MoreVertical, TrendingUp, TrendingDown, ArrowRightLeft, ChevronLeft, ChevronRight, EyeIcon, X, FileText, ArrowUpCircle, ArrowDownCircle, PieChart } from 'lucide-react';
 import { useSettings } from '../../../shared/contexts/SettingsContext.jsx';
 import { useTheme } from '../../../shared/contexts/ThemeContext.jsx';
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
@@ -164,7 +164,7 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
                 <DialogFooter>
                     <Button variant="ghost" onClick={handleClose}>Hủy</Button>
                     <Button onClick={handleSubmit} disabled={loading}>
-                        {loading && <LoadingSpinner size="sm" />}
+                        {loading && <LoadingSpinner size="md" />}
                         {category?.id ? 'Lưu Thay Đổi' : 'Thêm'}
                     </Button>
                 </DialogFooter>
@@ -292,7 +292,7 @@ const DeleteCategoryDialog = ({ category, open, onOpenChange, onCategoryDeleted 
                         onClick={handleDelete}
                         className="bg-red-600 hover:bg-red-700"
                     >
-                        {loading && <LoadingSpinner size="sm" />}
+                        {loading && <LoadingSpinner size="md" />}
                         Xóa Danh Mục
                     </AlertDialogAction>
                 </AlertDialogFooter>
@@ -380,7 +380,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                 <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
             </CardHeader>
             <CardContent>
-                {loading ? <div className="text-center py-16"><Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" /></div> : (
+                {loading ? <div className="text-center py-16"><LoadingSpinner size="xl" /></div> : (
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                         <div className="lg:col-span-3">
                             <h3 className="font-semibold mb-4">Lịch sử giao dịch</h3>
@@ -612,7 +612,7 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                 </Button>
             </div>
 
-            {loading ? <div className="flex justify-center py-8"><LoadingSpinner size="lg" /></div> :
+            {loading ? <div className="flex justify-center py-8"><LoadingSpinner size="xl" /></div> :
                 categories.length === 0 ? (
                     <Card className="mt-6">
                         <CardContent className="flex flex-col items-center justify-center text-center p-10">

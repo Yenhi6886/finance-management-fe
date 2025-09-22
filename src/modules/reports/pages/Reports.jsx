@@ -6,6 +6,7 @@ import { Label } from '../../../components/ui/label.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx';
 import { Tabs, TabsContent } from '../../../components/ui/tabs.jsx';
 import { Badge } from '../../../components/ui/badge.jsx';
+import { FMDatePicker } from '../../../components/ui/fm-date-picker.jsx';
 import { format } from 'date-fns';
 import {
     Calendar,
@@ -314,11 +315,27 @@ const Reports = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <Label>Từ ngày</Label>
-                                    <Input type="date" value={dateRange.startDate} onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))} />
+                                    <FMDatePicker
+                                        value={dateRange.startDate ? new Date(dateRange.startDate) : null}
+                                        onChange={(selectedDate) => {
+                                            if (selectedDate) {
+                                                setDateRange(prev => ({ ...prev, startDate: format(selectedDate, 'yyyy-MM-dd') }));
+                                            }
+                                        }}
+                                        placeholder="Chọn từ ngày"
+                                    />
                                 </div>
                                 <div>
                                     <Label>Đến ngày</Label>
-                                    <Input type="date" value={dateRange.endDate} onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))} />
+                                    <FMDatePicker
+                                        value={dateRange.endDate ? new Date(dateRange.endDate) : null}
+                                        onChange={(selectedDate) => {
+                                            if (selectedDate) {
+                                                setDateRange(prev => ({ ...prev, endDate: format(selectedDate, 'yyyy-MM-dd') }));
+                                            }
+                                        }}
+                                        placeholder="Chọn đến ngày"
+                                    />
                                 </div>
                                 <div>
                                     <Label>Ví</Label>
@@ -510,11 +527,18 @@ const Reports = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-2'>
-                                <Input
-                                    type="month"
-                                    value={selectedMonth}
-                                    onChange={(e) => setSelectedMonth(e.target.value)}
+                                <FMDatePicker
+                                    value={selectedMonth ? new Date(selectedMonth + '-01') : null}
+                                    onChange={(selectedDate) => {
+                                        if (selectedDate) {
+                                            setSelectedMonth(format(selectedDate, 'yyyy-MM'));
+                                        }
+                                    }}
+                                    placeholder="Chọn tháng"
+                                    showMonthYearPicker
+                                    dateFormat="MM/yyyy"
                                     className="mt-1"
+                                    theme="green"
                                 />
                                 <Button size="sm" onClick={handleFilterBudget} disabled={isBudgetLoading}>
                                     {isBudgetLoading ? <Loading /> : 'Xem'}
