@@ -11,16 +11,26 @@ const reportService = {
     });
   },
 
-  getTransactionsByTime: (startDate, endDate) => {
-    return apiService.get('/transactions/statistics', {
-      params: { startDate, endDate }
-    });
+  getTransactionsByTime: (startDate, endDate, page = 0, size = 10, minAmount = null, maxAmount = null) => {
+    const params = { startDate, endDate, page, size };
+    if (minAmount !== null && minAmount !== '' && !isNaN(parseFloat(minAmount))) {
+      params.minAmount = parseFloat(minAmount);
+    }
+    if (maxAmount !== null && maxAmount !== '' && !isNaN(parseFloat(maxAmount))) {
+      params.maxAmount = parseFloat(maxAmount);
+    }
+    return apiService.get('/transactions/statistics', { params });
   },
 
-  getTransactionsByWalletIdandByTime: (walletId, startDate, endDate) => {
-    return apiService.get('/transactions/statistics/wallet', {
-      params: { walletId, startDate, endDate }
-    });
+  getTransactionsByWalletIdandByTime: (walletId, startDate, endDate, page = 0, size = 10, minAmount = null, maxAmount = null) => {
+    const params = { walletId, startDate, endDate, page, size };
+    if (minAmount !== null && minAmount !== '' && !isNaN(parseFloat(minAmount))) {
+      params.minAmount = parseFloat(minAmount);
+    }
+    if (maxAmount !== null && maxAmount !== '' && !isNaN(parseFloat(maxAmount))) {
+      params.maxAmount = parseFloat(maxAmount);
+    }
+    return apiService.get('/transactions/statistics/wallet', { params });
   },
 
   getBudgetStatistics: (year, month) => {
