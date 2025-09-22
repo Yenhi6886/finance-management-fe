@@ -425,18 +425,6 @@ export const validatePassword = (password) => {
     errors.push('Mật khẩu không được vượt quá 8 ký tự');
   }
   
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Mật khẩu phải có ít nhất một chữ hoa');
-  }
-  
-  if (!/[a-z]/.test(password)) {
-    errors.push('Mật khẩu phải có ít nhất một chữ thường');
-  }
-  
-  if (!/[0-9]/.test(password)) {
-    errors.push('Mật khẩu phải có ít nhất một số');
-  }
-  
   return errors;
 };
 
