@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { walletService } from '../services/walletService'
@@ -14,7 +14,9 @@ import {
   Star,
   MoreHorizontal,
   WalletCards,
-  UsersIcon
+  UsersIcon,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -73,13 +75,47 @@ const SlidingTabs = ({ view, setView, activeCount, archivedCount }) => {
   )
 }
 
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  return (
+    <div className="flex items-center justify-center space-x-2 mt-6">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 0}
+      >
+        <ChevronLeft className="h-4 w-4" />
+        <span>Trang trước</span>
+      </Button>
+      <span className="text-sm font-medium">
+        Trang {currentPage + 1} / {totalPages}
+      </span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage + 1 >= totalPages}
+      >
+        <span>Trang sau</span>
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+};
+
 const WalletList = () => {
   const { refreshWallets } = useContext(WalletContext)
   const { currentWallet, selectWallet } = useWallet()
   const { settings, loading: settingsLoading } = useSettings()
 
-  const [activeWallets, setActiveWallets] = useState([])
-  const [archivedWallets, setArchivedWallets] = useState([])
+  const [activeWalletsPage, setActiveWalletsPage] = useState({ content: [], totalElements: 0, totalPages: 0, number: 0 })
+  const [archivedWalletsPage, setArchivedWalletsPage] = useState({ content: [], totalElements: 0, totalPages: 0, number: 0 })
+  const [totalBalance, setTotalBalance] = useState(0);
+
   const [walletsLoading, setWalletsLoading] = useState(true)
   const [isTogglingArchive, setIsTogglingArchive] = useState(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -123,43 +159,49 @@ const WalletList = () => {
       path: '/wallets/share'
     }
   ]
-
-  const fetchWalletsData = useCallback(async () => {
+  
+  const fetchWalletsData = useCallback(async (activePage = 0, archivedPage = 0) => {
     try {
       setWalletsLoading(true)
-      const [activeResponse, archivedResponse] = await Promise.all([
-        walletService.getWallets(),
-        walletService.getArchivedWallets()
+      const params = { page: view === 'active' ? activePage : archivedPage, size: 9 };
+      const [activeResponse, archivedResponse, totalBalanceResponse] = await Promise.all([
+        walletService.getWallets({ page: activePage, size: 9 }),
+        walletService.getArchivedWallets({ page: archivedPage, size: 9 }),
+        walletService.getTotalBalance()
       ])
-      setActiveWallets(activeResponse.data.data || [])
-      setArchivedWallets(archivedResponse.data.data || [])
+      setActiveWalletsPage(activeResponse.data.data || { content: [], totalElements: 0, totalPages: 0, number: 0 })
+      setArchivedWalletsPage(archivedResponse.data.data || { content: [], totalElements: 0, totalPages: 0, number: 0 })
+      setTotalBalance(totalBalanceResponse.data.data.totalBalance || 0);
     } catch (error) {
       console.error('Error fetching wallets:', error)
       toast.error('Không thể tải danh sách ví.')
     } finally {
       setWalletsLoading(false)
     }
-  }, [])
+  }, [view])
 
   useEffect(() => {
-    fetchWalletsData()
+    fetchWalletsData(0, 0)
   }, [fetchWalletsData])
 
   useEffect(() => {
     if (location.state?.message && !hasShownToastRef.current) {
       toast[location.state.type || 'success'](location.state.message)
       hasShownToastRef.current = true
-      fetchWalletsData()
+      fetchWalletsData(activeWalletsPage.number, archivedWalletsPage.number)
       refreshWallets()
       window.history.replaceState({}, document.title)
     }
-  }, [location.state, fetchWalletsData, refreshWallets])
+  }, [location.state, fetchWalletsData, refreshWallets, activeWalletsPage.number, archivedWalletsPage.number])
 
-  const totalBalance = useMemo(() => {
-    return activeWallets.reduce((sum, wallet) => {
-      return sum + Number(wallet.balance)
-    }, 0)
-  }, [activeWallets])
+  const handlePageChange = (newPage) => {
+    if (view === 'active') {
+      fetchWalletsData(newPage, archivedWalletsPage.number);
+    } else {
+      fetchWalletsData(activeWalletsPage.number, newPage);
+    }
+    walletListRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const handleDeleteClick = (wallet) => {
     if (view === 'archived') {
@@ -212,7 +254,10 @@ const WalletList = () => {
     }
   }
 
-  const walletsToDisplay = view === 'active' ? activeWallets : archivedWallets
+  const walletsToDisplay = view === 'active' ? activeWalletsPage.content : archivedWalletsPage.content;
+  const currentPage = view === 'active' ? activeWalletsPage.number : archivedWalletsPage.number;
+  const totalPages = view === 'active' ? activeWalletsPage.totalPages : archivedWalletsPage.totalPages;
+
 
   const permissionDisplay = {
     VIEW: { text: 'Chỉ xem', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300' },
@@ -295,11 +340,11 @@ const WalletList = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Ví đang hoạt động:</span>
-                    <span className="text-xl font-bold tracking-tight">{activeWallets.length}</span>
+                    <span className="text-xl font-bold tracking-tight">{activeWalletsPage.totalElements}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Ví đang lưu trữ:</span>
-                    <span className="text-xl font-bold tracking-tight">{archivedWallets.length}</span>
+                    <span className="text-xl font-bold tracking-tight">{archivedWalletsPage.totalElements}</span>
                   </div>
                 </div>
               </CardContent>
@@ -336,12 +381,13 @@ const WalletList = () => {
             <SlidingTabs
                 view={view}
                 setView={setView}
-                activeCount={activeWallets.length}
-                archivedCount={archivedWallets.length}
+                activeCount={activeWalletsPage.totalElements}
+                archivedCount={archivedWalletsPage.totalElements}
             />
           </div>
 
           {walletsToDisplay.length > 0 ? (
+            <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {walletsToDisplay.map((wallet) => {
                   const isShared = !!wallet.sharedBy;
@@ -436,6 +482,8 @@ const WalletList = () => {
                   )
                 })}
               </div>
+              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+              </>
           ) : (
               <div className="flex items-center justify-center pt-16">
                 <div className="text-center">

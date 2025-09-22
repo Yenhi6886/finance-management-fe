@@ -1,16 +1,23 @@
 import apiService from '../../../shared/services/apiService'
 
 export const walletService = {
-  getWallets: async () => {
-    return apiService.get('/wallets')
+  getWallets: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return apiService.get(`/wallets?${queryString}`)
   },
 
-  getMyWallets: async () => {
-    return apiService.get('/wallets/my-wallets')
+  getMyWallets: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return apiService.get(`/wallets/my-wallets?${queryString}`)
   },
 
-  getArchivedWallets: async () => {
-    return apiService.get('/wallets/archived')
+  getArchivedWallets: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return apiService.get(`/wallets/archived?${queryString}`)
+  },
+  
+  getTotalBalance: async () => {
+    return apiService.get('/wallets/total-balance')
   },
 
   createWallet: async (walletData) => {
