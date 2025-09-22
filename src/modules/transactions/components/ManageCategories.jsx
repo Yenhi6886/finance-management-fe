@@ -17,6 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../components/ui/tooltip.jsx';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { cn } from '../../../lib/utils.js';
+import { LoadingSpinner } from '../../../components/Loading.jsx';
 
 const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => {
     const [name, setName] = useState('');
@@ -611,7 +612,7 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                 </Button>
             </div>
 
-            {loading ? <div className="text-center py-8"><Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" /></div> :
+            {loading ? <div className="flex justify-center py-8"><LoadingSpinner size="lg" /></div> :
                 categories.length === 0 ? (
                     <Card className="mt-6">
                         <CardContent className="flex flex-col items-center justify-center text-center p-10">
