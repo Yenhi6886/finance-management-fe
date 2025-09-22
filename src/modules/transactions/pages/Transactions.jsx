@@ -194,6 +194,7 @@ const Transactions = () => {
 const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) => {
     const navigate = useNavigate();
     const { settings } = useSettings();
+    const { currentWallet } = useWallet();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState([]);
@@ -241,7 +242,9 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
     const totalExpense = transactions.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0);
     const balance = totalIncome - totalExpense;
 
-    const SummaryAndActions = () => (
+    const SummaryAndActions = () => {
+        const canAdd = currentWallet && (currentWallet.permissionLevel === 'OWNER' || currentWallet.permissionLevel === 'EDIT');
+        return (
         <div className="space-y-6">
             <Card>
                 <CardHeader>
@@ -269,17 +272,21 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
                     <div className="grid grid-cols-2 gap-2">
-                        <Button onClick={() => onOpenAddModal('expense')} variant="destructive" className="rounded-md bg-red-600 hover:bg-red-700 text-white"><MinusCircle className="mr-2 h-4 w-4" />Chi Tiêu</Button>
-                        <Button onClick={() => onOpenAddModal('income')} className="rounded-md"><PlusCircle className="mr-2 h-4 w-4" />Thu Nhập</Button>
+                        <Button onClick={() => canAdd && onOpenAddModal('expense')} disabled={!canAdd} variant="destructive" className="rounded-md bg-red-600 hover:bg-red-700 text-white"><MinusCircle className="mr-2 h-4 w-4" />Chi Tiêu</Button>
+                        <Button onClick={() => canAdd && onOpenAddModal('income')} disabled={!canAdd} className="rounded-md"><PlusCircle className="mr-2 h-4 w-4" />Thu Nhập</Button>
                     </div>
                     <Button onClick={() => navigate('/reports')} variant="secondary" className="w-full rounded-md">
                         <BarChart3Icon className="mr-2 h-4 w-4" />
                         Xem Báo Cáo Chi Tiết
                     </Button>
+                    {!canAdd && (
+                        <p className="text-xs text-muted-foreground mt-1">Bạn không có quyền thêm giao dịch trên ví hiện tại.</p>
+                    )}
                 </CardContent>
             </Card>
         </div>
     );
+    }
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
