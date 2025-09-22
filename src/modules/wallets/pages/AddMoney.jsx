@@ -30,7 +30,6 @@ const AddMoney = () => {
   const [wallets, setWallets] = useState([])
   const [selectedWallet, setSelectedWallet] = useState('')
   const [amount, setAmount] = useState('')
-  const [addMethod, setAddMethod] = useState('')
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
@@ -72,9 +71,6 @@ const AddMoney = () => {
       newErrors.amount = `Số tiền tối thiểu là ${formatCurrency(1000, 'VND', settings)}`
     } else if (parseFloat(amount) > 100000000) {
       newErrors.amount = `Số tiền tối đa là ${formatCurrency(100000000, 'VND', settings)}`
-    }
-    if (!addMethod) {
-      newErrors.addMethod = 'Vui lòng chọn phương thức nạp tiền'
     }
     
     // Xác thực ghi chú
@@ -132,7 +128,6 @@ const AddMoney = () => {
     setSelectedWallet('');
     setAmount('');
     setNote('');
-    setAddMethod('');
     setErrors({});
   };
 
@@ -142,7 +137,7 @@ const AddMoney = () => {
     try {
       const transactionData = {
         amount: parseFloat(amount),
-        method: addMethod,
+        method: 'Nạp tiền',
         description: note.trim() || '',
       };
 
@@ -240,23 +235,6 @@ const AddMoney = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="addMethod">Phương thức nạp tiền <span className="text-red-500">*</span></Label>
-                      <Select onValueChange={setAddMethod} value={addMethod}>
-                        <SelectTrigger className={`w-full h-12 ${errors.addMethod ? 'border-red-500' : 'border-border'}`}>
-                          <SelectValue placeholder="Chọn phương thức nạp tiền" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Ngân hàng">Ngân hàng</SelectItem>
-                          <SelectItem value="Ví điện tử">Ví điện tử</SelectItem>
-                          <SelectItem value="Thẻ tín dụng">Thẻ tín dụng</SelectItem>
-                          <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
-                          <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-                          <SelectItem value="Khác">Khác</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {errors.addMethod && <p className="text-sm text-red-500">{errors.addMethod}</p>}
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="note">Ghi chú</Label>
                       <textarea 
                         id="note" 
@@ -308,18 +286,30 @@ const AddMoney = () => {
                     <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
                       <ReceiptIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <h3 className="text-lg font-semibold text-card-foreground">Giao Dịch Gần Đây</h3>
+                    <div>
+                      <h3 className="text-lg font-semibold text-card-foreground">Giao Dịch Gần Đây</h3>
+                      <p className="text-xs text-muted-foreground mt-1">Click để nạp tiền tương tự</p>
+                    </div>
                   </div>
                   {recentTransactions.length > 0 ? (
                       <div className="space-y-3">
                         {recentTransactions.map(t => (
-                            <div key={t.id} className="flex items-center justify-between">
+                            <div 
+                              key={t.id} 
+                              className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                              onClick={() => {
+                                setAmount(t.amount.toString());
+                                setSelectedWallet(t.walletId.toString());
+                              }}
+                            >
                               <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center">
                                   <PlusIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
                                 </div>
                                 <div>
-                                  <p className="font-medium text-card-foreground text-sm" title={t.description}>{t.description.length > 25 ? `${t.description.substring(0, 25)}...` : t.description}</p>
+                                  <p className="font-medium text-card-foreground text-sm" title={`Nạp tiền vào ví ${t.walletName}`}>
+                                    {`Nạp tiền vào ví ${t.walletName}`.length > 25 ? `${`Nạp tiền vào ví ${t.walletName}`.substring(0, 25)}...` : `Nạp tiền vào ví ${t.walletName}`}
+                                  </p>
                                   <p className="text-xs text-muted-foreground">{formatDate(t.date, settings)}</p>
                                 </div>
                               </div>
@@ -381,10 +371,6 @@ const AddMoney = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Số tiền:</span>
                       <span className="font-bold text-lg text-green-600">{formatCurrency(parseFloat(amount || 0), 'VND', settings)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Phương thức:</span>
-                      <span className="font-semibold text-foreground">{addMethod}</span>
                     </div>
                     {note.trim() && (
                         <div className="flex justify-between items-start pt-2 border-t">
