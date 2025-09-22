@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import Sidebar from './Sidebar'
-import WalletPanel from './WalletPanel'
+import Sidebar from './Sidebar.jsx'
+import WalletPanel from './WalletPanel.jsx'
 
 const DashboardLayout = () => {
     const [isWalletPanelOpen, setWalletPanelOpen] = useState(false);

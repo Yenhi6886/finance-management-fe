@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext, useMemo, useCallback, useRef } from 'react'
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
-import { Button } from '../../../components/ui/button'
-import { walletService } from '../services/walletService'
+import useEmblaCarousel from 'embla-carousel-react'
+import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx'
+import { Button } from '../../../components/ui/button.jsx'
+import { walletService } from '../services/walletService.js'
 import {
   EyeIcon,
   EditIcon,
@@ -14,7 +15,9 @@ import {
   Star,
   MoreHorizontal,
   WalletCards,
-  UsersIcon
+  UsersIcon,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -22,7 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '../../../components/ui/dropdown-menu'
+} from '../../../components/ui/dropdown-menu.jsx'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -34,21 +37,21 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle
-} from '../../../components/ui/alert-dialog'
-import { WalletContext } from '../../../shared/contexts/WalletContext'
-import { useSettings } from '../../../shared/contexts/SettingsContext'
-import AnimatedIcon from '../../../components/ui/AnimatedIcon'
-import { cn } from '../../../lib/utils'
-import { IconComponent } from '../../../shared/config/icons'
+} from '../../../components/ui/alert-dialog.jsx'
+import { WalletContext } from '../../../shared/contexts/WalletContext.jsx'
+import { useSettings } from '../../../shared/contexts/SettingsContext.jsx'
+import AnimatedIcon from '../../../components/ui/AnimatedIcon.jsx'
+import { cn } from '../../../lib/utils.js'
+import { IconComponent } from '../../../shared/config/icons.js'
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js'
-import { useWallet } from '../../../shared/hooks/useWallet'
+import { useWallet } from '../../../shared/hooks/useWallet.js'
 
 import listIconAnimation from '../../../assets/icons/listicon.json'
 import addWalletAnimation from '../../../assets/icons/addwalletgreen.json'
+import walletAnimation from '../../../assets/icons/wallet.json'
 import transferAnimation from '../../../assets/icons/transfer.json'
 import moneyAnimation from '../../../assets/icons/money.json'
 import shareAnimation from '../../../assets/icons/share.json'
-import walletAnimation from '../../../assets/icons/wallet.json'
 
 const SlidingTabs = ({ view, setView, activeCount, archivedCount }) => {
   return (
@@ -90,6 +93,31 @@ const WalletList = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const walletListRef = useRef(null);
+
+  // Embla carousel setup
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    containScroll: 'trimSnaps'
+  });
+  const [prevBtnEnabled, setPrevBtnEnabled] = useState(false);
+  const [nextBtnEnabled, setNextBtnEnabled] = useState(false);
+
+  const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setPrevBtnEnabled(emblaApi.canScrollPrev());
+    setNextBtnEnabled(emblaApi.canScrollNext());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
+    return () => emblaApi.off('select', onSelect);
+  }, [emblaApi, onSelect]);
 
   const walletActions = [
     {
@@ -214,6 +242,18 @@ const WalletList = () => {
 
   const walletsToDisplay = view === 'active' ? activeWallets : archivedWallets
 
+  // Chia ví thành các nhóm 9 ví mỗi slide
+  const walletSlides = useMemo(() => {
+    const slides = [];
+    const walletsPerSlide = 9;
+    
+    for (let i = 0; i < walletsToDisplay.length; i += walletsPerSlide) {
+      slides.push(walletsToDisplay.slice(i, i + walletsPerSlide));
+    }
+    
+    return slides;
+  }, [walletsToDisplay]);
+
   const permissionDisplay = {
     VIEW: { text: 'Chỉ xem', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300' },
     EDIT: { text: 'Chỉnh sửa', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' },
@@ -274,9 +314,9 @@ const WalletList = () => {
                   <p className="text-sm text-muted-foreground">Tổng số dư các ví đang hoạt động</p>
                   <p className="text-3xl font-bold tracking-tight">{formatCurrency(totalBalance, 'VND', settings)}</p>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="w-full text-green-600 border-green-600 hover:bg-green-50"
                   onClick={() => navigate('/dollar')}
                 >
@@ -342,100 +382,118 @@ const WalletList = () => {
           </div>
 
           {walletsToDisplay.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {walletsToDisplay.map((wallet) => {
-                  const isShared = !!wallet.sharedBy;
-                  const canEdit = isShared ? ['EDIT', 'OWNER'].includes(wallet.permissionLevel) : true;
-                  const isOwner = isShared ? wallet.permissionLevel === 'OWNER' : true;
-                  const permissionInfo = permissionDisplay[wallet.permissionLevel];
+            <div className="relative mt-6">
+              <div className="embla">
+                <div className="embla__viewport" ref={emblaRef}>
+                  <div className="embla__container">
+                    {walletSlides.map((slideWallets, slideIndex) => (
+                      <div key={slideIndex} className="embla__slide">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-1">
+                          {slideWallets.map((wallet) => {
+                            const isShared = !!wallet.sharedBy;
+                            const canEdit = isShared ? ['EDIT', 'OWNER'].includes(wallet.permissionLevel) : true;
+                            const isOwner = isShared ? wallet.permissionLevel === 'OWNER' : true;
+                            const permissionInfo = permissionDisplay[wallet.permissionLevel];
 
-                  return (
-                      <Card key={wallet.id} className={cn(
-                        "transition-shadow hover:shadow-lg", 
-                        view === 'archived' && 'bg-muted/50',
-                        currentWallet?.id === wallet.id && 'border-green-600 border-2'
-                      )}>
-                        <CardContent className="p-4 flex flex-col h-full">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <IconComponent name={wallet.icon} className="w-7 h-7" />
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-xl">{wallet.name}</h3>
-                                {currentWallet?.id === wallet.id && (
-                                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                                )}
-                                {isShared && permissionInfo && (
-                                    <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full', permissionInfo.className)}>
-                                  {permissionInfo.text}
-                                </span>
-                                )}
-                              </div>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {view === 'active' && (
-                                    <>
-                                      <DropdownMenuItem onSelect={() => navigate(`/wallets/${wallet.id}`)}>
-                                        <EyeIcon className="mr-2 h-4 w-4" />
-                                        <span>Xem chi tiết</span>
-                                      </DropdownMenuItem>
-                                      {canEdit && (
-                                          <DropdownMenuItem onSelect={() => navigate(`/wallets/${wallet.id}/edit`)}>
-                                            <EditIcon className="mr-2 h-4 w-4" />
-                                            <span>Chỉnh sửa ví</span>
+                            return (
+                              <Card key={wallet.id} className={cn(
+                                "transition-shadow hover:shadow-lg",
+                                view === 'archived' && 'bg-muted/50',
+                                currentWallet?.id === wallet.id && 'border-green-600 border-2'
+                              )}>
+                                <CardContent className="p-4 flex flex-col h-full">
+                                  <div className="flex items-start justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                      <IconComponent name={wallet.icon} className="w-7 h-7" />
+                                      <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold text-xl">{wallet.name}</h3>
+                                        {currentWallet?.id === wallet.id && (
+                                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                        )}
+                                        {isShared && permissionInfo && (
+                                          <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full', permissionInfo.className)}>
+                                            {permissionInfo.text}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                          <MoreHorizontal className="w-4 h-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        {view === 'active' && (
+                                          <>
+                                            <DropdownMenuItem onSelect={() => navigate(`/wallets/${wallet.id}`)}>
+                                              <EyeIcon className="mr-2 h-4 w-4" />
+                                              <span>Xem chi tiết</span>
+                                            </DropdownMenuItem>
+                                            {canEdit && (
+                                              <DropdownMenuItem onSelect={() => navigate(`/wallets/${wallet.id}/edit`)}>
+                                                <EditIcon className="mr-2 h-4 w-4" />
+                                                <span>Chỉnh sửa ví</span>
+                                              </DropdownMenuItem>
+                                            )}
+                                            {currentWallet?.id !== wallet.id && (
+                                              <DropdownMenuItem onSelect={() => handleSetDefault(wallet)}>
+                                                <Star className="mr-2 h-4 w-4 text-yellow-500" />
+                                                <span>Đặt mặc định</span>
+                                              </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuSeparator />
+                                          </>
+                                        )}
+                                        {isOwner && (
+                                          <DropdownMenuItem onSelect={() => handleArchiveToggle(wallet)} disabled={isTogglingArchive === wallet.id}>
+                                            {isTogglingArchive === wallet.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
+                                              view === 'archived' ? <ArchiveRestoreIcon className="mr-2 h-4 w-4" /> : <ArchiveIcon className="mr-2 h-4 w-4" />
+                                            )}
+                                            <span>{view === 'archived' ? 'Khôi phục' : 'Lưu trữ'}</span>
                                           </DropdownMenuItem>
-                                      )}
-                                      {currentWallet?.id !== wallet.id && (
-                                        <DropdownMenuItem onSelect={() => handleSetDefault(wallet)}>
-                                          <Star className="mr-2 h-4 w-4 text-yellow-500" />
-                                          <span>Đặt mặc định</span>
-                                        </DropdownMenuItem>
-                                      )}
-                                      <DropdownMenuSeparator />
-                                    </>
-                                )}
-                                {isOwner && (
-                                    <DropdownMenuItem onSelect={() => handleArchiveToggle(wallet)} disabled={isTogglingArchive === wallet.id}>
-                                      {isTogglingArchive === wallet.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
-                                          view === 'archived' ? <ArchiveRestoreIcon className="mr-2 h-4 w-4" /> : <ArchiveIcon className="mr-2 h-4 w-4" />
-                                      )}
-                                      <span>{view === 'archived' ? 'Khôi phục' : 'Lưu trữ'}</span>
-                                    </DropdownMenuItem>
-                                )}
-                                {isOwner && <DropdownMenuSeparator />}
-                                {isOwner && (
-                                    <DropdownMenuItem onSelect={() => handleDeleteClick(wallet)} disabled={view === 'archived'} className="text-red-600 focus:text-red-600 focus:bg-red-50">
-                                      <TrashIcon className="mr-2 h-4 w-4" />
-                                      <span>Xóa ví</span>
-                                    </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
+                                        )}
+                                        {isOwner && <DropdownMenuSeparator />}
+                                        {isOwner && (
+                                          <DropdownMenuItem onSelect={() => handleDeleteClick(wallet)} disabled={view === 'archived'} className="text-red-600 focus:text-red-600 focus:bg-red-50">
+                                            <TrashIcon className="mr-2 h-4 w-4" />
+                                            <span>Xóa ví</span>
+                                          </DropdownMenuItem>
+                                        )}
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
 
-                          <div className="flex-grow space-y-1">
-                            <p className="text-sm text-muted-foreground">Số dư</p>
-                            <p className="text-3xl font-bold tracking-tight">{formatCurrency(wallet.balance, wallet.currency, settings)}</p>
-                          </div>
+                                  <div className="flex-grow space-y-1">
+                                    <p className="text-sm text-muted-foreground">Số dư</p>
+                                    <p className="text-3xl font-bold tracking-tight">{formatCurrency(wallet.balance, wallet.currency, settings)}</p>
+                                  </div>
 
-                          {isShared && (
-                              <div className="mt-2 pt-2 border-t text-xs text-muted-foreground flex items-center gap-1.5">
-                                <UsersIcon className="w-3 h-3" />
-                                <span>Được chia sẻ bởi {wallet.sharedBy}</span>
-                              </div>
-                          )}
+                                  {isShared && (
+                                    <div className="mt-2 pt-2 border-t text-xs text-muted-foreground flex items-center gap-1.5">
+                                      <UsersIcon className="w-3 h-3" />
+                                      <span>Được chia sẻ bởi {wallet.sharedBy}</span>
+                                    </div>
+                                  )}
 
-                          {wallet.description && <p className="text-sm text-muted-foreground mt-2 pt-2 border-t italic line-clamp-2">{wallet.description}</p>}
-                        </CardContent>
-                      </Card>
-                  )
-                })}
+                                  {wallet.description && <p className="text-sm text-muted-foreground mt-2 pt-2 border-t italic line-clamp-2">{wallet.description}</p>}
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
+              {walletSlides.length > 1 && (
+                <>
+                  <Button onClick={scrollPrev} disabled={!prevBtnEnabled} variant="outline" size="icon" className="h-9 w-9 rounded-full absolute -left-4 top-1/2 -translate-y-1/2 z-10 opacity-75 hover:opacity-100 disabled:opacity-0 transition-all"><ChevronLeft className="h-4 w-4" /></Button>
+                  <Button onClick={scrollNext} disabled={!nextBtnEnabled} variant="outline" size="icon" className="h-9 w-9 rounded-full absolute -right-4 top-1/2 -translate-y-1/2 z-10 opacity-75 hover:opacity-100 disabled:opacity-0 transition-all"><ChevronRight className="h-4 w-4" /></Button>
+                </>
+              )}
+            </div>
           ) : (
               <div className="flex items-center justify-center pt-16">
                 <div className="text-center">

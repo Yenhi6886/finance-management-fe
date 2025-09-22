@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../../../components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../components/ui/alert-dialog';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { useWallet } from '../../../shared/hooks/useWallet';
-import { useNotification } from '../../../shared/contexts/NotificationContext';
-import { categoryService } from '../services/categoryService';
-import { transactionService } from '../services/transactionService';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../../../components/ui/dialog.jsx';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../components/ui/alert-dialog.jsx';
+import { Button } from '../../../components/ui/button.jsx';
+import { Input } from '../../../components/ui/input.jsx';
+import { Label } from '../../../components/ui/label.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx';
+import { useWallet } from '../../../shared/hooks/useWallet.js';
+import { useNotification } from '../../../shared/contexts/NotificationContext.jsx';
+import { categoryService } from '../services/categoryService.js';
+import { transactionService } from '../services/transactionService.js';
 import { toast } from 'sonner';
 import { Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
-import { useSettings } from '../../../shared/contexts/SettingsContext';
-import { useDateFormat } from '../../../shared/hooks/useDateFormat';
-import { cn } from '../../../lib/utils';
-import { IconComponent } from '../../../shared/config/icons';
-import { validateTransaction, validateField } from '../../../shared/utils/validationUtils';
+import { useSettings } from '../../../shared/contexts/SettingsContext.jsx';
+import { useDateFormat } from '../../../shared/hooks/useDateFormat.js';
+import { cn } from '../../../lib/utils.js';
+import { IconComponent } from '../../../shared/config/icons.js';
+import { validateTransaction, validateField } from '../../../shared/utils/validationUtils.js';
 
 const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transaction }) => {
     const { wallets } = useWallet();

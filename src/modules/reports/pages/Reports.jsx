@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { Tabs, TabsContent } from '../../../components/ui/tabs';
-import { Badge } from '../../../components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card.jsx';
+import { Button } from '../../../components/ui/button.jsx';
+import { Input } from '../../../components/ui/input.jsx';
+import { Label } from '../../../components/ui/label.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx';
+import { Tabs, TabsContent } from '../../../components/ui/tabs.jsx';
+import { Badge } from '../../../components/ui/badge.jsx';
 import { format } from 'date-fns';
 import {
     Calendar,
@@ -16,18 +16,18 @@ import {
     ArrowUpCircle,
     ArrowDownCircle,
 } from 'lucide-react';
-import { useSettings } from '../../../shared/contexts/SettingsContext';
-import { useWallet } from '../../../shared/hooks/useWallet';
-import { useAuth } from '../../auth/contexts/AuthContext';
-import { formatCurrency } from '../../../shared/utils/formattingUtils';
-import { useDateFormat } from '../../../shared/hooks/useDateFormat';
-import { ExportDialog, EmailSettingsDialog } from '../components/ExportComponents';
-import reportService from '../services/reportService';
-import { LoadingSpinner as Loading } from '../../../components/Loading';
-import emailService from '../services/emailService';
+import { useSettings } from '../../../shared/contexts/SettingsContext.jsx';
+import { useWallet } from '../../../shared/hooks/useWallet.js';
+import { useAuth } from '../../auth/contexts/AuthContext.jsx';
+import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
+import { useDateFormat } from '../../../shared/hooks/useDateFormat.js';
+import { ExportDialog, EmailSettingsDialog } from '../components/ExportComponents.jsx';
+import reportService from '../services/reportService.js';
+import { LoadingSpinner as Loading } from '../../../components/Loading.jsx';
+import emailService from '../services/emailService.js';
 import { toast } from 'sonner';
-import { cn } from '../../../lib/utils';
-import { IconComponent } from '../../../shared/config/icons';
+import { cn } from '../../../lib/utils.js';
+import { IconComponent } from '../../../shared/config/icons.js';
 
 const PAGE_SIZE = 10;
 

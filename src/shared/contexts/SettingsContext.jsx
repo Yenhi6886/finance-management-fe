@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react'
-import { settingsService } from '../../modules/settings/services/settingsService'
+import { settingsService } from '../../modules/settings/services/settingsService.js'
 import { toast } from 'sonner'
-import { useAuth } from '../../modules/auth/contexts/AuthContext'
+import { useAuth } from '../../modules/auth/contexts/AuthContext.jsx'
 
 export const SettingsContext = createContext()
 

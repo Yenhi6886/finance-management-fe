@@ -114,21 +114,22 @@ body {
   margin-left: calc(var(--slide-spacing) * -1);
 }
 .embla__slide {
-  flex: 0 0 calc(100% / 3);
+  flex: 0 0 100%; /* Mỗi slide chiếm 100% để hiển thị tối đa 3 danh mục hoặc 9 ví */
   min-width: 0;
   padding-left: var(--slide-spacing);
   position: relative;
 }
 
+/* Responsive adjustments for wallet slides */
 @media (max-width: 1024px) {
   .embla__slide {
-    flex-basis: calc(100% / 2);
+    flex-basis: 100%;
   }
 }
 
 @media (max-width: 768px) {
   .embla__slide {
-    flex-basis: 90%;
+    flex-basis: 100%;
   }
 }
 

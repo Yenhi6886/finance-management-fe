@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card.jsx';
+import { Button } from '../../../components/ui/button.jsx';
 import { X, Loader2, FileText, ArrowUpCircle, ArrowDownCircle, PieChart } from 'lucide-react';
-import { categoryService } from '../services/categoryService';
+import { categoryService } from '../services/categoryService.js';
 import { toast } from 'sonner';
-import { useSettings } from '../../../shared/contexts/SettingsContext';
-import { useTheme } from '../../../shared/contexts/ThemeContext';
-import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils';
-import { cn } from '../../../lib/utils';
+import { useSettings } from '../../../shared/contexts/SettingsContext.jsx';
+import { useTheme } from '../../../shared/contexts/ThemeContext.jsx';
+import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js';
+import { cn } from '../../../lib/utils.js';
 import { PieChart as RechartsPieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {

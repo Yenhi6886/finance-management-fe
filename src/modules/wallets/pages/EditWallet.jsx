@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Label } from '../../../components/ui/label'
-import { walletService } from '../services/walletService'
+import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx'
+import { Button } from '../../../components/ui/button.jsx'
+import { Input } from '../../../components/ui/input.jsx'
+import { Label } from '../../../components/ui/label.jsx'
+import { walletService } from '../services/walletService.js'
 import { ArrowLeftIcon, SaveIcon, Loader2, StarIcon, CheckCircleIcon } from 'lucide-react'
 import { toast } from 'sonner'
-import { WalletContext } from '../../../shared/contexts/WalletContext'
-import { availableIcons, IconComponent, defaultIcon } from '../../../shared/config/icons'
+import { WalletContext } from '../../../shared/contexts/WalletContext.jsx'
+import { availableIcons, IconComponent, defaultIcon } from '../../../shared/config/icons.js'
 
 const EditWallet = () => {
   const { id } = useParams()

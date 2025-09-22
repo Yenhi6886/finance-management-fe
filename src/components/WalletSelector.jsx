@@ -1,5 +1,5 @@
 import React from 'react'
-import { useWallet } from '../shared/hooks/useWallet'
+import { useWallet } from '../shared/hooks/useWallet.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,10 +7,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu'
-import { Button } from './ui/button'
+} from './ui/dropdown-menu.jsx'
+import { Button } from './ui/button.jsx'
 import { WalletIcon, CheckIcon, ChevronDownIcon } from 'lucide-react'
-import { IconComponent } from '../shared/config/icons'
+import { IconComponent } from '../shared/config/icons.js'
 
 const WalletSelector = () => {
   const { currentWallet, wallets, selectWallet, loading, getTotalBalance } = useWallet()

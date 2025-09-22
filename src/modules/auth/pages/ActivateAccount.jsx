@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { authService } from '../services/authService'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
-import { Button } from '../../../components/ui/button'
+import { authService } from '../services/authService.js'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card.jsx'
+import { Button } from '../../../components/ui/button.jsx'
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 
 const ActivateAccount = () => {

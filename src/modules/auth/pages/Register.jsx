@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Label } from '../../../components/ui/label'
+import { useAuth } from '../contexts/AuthContext.jsx'
+import { Button } from '../../../components/ui/button.jsx'
+import { Input } from '../../../components/ui/input.jsx'
+import { Label } from '../../../components/ui/label.jsx'
 import { EyeIcon, EyeOffIcon, AlertTriangle } from 'lucide-react'
 import {
     validateName,
@@ -11,7 +11,7 @@ import {
     isValidEmail,
     validatePhoneNumber,
     validatePassword
-} from '../../../shared/utils/validationUtils'
+} from '../../../shared/utils/validationUtils.js'
 
 // Google Icon Component
 const GoogleIcon = ({ className = "w-5 h-5" }) => (

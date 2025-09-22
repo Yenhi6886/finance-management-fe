@@ -1,8 +1,8 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { useSettings } from '../../../shared/contexts/SettingsContext';
-import { useTheme } from '../../../shared/contexts/ThemeContext';
-import { formatCurrency } from '../../../shared/utils/formattingUtils';
+import { useSettings } from '../../../shared/contexts/SettingsContext.jsx';
+import { useTheme } from '../../../shared/contexts/ThemeContext.jsx';
+import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
 
 const COLORS = ['#10b981', '#ef4444']; // Green for Income, Red for Expense
 

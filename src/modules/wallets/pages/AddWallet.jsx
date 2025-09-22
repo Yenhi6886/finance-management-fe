@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Label } from '../../../components/ui/label'
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
+import { Button } from '../../../components/ui/button.jsx'
+import { Input } from '../../../components/ui/input.jsx'
+import { Label } from '../../../components/ui/label.jsx'
+import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx'
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -11,8 +11,8 @@ import {
   Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { walletService } from '../services/walletService'
-import { availableIcons, IconComponent, defaultIcon } from '../../../shared/config/icons'
+import { walletService } from '../services/walletService.js'
+import { availableIcons, IconComponent, defaultIcon } from '../../../shared/config/icons.js'
 
 const AddWallet = () => {
   const navigate = useNavigate()

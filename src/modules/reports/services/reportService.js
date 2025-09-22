@@ -1,4 +1,4 @@
-import apiService from '../../../shared/services/apiService';
+import apiService from '../../../shared/services/apiService.js';
 
 const reportService = {
   getTodayTransactions: (page = 0, size = 10) => {

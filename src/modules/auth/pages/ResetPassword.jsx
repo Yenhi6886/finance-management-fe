@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { authService } from '../services/authService';
-import { validationUtils } from '../../../shared/utils/validationUtils';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../../components/ui/card';
+import { authService } from '../services/authService.js';
+import { validationUtils } from '../../../shared/utils/validationUtils.js';
+import { Button } from '../../../components/ui/button.jsx';
+import { Input } from '../../../components/ui/input.jsx';
+import { Label } from '../../../components/ui/label.jsx';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../../components/ui/card.jsx';
 import { KeyIcon, AlertTriangleIcon, Eye, EyeOff } from 'lucide-react';
-import { errorHandler } from '../../../shared/utils/errorHandler';
+import { errorHandler } from '../../../shared/utils/errorHandler.js';
 import { LoadingScreen } from '../../../components/Loading.jsx';
 
 const ResetPassword = () => {

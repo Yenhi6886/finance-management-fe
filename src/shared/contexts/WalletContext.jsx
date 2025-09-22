@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react'
-import { walletService } from '../../modules/wallets/services/walletService'
-import { useAuth } from '../../modules/auth/contexts/AuthContext'
+import { walletService } from '../../modules/wallets/services/walletService.js'
+import { useAuth } from '../../modules/auth/contexts/AuthContext.jsx'
 
 export const WalletContext = createContext()
 

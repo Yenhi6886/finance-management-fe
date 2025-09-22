@@ -1,28 +1,28 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
-import { AuthProvider } from './modules/auth/contexts/AuthContext'
-import { ThemeProvider } from './shared/contexts/ThemeContext'
-import { WalletProvider } from './shared/contexts/WalletContext'
-import { SettingsProvider } from './shared/contexts/SettingsContext'
-import { NotificationProvider } from './shared/contexts/NotificationContext'
-import { InitialLoadingProvider } from './shared/contexts/InitialLoadingContext'
-import ProtectedRoute from './components/ProtectedRoute'
-import DashboardLayout from './components/DashboardLayout'
+import { AuthProvider } from './modules/auth/contexts/AuthContext.jsx'
+import { ThemeProvider } from './shared/contexts/ThemeContext.jsx'
+import { WalletProvider } from './shared/contexts/WalletContext.jsx'
+import { SettingsProvider } from './shared/contexts/SettingsContext.jsx'
+import { NotificationProvider } from './shared/contexts/NotificationContext.jsx'
+import { InitialLoadingProvider } from './shared/contexts/InitialLoadingContext.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
+import DashboardLayout from './components/DashboardLayout.jsx'
 // Auth pages
-import Login from './modules/auth/pages/Login'
-import Register from './modules/auth/pages/Register'
-import ForgotPassword from './modules/auth/pages/ForgotPassword'
-import ResetPassword from './modules/auth/pages/ResetPassword'
-import ActivateAccount from './modules/auth/pages/ActivateAccount'
+import Login from './modules/auth/pages/Login.jsx'
+import Register from './modules/auth/pages/Register.jsx'
+import ForgotPassword from './modules/auth/pages/ForgotPassword.jsx'
+import ResetPassword from './modules/auth/pages/ResetPassword.jsx'
+import ActivateAccount from './modules/auth/pages/ActivateAccount.jsx'
 
 // Main pages
-import Dashboard from './modules/dashboard/pages/Dashboard'
-import Profile from './modules/profile/pages/Profile'
-import { ProfilePage } from './modules/profile'
-import ChangePassword from './modules/profile/pages/ChangePassword'
-import { Reports } from './modules/reports'
-import { Transactions } from './modules/transactions'
-import { Settings } from './modules/settings'
+import Dashboard from './modules/dashboard/pages/Dashboard.jsx'
+import Profile from './modules/profile/pages/Profile.jsx'
+import { ProfilePage } from './modules/profile/index.js'
+import ChangePassword from './modules/profile/pages/ChangePassword.jsx'
+import { Reports } from './modules/reports/index.js'
+import { Transactions } from './modules/transactions/index.js'
+import { Settings } from './modules/settings/index.js'
 
 // Wallet pages
 import {
@@ -34,14 +34,14 @@ import {
   ShareWallet,
   AddMoney,
   AcceptInvitation
-} from './modules/wallets'
+} from './modules/wallets/index.js'
 
 // New Currency Page
-import CurrencyPage from './modules/currency/pages/CurrencyPage'
+import CurrencyPage from './modules/currency/pages/CurrencyPage.jsx'
 
 // Error page
-import ErrorPage from './modules/error/ErrorPage'
-import OAuthCallback from './modules/auth/pages/oauth-callback'
+import ErrorPage from './modules/error/ErrorPage.jsx'
+import OAuthCallback from './modules/auth/pages/oauth-callback.jsx'
 
 function App() {
   return (

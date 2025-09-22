@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Label } from '../../../components/ui/label'
-import { Alert, AlertDescription } from '../../../components/ui/alert'
+import { useAuth } from '../contexts/AuthContext.jsx'
+import { Button } from '../../../components/ui/button.jsx'
+import { Input } from '../../../components/ui/input.jsx'
+import { Label } from '../../../components/ui/label.jsx'
+import { Alert, AlertDescription } from '../../../components/ui/alert.jsx'
 import { EyeIcon, EyeOffIcon, Info} from 'lucide-react'
 
 // Google Icon Component

@@ -1,15 +1,15 @@
 import React, { useState } from 'react'
-import { useAuth } from '../../auth/contexts/AuthContext'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Label } from '../../../components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../components/ui/alert-dialog'
+import { useAuth } from '../../auth/contexts/AuthContext.jsx'
+import { Button } from '../../../components/ui/button.jsx'
+import { Input } from '../../../components/ui/input.jsx'
+import { Label } from '../../../components/ui/label.jsx'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card.jsx'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../components/ui/alert-dialog.jsx'
 import { EyeIcon, EyeOffIcon, KeyRound, Trash2 } from 'lucide-react'
-import { errorHandler } from '../../../shared/utils/errorHandler'
+import { errorHandler } from '../../../shared/utils/errorHandler.js'
 import { authService } from '../../auth/services/authService.js'
 import { useNavigate } from 'react-router-dom'
-import { validationUtils } from '../../../shared/utils/validationUtils'
+import { validationUtils } from '../../../shared/utils/validationUtils.js'
 
 const ChangePassword = () => {
   const { loading, deleteAccount } = useAuth()

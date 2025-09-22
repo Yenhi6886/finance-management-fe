@@ -1,4 +1,4 @@
-import { formatDate, formatDateTime } from '../formattingUtils';
+import { formatDate, formatDateTime } from '../formattingUtils.js';
 
 // Mock settings object
 const mockSettings = {

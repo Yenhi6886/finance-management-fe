@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useWallet } from '../shared/contexts/WalletContext'
+import { useWallet } from '../shared/contexts/WalletContext.jsx'
 import { cn } from '../lib/utils.js'
-import AnimatedIcon from './ui/AnimatedIcon'
+import AnimatedIcon from './ui/AnimatedIcon.jsx'
 import addWalletAnimation from '../assets/icons/addWallet.json'
 import { X, Check, FolderKanban } from 'lucide-react'
-import { IconComponent } from '../shared/config/icons'
-import { useSettings } from '../shared/contexts/SettingsContext'
+import { IconComponent } from '../shared/config/icons.js'
+import { useSettings } from '../shared/contexts/SettingsContext.jsx'
 import { formatCurrency } from '../shared/utils/formattingUtils.js'
-import { categoryService } from '../modules/transactions/services/categoryService'
+import { categoryService } from '../modules/transactions/services/categoryService.js'
 import { toast } from 'sonner'
 
 const WalletPanel = ({ isOpen, onClose }) => {
@@ -55,7 +55,7 @@ const WalletPanel = ({ isOpen, onClose }) => {
         >
             <div className="w-72 flex flex-col h-full">
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Danh Sách Ví</h2>
+                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Danh Sách Ví & Danh mục</h2>
                     <button
                         onClick={onClose}
                         className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"

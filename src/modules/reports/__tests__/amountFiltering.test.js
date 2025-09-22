@@ -1,7 +1,7 @@
-import reportService from '../services/reportService';
+import reportService from '../services/reportService.js';
 
 // Mock apiService
-jest.mock('../../../shared/services/apiService', () => ({
+jest.mock('../../../shared/services/apiService.js', () => ({
   get: jest.fn()
 }));
 
@@ -12,7 +12,7 @@ describe('Report Service - Amount Filtering', () => {
 
   describe('getTransactionsByTime', () => {
     test('should include minAmount and maxAmount in params when provided', () => {
-      const mockApiService = require('../../../shared/services/apiService');
+      const mockApiService = require('../../../shared/services/apiService.js');
       mockApiService.get.mockResolvedValue({ data: { success: true } });
 
       const startDate = '2023-01-01T00:00:00';
@@ -37,7 +37,7 @@ describe('Report Service - Amount Filtering', () => {
     });
 
     test('should not include minAmount and maxAmount when null or empty', () => {
-      const mockApiService = require('../../../shared/services/apiService');
+      const mockApiService = require('../../../shared/services/apiService.js');
       mockApiService.get.mockResolvedValue({ data: { success: true } });
 
       const startDate = '2023-01-01T00:00:00';
@@ -58,7 +58,7 @@ describe('Report Service - Amount Filtering', () => {
     });
 
     test('should handle string values and convert to numbers', () => {
-      const mockApiService = require('../../../shared/services/apiService');
+      const mockApiService = require('../../../shared/services/apiService.js');
       mockApiService.get.mockResolvedValue({ data: { success: true } });
 
       const startDate = '2023-01-01T00:00:00';
@@ -85,7 +85,7 @@ describe('Report Service - Amount Filtering', () => {
 
   describe('getTransactionsByWalletIdandByTime', () => {
     test('should include walletId and amount filters in params', () => {
-      const mockApiService = require('../../../shared/services/apiService');
+      const mockApiService = require('../../../shared/services/apiService.js');
       mockApiService.get.mockResolvedValue({ data: { success: true } });
 
       const walletId = 1;

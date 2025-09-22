@@ -1,5 +1,5 @@
-import { useSettings } from '../contexts/SettingsContext';
-import { formatDate, formatDateTime } from '../utils/formattingUtils';
+import { useSettings } from '../contexts/SettingsContext.jsx';
+import { formatDate, formatDateTime } from '../utils/formattingUtils.js';
 
 /**
  * Hook để quản lý định dạng ngày toàn cục

@@ -4,11 +4,11 @@ import { useAuth } from '../modules/auth/contexts/AuthContext.jsx'
 import { useTheme } from '../shared/contexts/ThemeContext.jsx'
 import { useNotification } from '../shared/contexts/NotificationContext.jsx'
 import { cn } from '../lib/utils.js'
-import AnimatedIcon from './ui/AnimatedIcon'
-import { Button } from './ui/button'
-import { Avatar } from './ui/avatar'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'
-import { NotificationPanel } from './NotificationPanel'
+import AnimatedIcon from './ui/AnimatedIcon.jsx'
+import { Button } from './ui/button.jsx'
+import { Avatar } from './ui/avatar.jsx'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip.jsx'
+import { NotificationPanel } from './NotificationPanel.jsx'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from './ui/alert-dialog'
+} from './ui/alert-dialog.jsx'
 import {
   SunIcon,
   MoonIcon,

@@ -8,8 +8,8 @@ import {
     Tooltip,
     ResponsiveContainer
 } from 'recharts'
-import { useSettings } from '../../../shared/contexts/SettingsContext'
-import { useTheme } from '../../../shared/contexts/ThemeContext'
+import { useSettings } from '../../../shared/contexts/SettingsContext.jsx'
+import { useTheme } from '../../../shared/contexts/ThemeContext.jsx'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
 
 const CustomTooltip = ({ active, payload, label, currency, settings }) => {

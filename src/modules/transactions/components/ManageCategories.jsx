@@ -1,22 +1,22 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { categoryService } from '../services/categoryService';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card.jsx';
+import { Button } from '../../../components/ui/button.jsx';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog.jsx';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog.jsx';
+import { Input } from '../../../components/ui/input.jsx';
+import { Label } from '../../../components/ui/label.jsx';
+import { categoryService } from '../services/categoryService.js';
 import { toast } from 'sonner';
 import { PlusCircle, Trash2, Loader2, BadgePlus, Edit, MoreVertical, TrendingUp, TrendingDown, ArrowRightLeft, ChevronLeft, ChevronRight, EyeIcon, X, FileText, ArrowUpCircle, ArrowDownCircle, PieChart } from 'lucide-react';
-import { useSettings } from '../../../shared/contexts/SettingsContext';
-import { useTheme } from '../../../shared/contexts/ThemeContext';
+import { useSettings } from '../../../shared/contexts/SettingsContext.jsx';
+import { useTheme } from '../../../shared/contexts/ThemeContext.jsx';
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
-import { useDateFormat } from '../../../shared/hooks/useDateFormat';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../../../components/ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../components/ui/tooltip';
+import { useDateFormat } from '../../../shared/hooks/useDateFormat.js';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../../../components/ui/dropdown-menu.jsx';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../components/ui/tooltip.jsx';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-import { cn } from '../../../lib/utils';
+import { cn } from '../../../lib/utils.js';
 
 const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => {
     const [name, setName] = useState('');
@@ -537,6 +537,18 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
         fetchCategories();
     }, [fetchCategories, refreshTrigger]);
 
+    // Chia categories thành các nhóm 3 danh mục mỗi slide
+    const categorySlides = useMemo(() => {
+        const slides = [];
+        const categoriesPerSlide = 3;
+        
+        for (let i = 0; i < categories.length; i += categoriesPerSlide) {
+            slides.push(categories.slice(i, i + categoriesPerSlide));
+        }
+        
+        return slides;
+    }, [categories]);
+
     // Clear local detailed category if parent is handling category viewing
     useEffect(() => {
         if (onViewCategory && detailedCategory) {
@@ -616,16 +628,18 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                         <div className="embla">
                             <div className="embla__viewport" ref={emblaRef}>
                                 <div className="embla__container">
-                                    {categories.map(cat => {
-                                        const hasBudget = cat.budgetAmount && cat.budgetAmount > 0;
-                                        const hasSpent = cat.spentAmount > 0;
-                                        const showExpenseTracker = hasBudget || hasSpent;
-                                        const hasIncomeTarget = cat.incomeTargetAmount && cat.incomeTargetAmount > 0;
-                                        const hasEarned = cat.earnedAmount > 0;
-                                        const showIncomeTracker = hasIncomeTarget || hasEarned;
-                                        return (
-                                            <div className="embla__slide" key={cat.id}>
-                                                <Card className={`flex flex-col h-full border-t-4 ${generateSoftColor(cat.id)}`}>
+                                    {categorySlides.map((slideCategories, slideIndex) => (
+                                        <div key={slideIndex} className="embla__slide">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-1">
+                                                {slideCategories.map(cat => {
+                                                    const hasBudget = cat.budgetAmount && cat.budgetAmount > 0;
+                                                    const hasSpent = cat.spentAmount > 0;
+                                                    const showExpenseTracker = hasBudget || hasSpent;
+                                                    const hasIncomeTarget = cat.incomeTargetAmount && cat.incomeTargetAmount > 0;
+                                                    const hasEarned = cat.earnedAmount > 0;
+                                                    const showIncomeTracker = hasIncomeTarget || hasEarned;
+                                                    return (
+                                                        <Card key={cat.id} className={`flex flex-col h-full border-t-4 ${generateSoftColor(cat.id)}`}>
                                                     <CardHeader className="flex flex-row items-start justify-between">
                                                         <div>
                                                             <CardTitle
@@ -680,15 +694,17 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                                                             {!showExpenseTracker && !showIncomeTracker && (
                                                                 <p className="text-sm text-muted-foreground italic">Chưa đặt ngân sách hoặc mục tiêu</p>
                                                             )}
-                                                    </CardContent>
-                                                </Card>
+                                                        </CardContent>
+                                                    </Card>
+                                                )
+                                            })}
                                             </div>
-                                        )
-                                    })}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
-                        {categories.length > 3 && (
+                        {categorySlides.length > 1 && (
                             <>
                                 <Button onClick={scrollPrev} disabled={!prevBtnEnabled} variant="outline" size="icon" className="h-9 w-9 rounded-full absolute -left-4 top-1/2 -translate-y-1/2 z-10 opacity-75 hover:opacity-100 disabled:opacity-0 transition-all"><ChevronLeft className="h-4 w-4" /></Button>
                                 <Button onClick={scrollNext} disabled={!nextBtnEnabled} variant="outline" size="icon" className="h-9 w-9 rounded-full absolute -right-4 top-1/2 -translate-y-1/2 z-10 opacity-75 hover:opacity-100 disabled:opacity-0 transition-all"><ChevronRight className="h-4 w-4" /></Button>

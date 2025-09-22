@@ -3,11 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/contexts/AuthContext.jsx';
 import { useTheme } from '../../../shared/contexts/ThemeContext.jsx';
 import { WalletContext } from '../../../shared/contexts/WalletContext.jsx';
-import { Avatar } from '../../../components/ui/avatar';
-import { Button } from '../../../components/ui/button';
-import { Card, CardContent } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
-import { Switch } from '../../../components/ui/switch';
+import { Avatar } from '../../../components/ui/avatar.jsx';
+import { Button } from '../../../components/ui/button.jsx';
+import { Card, CardContent } from '../../../components/ui/card.jsx';
+import { Badge } from '../../../components/ui/badge.jsx';
+import { Switch } from '../../../components/ui/switch.jsx';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '../../../components/ui/alert-dialog';
+} from '../../../components/ui/alert-dialog.jsx';
 import {
   UserIcon,
   ShieldCheckIcon,

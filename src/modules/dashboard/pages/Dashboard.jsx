@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useContext, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
-import { AreaChart, BarChart } from '../../../components/charts/ChartComponents'
+import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx'
+import { AreaChart, BarChart } from '../../../components/charts/ChartComponents.jsx'
 import { LoadingScreen } from '../../../components/Loading.jsx'
-import InitialLoadingScreen from '../../../components/InitialLoadingScreen'
-import { useInitialLoading } from '../../../shared/contexts/InitialLoadingContext'
+import InitialLoadingScreen from '../../../components/InitialLoadingScreen.jsx'
+import { useInitialLoading } from '../../../shared/contexts/InitialLoadingContext.jsx'
 import { dashboardService } from '../services/dashboardService.js'
-import { WalletContext } from '../../../shared/contexts/WalletContext'
-import { useDateFormat } from '../../../shared/hooks/useDateFormat'
+import { WalletContext } from '../../../shared/contexts/WalletContext.jsx'
+import { useDateFormat } from '../../../shared/hooks/useDateFormat.js'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../components/ui/select"
+} from "../../../components/ui/select.jsx"
 import { IconComponent } from '../../../shared/config/icons.js'
 import {
   TrendingUpIcon,
@@ -31,7 +31,7 @@ import {
   AlertCircle,
   AppWindow,
 } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert.jsx"
 
 const Dashboard = () => {
   const navigate = useNavigate();

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Label } from '../../../components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/dialog'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog'
+import { Button } from '../../../components/ui/button.jsx'
+import { Input } from '../../../components/ui/input.jsx'
+import { Label } from '../../../components/ui/label.jsx'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/dialog.jsx'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog.jsx'
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -19,13 +19,13 @@ import {
   PlusCircle,
   WalletCards
 } from 'lucide-react'
-import { walletService } from '../services/walletService'
-import { useSettings } from '../../../shared/contexts/SettingsContext'
+import { walletService } from '../services/walletService.js'
+import { useSettings } from '../../../shared/contexts/SettingsContext.jsx'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
 import { toast } from 'sonner'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
-import { IconComponent } from '../../../shared/config/icons'
-import { validateDescription } from '../../../shared/utils/validationUtils'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx'
+import { IconComponent } from '../../../shared/config/icons.js'
+import { validateDescription } from '../../../shared/utils/validationUtils.js'
 import { AlertTriangle } from 'lucide-react'
 
 const TransferFormSkeleton = () => (

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
-import { LoadingSpinner as Loading } from '../../../components/Loading';
-import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card.jsx';
+import { LoadingSpinner as Loading } from '../../../components/Loading.jsx';
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert.jsx';
 import { Terminal, DollarSign, ArrowRight } from "lucide-react"
-import { Input } from '../../../components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import currencyService from '../services/currencyService';
+import { Input } from '../../../components/ui/input.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx';
+import currencyService from '../services/currencyService.js';
 
 const CurrencyPage = () => {
     const [rates, setRates] = useState(null);

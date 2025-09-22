@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
-import { Button } from '../../../components/ui/button'
-import { walletService } from '../services/walletService'
+import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx'
+import { Button } from '../../../components/ui/button.jsx'
+import { walletService } from '../services/walletService.js'
 import {
   ArrowLeft,
   Edit,
@@ -33,9 +33,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '../../../components/ui/dropdown-menu'
+} from '../../../components/ui/dropdown-menu.jsx'
 import { toast } from 'sonner'
-import { WalletContext } from '../../../shared/contexts/WalletContext'
+import { WalletContext } from '../../../shared/contexts/WalletContext.jsx'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,14 +45,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle
-} from '../../../components/ui/alert-dialog'
-import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
-import { cn } from '../../../lib/utils'
-import { IconComponent } from '../../../shared/config/icons'
-import { useSettings } from '../../../shared/contexts/SettingsContext'
+} from '../../../components/ui/alert-dialog.jsx'
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert.jsx'
+import { cn } from '../../../lib/utils.js'
+import { IconComponent } from '../../../shared/config/icons.js'
+import { useSettings } from '../../../shared/contexts/SettingsContext.jsx'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
-import BalanceTrendChart from '../components/BalanceTrendChart'
-import ExpenseByCategoryChart from '../components/ExpenseByCategoryChart'
+import BalanceTrendChart from '../components/BalanceTrendChart.jsx'
+import ExpenseByCategoryChart from '../components/ExpenseByCategoryChart.jsx'
 
 const WalletDetail = () => {
   const { id } = useParams()

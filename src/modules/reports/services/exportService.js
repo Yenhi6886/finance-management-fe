@@ -1,4 +1,4 @@
-import apiService from '../../../shared/services/apiService';
+import apiService from '../../../shared/services/apiService.js';
 
 function downloadBlob(data, filename, contentType) {
   const blob = new Blob([data], { type: contentType });

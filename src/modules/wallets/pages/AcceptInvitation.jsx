@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { LoadingSpinner as Loading } from '../../../components/Loading';
-import { walletService } from '../services/walletService';
-import { useAuth } from '../../auth/contexts/AuthContext';
-import { formatCurrency } from '../../../shared/utils/formattingUtils';
-import { IconComponent } from '../../../shared/config/icons';
-import { Badge } from '../../../components/ui/badge';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../components/ui/card.jsx';
+import { Button } from '../../../components/ui/button.jsx';
+import { LoadingSpinner as Loading } from '../../../components/Loading.jsx';
+import { walletService } from '../services/walletService.js';
+import { useAuth } from '../../auth/contexts/AuthContext.jsx';
+import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
+import { IconComponent } from '../../../shared/config/icons.js';
+import { Badge } from '../../../components/ui/badge.jsx';
 
 const permissionDisplayMap = {
     VIEW: 'Xem',

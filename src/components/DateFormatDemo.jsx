@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { useDateFormat } from '../shared/hooks/useDateFormat';
-import { useSettings } from '../shared/contexts/SettingsContext';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card.jsx';
+import { useDateFormat } from '../shared/hooks/useDateFormat.js';
+import { useSettings } from '../shared/contexts/SettingsContext.jsx';
 
 const DateFormatDemo = () => {
     const { formatDate, formatDateTime, getCurrentDateFormat } = useDateFormat();

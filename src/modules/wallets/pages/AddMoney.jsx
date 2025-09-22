@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Label } from '../../../components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/dialog'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
+import { Button } from '../../../components/ui/button.jsx'
+import { Input } from '../../../components/ui/input.jsx'
+import { Label } from '../../../components/ui/label.jsx'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/dialog.jsx'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog.jsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx'
 import {
   ArrowLeftIcon,
   PlusIcon,
@@ -16,14 +16,14 @@ import {
   RefreshCwIcon as TransferIcon,
   Loader2
 } from 'lucide-react'
-import { walletService } from '../services/walletService'
-import { useSettings } from '../../../shared/contexts/SettingsContext'
+import { walletService } from '../services/walletService.js'
+import { useSettings } from '../../../shared/contexts/SettingsContext.jsx'
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js'
-import { useDateFormat } from '../../../shared/hooks/useDateFormat'
+import { useDateFormat } from '../../../shared/hooks/useDateFormat.js'
 import { toast } from 'sonner'
-import { IconComponent } from '../../../shared/config/icons'
-import { useWallet } from '../../../shared/hooks/useWallet'
-import { validateDescription } from '../../../shared/utils/validationUtils'
+import { IconComponent } from '../../../shared/config/icons.js'
+import { useWallet } from '../../../shared/hooks/useWallet.js'
+import { validateDescription } from '../../../shared/utils/validationUtils.js'
 import { AlertTriangle } from 'lucide-react'
 
 const AddMoney = () => {

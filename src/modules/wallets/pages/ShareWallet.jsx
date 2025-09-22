@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Label } from '../../../components/ui/label'
+import { Button } from '../../../components/ui/button.jsx'
+import { Input } from '../../../components/ui/input.jsx'
+import { Label } from '../../../components/ui/label.jsx'
 import {
   ArrowLeftIcon,
   Settings2Icon,
@@ -23,14 +23,14 @@ import {
   XCircleIcon,
   BanIcon
 } from 'lucide-react'
-import { cn } from '../../../lib/utils'
-import { walletService } from '../services/walletService'
-import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
+import { cn } from '../../../lib/utils.js'
+import { walletService } from '../services/walletService.js'
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert.jsx'
 import { LoadingSpinner as Loading, LottieLoader } from "../../../components/Loading.jsx";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
-import { IconComponent } from '../../../shared/config/icons'
-import { Badge } from '../../../components/ui/badge'
-import { useAuth } from '../../auth/contexts/AuthContext'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx'
+import { IconComponent } from '../../../shared/config/icons.js'
+import { Badge } from '../../../components/ui/badge.jsx'
+import { useAuth } from '../../auth/contexts/AuthContext.jsx'
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../../../components/ui/dialog"
+} from "../../../components/ui/dialog.jsx"
 import { toast } from 'sonner'
 
 const ShareWallet = () => {

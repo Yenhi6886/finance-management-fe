@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Label } from '../../../components/ui/label'
-import { useTheme } from '../../../shared/contexts/ThemeContext'
-import { cn } from '../../../lib/utils'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card.jsx'
+import { Button } from '../../../components/ui/button.jsx'
+import { Input } from '../../../components/ui/input.jsx'
+import { Label } from '../../../components/ui/label.jsx'
+import { useTheme } from '../../../shared/contexts/ThemeContext.jsx'
+import { cn } from '../../../lib/utils.js'
 import { Sun, Moon, Laptop, Palette, Languages, Check, Info, Calendar} from 'lucide-react'
-import { useSettings } from '../../../shared/contexts/SettingsContext'
-import DateFormatDemo from '../../../components/DateFormatDemo'
+import { useSettings } from '../../../shared/contexts/SettingsContext.jsx'
+import DateFormatDemo from '../../../components/DateFormatDemo.jsx'
 
 const InterfaceSettings = () => {
     const { theme, setTheme } = useTheme()

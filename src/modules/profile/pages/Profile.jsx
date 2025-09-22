@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { useAuth } from '../../auth/contexts/AuthContext'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Label } from '../../../components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card'
-import { Avatar } from '../../../components/ui/avatar'
+import { useAuth } from '../../auth/contexts/AuthContext.jsx'
+import { Button } from '../../../components/ui/button.jsx'
+import { Input } from '../../../components/ui/input.jsx'
+import { Label } from '../../../components/ui/label.jsx'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card.jsx'
+import { Avatar } from '../../../components/ui/avatar.jsx'
 import { CameraIcon, Loader2 } from 'lucide-react'
 
 const Profile = () => {
