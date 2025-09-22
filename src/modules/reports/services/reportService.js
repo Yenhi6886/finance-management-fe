@@ -1,13 +1,15 @@
 import apiService from '../../../shared/services/apiService';
 
 const reportService = {
-  getTodayTransactions: () => {
-    return apiService.get('/transactions/statistics/today');
+  getTodayTransactions: (page = 0, size = 10) => {
+    return apiService.get('/transactions/statistics/today', {
+      params: { page, size }
+    });
   },
 
-  getTodayTransactionsByWallet: (walletId) => {
+  getTodayTransactionsByWallet: (walletId, page = 0, size = 10) => {
     return apiService.get('/transactions/statistics/wallet/today', {
-      params: { walletId }
+      params: { walletId, page, size }
     });
   },
 
@@ -33,9 +35,9 @@ const reportService = {
     return apiService.get('/transactions/statistics/wallet', { params });
   },
 
-  getBudgetStatistics: (year, month) => {
+  getBudgetStatistics: (year, month, page = 0, size = 10) => {
     return apiService.get('/budgets/statistics', {
-      params: { year, month }
+      params: { year, month, page, size }
     });
   }
 };
