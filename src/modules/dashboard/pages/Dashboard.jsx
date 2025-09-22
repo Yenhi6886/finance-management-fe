@@ -7,6 +7,7 @@ import InitialLoadingScreen from '../../../components/InitialLoadingScreen'
 import { useInitialLoading } from '../../../shared/contexts/InitialLoadingContext'
 import { dashboardService } from '../services/dashboardService.js'
 import { WalletContext } from '../../../shared/contexts/WalletContext'
+import { useDateFormat } from '../../../shared/hooks/useDateFormat'
 import {
   Select,
   SelectContent,
@@ -36,6 +37,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { wallets, loading: walletLoading } = useContext(WalletContext);
   const { showInitialLoading, hideInitialLoading, isInitialLoading, hasShownInitialLoading } = useInitialLoading();
+  const { formatDate, formatDateTime } = useDateFormat();
 
   const [selectedWalletId, setSelectedWalletId] = useState('all');
   const [dashboardData, setDashboardData] = useState(null);
@@ -111,15 +113,6 @@ const Dashboard = () => {
     if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M ₫`;
     if (amount >= 1000) return `${(amount / 1000).toFixed(0)}K ₫`;
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('vi-VN', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    }).format(date);
   };
 
   const formatDateShort = (dateString) => {

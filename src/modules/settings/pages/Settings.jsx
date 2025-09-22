@@ -7,6 +7,7 @@ import { useTheme } from '../../../shared/contexts/ThemeContext'
 import { cn } from '../../../lib/utils'
 import { Sun, Moon, Laptop, Palette, Languages, Check, Info, Calendar} from 'lucide-react'
 import { useSettings } from '../../../shared/contexts/SettingsContext'
+import DateFormatDemo from '../../../components/DateFormatDemo'
 
 const InterfaceSettings = () => {
     const { theme, setTheme } = useTheme()
@@ -205,6 +206,16 @@ const FormatSettings = () => {
                             <p className="text-sm text-muted-foreground">Ví dụ: {format.example}</p>
                         </div>
                     ))}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-green-600 dark:text-green-400">Xem Trước Định Dạng</CardTitle>
+                    <CardDescription>Xem cách ngày tháng sẽ được hiển thị với định dạng hiện tại.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <DateFormatDemo />
                 </CardContent>
             </Card>
         </div>
