@@ -1,1 +1,0 @@
-export { default as Transactions } from './pages/Transactions.jsx';
