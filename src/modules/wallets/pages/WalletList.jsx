@@ -119,6 +119,23 @@ const WalletList = () => {
     return () => emblaApi.off('select', onSelect);
   }, [emblaApi, onSelect]);
 
+  // Generate random soft colors for wallet borders
+  const generateSoftColor = (id) => {
+    const colors = [
+      'border-t-blue-200 bg-blue-50/30 dark:border-t-blue-400 dark:bg-blue-900/10',
+      'border-t-green-200 bg-green-50/30 dark:border-t-green-400 dark:bg-green-900/10',
+      'border-t-purple-200 bg-purple-50/30 dark:border-t-purple-400 dark:bg-purple-900/10',
+      'border-t-pink-200 bg-pink-50/30 dark:border-t-pink-400 dark:bg-pink-900/10',
+      'border-t-yellow-200 bg-yellow-50/30 dark:border-t-yellow-400 dark:bg-yellow-900/10',
+      'border-t-indigo-200 bg-indigo-50/30 dark:border-t-indigo-400 dark:bg-indigo-900/10',
+      'border-t-red-200 bg-red-50/30 dark:border-t-red-400 dark:bg-red-900/10',
+      'border-t-teal-200 bg-teal-50/30 dark:border-t-teal-400 dark:bg-teal-900/10',
+      'border-t-orange-200 bg-orange-50/30 dark:border-t-orange-400 dark:bg-orange-900/10',
+      'border-t-cyan-200 bg-cyan-50/30 dark:border-t-cyan-400 dark:bg-cyan-900/10',
+    ];
+    return colors[id % colors.length];
+  };
+
   const walletActions = [
     {
       title: 'Xem Danh Sách Ví',
@@ -259,23 +276,6 @@ const WalletList = () => {
     EDIT: { text: 'Chỉnh sửa', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' },
     OWNER: { text: 'Toàn quyền', className: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' }
   }
-
-  // Generate random soft colors for wallet borders
-  const generateSoftColor = (id) => {
-    const colors = [
-      'border-t-blue-200 bg-blue-50/30 dark:border-t-blue-400 dark:bg-blue-900/10',
-      'border-t-green-200 bg-green-50/30 dark:border-t-green-400 dark:bg-green-900/10',
-      'border-t-purple-200 bg-purple-50/30 dark:border-t-purple-400 dark:bg-purple-900/10',
-      'border-t-pink-200 bg-pink-50/30 dark:border-t-pink-400 dark:bg-pink-900/10',
-      'border-t-yellow-200 bg-yellow-50/30 dark:border-t-yellow-400 dark:bg-yellow-900/10',
-      'border-t-indigo-200 bg-indigo-50/30 dark:border-t-indigo-400 dark:bg-indigo-900/10',
-      'border-t-red-200 bg-red-50/30 dark:border-t-red-400 dark:bg-red-900/10',
-      'border-t-teal-200 bg-teal-50/30 dark:border-t-teal-400 dark:bg-teal-900/10',
-      'border-t-orange-200 bg-orange-50/30 dark:border-t-orange-400 dark:bg-orange-900/10',
-      'border-t-cyan-200 bg-cyan-50/30 dark:border-t-cyan-400 dark:bg-cyan-900/10',
-    ];
-    return colors[id % colors.length];
-  };
 
   if (walletsLoading || settingsLoading) {
     return <div>Đang tải dữ liệu...</div>

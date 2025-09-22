@@ -164,7 +164,7 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
                 <DialogFooter>
                     <Button variant="ghost" onClick={handleClose}>Hủy</Button>
                     <Button onClick={handleSubmit} disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {loading && <LoadingSpinner size="sm" />}
                         {category?.id ? 'Lưu Thay Đổi' : 'Thêm'}
                     </Button>
                 </DialogFooter>
@@ -292,7 +292,7 @@ const DeleteCategoryDialog = ({ category, open, onOpenChange, onCategoryDeleted 
                         onClick={handleDelete}
                         className="bg-red-600 hover:bg-red-700"
                     >
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {loading && <LoadingSpinner size="sm" />}
                         Xóa Danh Mục
                     </AlertDialogAction>
                 </AlertDialogFooter>
