@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
+import { useDateFormat } from '../../../shared/hooks/useDateFormat';
 import { cn } from '../../../lib/utils';
 import { IconComponent } from '../../../shared/config/icons';
 import { validateTransaction, validateField } from '../../../shared/utils/validationUtils';
@@ -21,6 +22,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
     const { wallets } = useWallet();
     const { settings } = useSettings();
     const { refreshNotifications } = useNotification();
+    const { formatDateTime } = useDateFormat();
     const [amount, setAmount] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [walletId, setWalletId] = useState('');
@@ -53,14 +55,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
 
     // Hàm format ngày để hiển thị
     const formatDateForDisplay = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        return formatDateTime(dateString);
     };
 
     useEffect(() => {

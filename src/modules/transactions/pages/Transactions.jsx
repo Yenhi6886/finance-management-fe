@@ -11,6 +11,7 @@ import { categoryService } from '../services/categoryService';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { useWallet } from '../../../shared/hooks/useWallet';
 import { formatCurrency, formatRelativeTime} from '../../../shared/utils/formattingUtils.js';
+import { useDateFormat } from '../../../shared/hooks/useDateFormat';
 import AddTransactionModal from '../components/AddTransactionModal';
 import EditTransactionModal from '../components/EditTransactionModal';
 import ManageCategories from '../components/ManageCategories';
@@ -31,6 +32,7 @@ const Transactions = () => {
     const navigate = useNavigate();
     const [viewingCategory, setViewingCategory] = useState(null);
     const actionFromUrl = searchParams.get('action');
+    const { formatDate } = useDateFormat();
 
     useEffect(() => {
         const tab = searchParams.get('tab') || 'transactions';

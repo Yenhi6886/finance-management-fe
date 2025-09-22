@@ -18,7 +18,8 @@ import {
 } from 'lucide-react'
 import { walletService } from '../services/walletService'
 import { useSettings } from '../../../shared/contexts/SettingsContext'
-import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
+import { formatCurrency } from '../../../shared/utils/formattingUtils.js'
+import { useDateFormat } from '../../../shared/hooks/useDateFormat'
 import { toast } from 'sonner'
 import { IconComponent } from '../../../shared/config/icons'
 import { useWallet } from '../../../shared/hooks/useWallet'
@@ -35,6 +36,7 @@ const AddMoney = () => {
   const [errors, setErrors] = useState({})
   const [recentTransactions, setRecentTransactions] = useState([])
   const { settings } = useSettings()
+  const { formatDate } = useDateFormat()
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
@@ -325,7 +327,7 @@ const AddMoney = () => {
                                   <p className="font-medium text-card-foreground text-sm" title={`Nạp tiền vào ví ${t.walletName}`}>
                                     {`Nạp tiền vào ví ${t.walletName}`.length > 25 ? `${`Nạp tiền vào ví ${t.walletName}`.substring(0, 25)}...` : `Nạp tiền vào ví ${t.walletName}`}
                                   </p>
-                                  <p className="text-xs text-muted-foreground">{formatDate(t.date, settings)}</p>
+                                  <p className="text-xs text-muted-foreground">{formatDate(t.date)}</p>
                                 </div>
                               </div>
                               <span className="font-bold text-green-600 dark:text-green-400 text-sm">+{formatCurrency(t.amount, 'VND', settings)}</span>

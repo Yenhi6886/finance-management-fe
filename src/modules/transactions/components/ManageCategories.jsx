@@ -11,7 +11,8 @@ import { toast } from 'sonner';
 import { PlusCircle, Trash2, Loader2, BadgePlus, Edit, MoreVertical, TrendingUp, TrendingDown, ArrowRightLeft, ChevronLeft, ChevronRight, EyeIcon, X, FileText, ArrowUpCircle, ArrowDownCircle, PieChart } from 'lucide-react';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
-import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js';
+import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
+import { useDateFormat } from '../../../shared/hooks/useDateFormat';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../../../components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../components/ui/tooltip';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
@@ -303,6 +304,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const { settings } = useSettings();
+    const { formatDate } = useDateFormat();
     const { theme } = useTheme();
 
     useEffect(() => {
@@ -389,7 +391,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                                                 {tx.type === 'INCOME' ? <ArrowUpCircle className="w-8 h-8 text-green-500 flex-shrink-0" /> : <ArrowDownCircle className="w-8 h-8 text-red-500 flex-shrink-0" />}
                                                 <div>
                                                     <p className="font-semibold">{tx.description || (tx.type === 'INCOME' ? 'Khoản thu nhập' : 'Khoản chi tiêu')}</p>
-                                                    <p className="text-sm text-muted-foreground">{tx.walletName} • {formatDate(tx.date, settings)}</p>
+                                                    <p className="text-sm text-muted-foreground">{tx.walletName} • {formatDate(tx.date)}</p>
                                                 </div>
                                             </div>
                                             <p className={cn("text-lg font-bold text-right pl-4", tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600')}>

@@ -19,7 +19,8 @@ import {
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { useWallet } from '../../../shared/hooks/useWallet';
 import { useAuth } from '../../auth/contexts/AuthContext';
-import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils';
+import { formatCurrency } from '../../../shared/utils/formattingUtils';
+import { useDateFormat } from '../../../shared/hooks/useDateFormat';
 import { ExportDialog, EmailSettingsDialog } from '../components/ExportComponents';
 import reportService from '../services/reportService';
 import { LoadingSpinner as Loading } from '../../../components/Loading';
@@ -107,6 +108,8 @@ const SlidingTabsReports = ({ activeTab, onTabChange }) => {
 
 const TransactionMobileCard = ({ transaction, settings }) => {
     const isIncome = transaction.type === 'INCOME';
+    const { formatDate } = useDateFormat();
+    
     return (
         <div className="p-4 bg-card border rounded-lg flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 overflow-hidden">
@@ -120,7 +123,7 @@ const TransactionMobileCard = ({ transaction, settings }) => {
                         {formatTransactionDescription(transaction)}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                        {transaction.walletName} • {format(new Date(transaction.date), 'dd/MM/yyyy')}
+                        {transaction.walletName} • {formatDate(transaction.date)}
                     </p>
                 </div>
             </div>
@@ -138,6 +141,7 @@ const Reports = () => {
     const { settings } = useSettings();
     const { wallets } = useWallet();
     const { user } = useAuth();
+    const { formatDate } = useDateFormat();
     const [activeTab, setActiveTab] = useState('today-report');
 
     const [emailSettings, setEmailSettings] = useState(null);
@@ -366,7 +370,7 @@ const Reports = () => {
                                         transactions.map((transaction, index) => (
                                             <tr key={transaction.id} className="border-b">
                                                 <td className="p-3">{(periodPage * PAGE_SIZE) + index + 1}</td>
-                                                <td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td>
+                                                <td className="p-3">{formatDate(transaction.date)}</td>
                                                 <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                                                     {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
                                                 </td>
@@ -541,7 +545,7 @@ const Reports = () => {
                                                 budgetTransactions.map((transaction, index) => (
                                                     <tr key={transaction.id} className="border-b">
                                                         <td className="p-3">{(budgetPage * PAGE_SIZE) + index + 1}</td>
-                                                        <td className="p-3">{format(new Date(transaction.date), 'dd/MM/yyyy')}</td>
+                                                        <td className="p-3">{formatDate(transaction.date)}</td>
                                                         <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                                                             {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
                                                         </td>
