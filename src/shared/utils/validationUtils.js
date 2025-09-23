@@ -25,7 +25,7 @@ export const validateAmountWithConfirm = (amount, options = {}) => {
 
   // Chuyển đổi thành số
   const numAmount = parseFloat(amount);
-
+  
   // Kiểm tra có phải số hợp lệ không
   if (isNaN(numAmount)) {
     errors.push('Số tiền phải là một số hợp lệ');
@@ -86,7 +86,7 @@ export const validateAmount = (amount, options = {}) => {
 
   // Chuyển đổi thành số
   const numAmount = parseFloat(amount);
-
+  
   // Kiểm tra có phải số hợp lệ không
   if (isNaN(numAmount)) {
     errors.push('Số tiền phải là một số hợp lệ');
@@ -206,7 +206,7 @@ export const validateDescription = (description, options = {}) => {
       wordCount[word.toLowerCase()] = (wordCount[word.toLowerCase()] || 0) + 1;
     }
   });
-
+  
   const maxRepeatedWords = Math.max(...Object.values(wordCount));
   if (maxRepeatedWords > 3) {
     errors.push(`${fieldName} chứa từ lặp lại quá nhiều lần`);
@@ -292,8 +292,8 @@ export const validateCategory = (categoryId, categories = []) => {
   }
 
   // Kiểm tra danh mục có tồn tại không
-  const categoryExists = categories.some(cat =>
-      cat.id === parseInt(categoryId) || cat.id === categoryId
+  const categoryExists = categories.some(cat => 
+    cat.id === parseInt(categoryId) || cat.id === categoryId
   );
 
   if (!categoryExists) {
@@ -318,8 +318,8 @@ export const validateWallet = (walletId, wallets = [], transactionType = 'expens
   }
 
   // Kiểm tra ví có tồn tại không
-  const wallet = wallets.find(w =>
-      w.id === parseInt(walletId) || w.id === walletId
+  const wallet = wallets.find(w => 
+    w.id === parseInt(walletId) || w.id === walletId
   );
 
   if (!wallet) {
@@ -385,17 +385,17 @@ export const validateTransaction = (formData, options = {}) => {
 
   // Xác thực ví
   const walletValidation = validateWallet(
-      formData.walletId,
-      wallets,
-      formData.type,
-      amountValidation.value || 0
+    formData.walletId, 
+    wallets, 
+    formData.type, 
+    amountValidation.value || 0
   );
   if (!walletValidation.isValid) {
     errors.walletId = walletValidation.errors[0];
     isValid = false;
   }
 
-  return {
+    return {
     isValid,
     errors,
     validatedData: {
@@ -411,20 +411,24 @@ export const validateTransaction = (formData, options = {}) => {
 // Xác thực mật khẩu
 export const validatePassword = (password) => {
   const errors = [];
-
+  
   if (!password) {
     errors.push('Mật khẩu là bắt buộc');
     return errors;
   }
-
-  if (password.length < 6) {
-    errors.push('Mật khẩu phải có ít nhất 6 ký tự');
+  
+  if (password.length < 8) {
+    errors.push('Mật khẩu phải có ít nhất 8 ký tự');
   }
 
-  if (password.length > 8) {
-    errors.push('Mật khẩu không được vượt quá 8 ký tự');
+  if (password.length > 100) {
+    errors.push('Mật khẩu không được vượt quá 100 ký tự');
   }
 
+  if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
+    errors.push('Mật khẩu phải chứa ít nhất một chữ cái và một chữ số');
+  }
+  
   return errors;
 };
 
@@ -438,64 +442,64 @@ export const isValidEmail = (email) => {
 // Xác thực tên đăng nhập
 export const validateUsername = (username) => {
   const errors = [];
-
+  
   if (!username) {
     errors.push('Tên đăng nhập là bắt buộc');
     return errors;
   }
-
+  
   if (username.length < 3) {
     errors.push('Tên đăng nhập phải có ít nhất 3 ký tự');
   }
-
+  
   if (username.length > 50) {
     errors.push('Tên đăng nhập không được vượt quá 50 ký tự');
   }
-
+  
   if (!/^[a-zA-Z0-9_]+$/.test(username)) {
     errors.push('Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới');
   }
-
+  
   return errors;
 };
 
 // Xác thực tên
 export const validateName = (name, fieldName = 'Tên') => {
   const errors = [];
-
+  
   if (!name || !name.trim()) {
     errors.push(`${fieldName} là bắt buộc`);
     return errors;
   }
-
+  
   if (name.trim().length < 2) {
     errors.push(`${fieldName} phải có ít nhất 2 ký tự`);
   }
-
+  
   if (name.trim().length > 50) {
     errors.push(`${fieldName} không được vượt quá 50 ký tự`);
   }
-
+  
   if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(name.trim())) {
     errors.push(`${fieldName} chỉ được chứa chữ cái và khoảng trắng`);
   }
-
+  
   return errors;
 };
 
 // Xác thực số điện thoại
 export const validatePhoneNumber = (phoneNumber) => {
   const errors = [];
-
+  
   if (!phoneNumber) {
     return errors; // Số điện thoại là tùy chọn
   }
-
+  
   const digitsOnly = phoneNumber.replace(/[^0-9]/g, '');
   if (!/^\d{10}$/.test(digitsOnly)) {
     errors.push('Số điện thoại phải đúng 10 chữ số');
   }
-
+  
   return errors;
 };
 

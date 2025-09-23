@@ -5,7 +5,7 @@ import { Input } from '../../../components/ui/input.jsx';
 import { Label } from '../../../components/ui/label.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx';
 import { Textarea } from '../../../components/ui/textarea.jsx';
-import { DateTimePicker } from '../../../components/ui/datetime-picker.jsx';
+import { FMDatePicker } from '../../../components/ui/fm-date-picker.jsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog.jsx';
 import { useWallet } from '../../../shared/hooks/useWallet.js';
 import { useNotification } from '../../../shared/contexts/NotificationContext.jsx';
@@ -364,7 +364,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
             </div>
             <div className="space-y-2">
                 <Label htmlFor={`date-${type}`}>Thời gian *</Label>
-                <DateTimePicker
+                <FMDatePicker
                     value={date ? new Date(date) : null}
                     onChange={(selectedDate) => {
                         if (selectedDate) {

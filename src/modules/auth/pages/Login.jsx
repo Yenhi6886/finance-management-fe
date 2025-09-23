@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext.jsx'
-import { Button } from '../../../components/ui/button.jsx'
-import { Input } from '../../../components/ui/input.jsx'
-import { Label } from '../../../components/ui/label.jsx'
-import { Alert, AlertDescription } from '../../../components/ui/alert.jsx'
+import { useAuth } from '../contexts/AuthContext'
+import { Button } from '../../../components/ui/button'
+import { Input } from '../../../components/ui/input'
+import { Label } from '../../../components/ui/label'
+import { Alert, AlertDescription } from '../../../components/ui/alert'
 import { EyeIcon, EyeOffIcon, Info} from 'lucide-react'
 
 // Google Icon Component
@@ -44,12 +44,12 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!agreedToTerms) {
       setNotification('Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo mật để tiếp tục.')
       return
     }
-    
+
     try {
       await login(formData)
       navigate('/dashboard')
@@ -166,9 +166,9 @@ const Login = () => {
             <Button
                 type="submit"
                 className={`w-full h-12 font-medium rounded-lg mt-6 text-sm transition-colors ${
-                  agreedToTerms 
-                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                    : 'bg-gray-400 cursor-not-allowed text-gray-600'
+                    agreedToTerms
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : 'bg-gray-400 cursor-not-allowed text-gray-600'
                 }`}
                 disabled={loading || !agreedToTerms}
             >

@@ -13,7 +13,6 @@ import {
     validatePassword
 } from '../../../shared/utils/validationUtils.js'
 
-// Google Icon Component
 const GoogleIcon = ({ className = "w-5 h-5" }) => (
     <svg className={className} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -44,8 +43,6 @@ const Register = () => {
     const handleChange = (e) => {
         const { name, value } = e.target
         setFormData(prev => ({ ...prev, [name]: value }))
-
-        // Xác thực real-time
         validateFieldRealTime(name, value)
     }
 
@@ -86,44 +83,38 @@ const Register = () => {
                 break
         }
 
-        setErrors(prev => ({ ...prev, [fieldName]: error }))
+        setErrors(prev => ({ ...prev, [fieldName]: error, general: undefined }))
     }
 
     const validateForm = () => {
         const newErrors = {}
 
-        // Xác thực họ
         const lastNameErrors = validateName(formData.lastName)
         if (lastNameErrors.length > 0) {
             newErrors.lastName = lastNameErrors[0]
         }
 
-        // Xác thực tên
         const firstNameErrors = validateName(formData.firstName)
         if (firstNameErrors.length > 0) {
             newErrors.firstName = firstNameErrors[0]
         }
 
-        // Xác thực tên đăng nhập
         const usernameErrors = validateUsername(formData.username)
         if (usernameErrors.length > 0) {
             newErrors.username = usernameErrors[0]
         }
 
-        // Xác thực email
         if (!formData.email) {
             newErrors.email = 'Email là bắt buộc'
         } else if (!isValidEmail(formData.email)) {
             newErrors.email = 'Email không hợp lệ'
         }
 
-        // Xác thực mật khẩu
         const passwordErrors = validatePassword(formData.password)
         if (passwordErrors.length > 0) {
             newErrors.password = passwordErrors[0]
         }
 
-        // Xác thực xác nhận mật khẩu
         if (!formData.confirmPassword) {
             newErrors.confirmPassword = 'Xác nhận mật khẩu là bắt buộc'
         } else if (formData.confirmPassword !== formData.password) {
@@ -136,19 +127,24 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        setErrors({})
 
         if (!agreedToTerms) {
             setErrors({ terms: 'Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo mật để tiếp tục.' })
             return
         }
 
-        // Xác thực form trước khi submit
         if (!validateForm()) {
             return
         }
 
         try {
             const { confirmPassword, ...registerData } = formData
+
+            if (!registerData.phoneNumber) {
+                delete registerData.phoneNumber
+            }
+
             await register(registerData)
             navigate('/login', {
                 state: {
@@ -156,9 +152,16 @@ const Register = () => {
                 }
             })
         } catch (error) {
-            // nếu AuthContext ném lỗi có message, hiển thị chung
-            const message = error?.response?.data?.message || error?.message || 'Đăng ký thất bại. Vui lòng thử lại.'
-            setErrors({ general: message })
+            if (error.response && error.response.data && typeof error.response.data === 'object') {
+                const backendErrors = error.response.data;
+                if (backendErrors.message) {
+                    setErrors({ general: backendErrors.message });
+                } else {
+                    setErrors(backendErrors);
+                }
+            } else {
+                setErrors({ general: error.message || 'Đăng ký thất bại. Vui lòng thử lại.' });
+            }
         }
     }
 

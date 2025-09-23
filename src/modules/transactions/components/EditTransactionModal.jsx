@@ -5,7 +5,7 @@ import { Button } from '../../../components/ui/button.jsx';
 import { Input } from '../../../components/ui/input.jsx';
 import { Label } from '../../../components/ui/label.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx';
-import { DateTimePicker } from '../../../components/ui/datetime-picker.jsx';
+import { FMDatePicker } from '../../../components/ui/fm-date-picker.jsx';
 import { useWallet } from '../../../shared/hooks/useWallet.js';
 import { useNotification } from '../../../shared/contexts/NotificationContext.jsx';
 import { categoryService } from '../services/categoryService.js';
@@ -375,7 +375,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor={`date-edit`}>Thời gian *</Label>
-                        <DateTimePicker
+                        <FMDatePicker
                             value={date ? new Date(date) : null}
                             onChange={(selectedDate) => {
                                 if (selectedDate) {
