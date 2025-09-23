@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card.jsx';
 import { LoadingSpinner as Loading } from '../../../components/Loading.jsx';
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert.jsx';
@@ -8,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import currencyService from '../services/currencyService.js';
 
 const CurrencyPage = () => {
+    const { t } = useLanguage();
     const [rates, setRates] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -31,10 +33,10 @@ const CurrencyPage = () => {
                     setRates(result.conversion_rates);
                     setLastUpdated(new Date());
                 } else {
-                    setError('Không nhận được dữ liệu hợp lệ từ API.');
+                    setError(t('currency.errors.loadingError'));
                 }
             } catch (err) {
-                setError('Không thể tải dữ liệu tỉ giá. Vui lòng kiểm tra lại API key và kết nối mạng.');
+                setError(t('currency.errors.loadingError'));
                 console.error(err);
             } finally {
                 setLoading(false);
@@ -83,17 +85,17 @@ const CurrencyPage = () => {
             return (
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
-                    <AlertTitle>Lỗi</AlertTitle>
+                    <AlertTitle>{t('currency.errors.loadingError')}</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
             );
         }
 
         if (!rates || !rates.VND) {
-            return <p className="text-center text-muted-foreground">Không có dữ liệu tỉ giá cho VND.</p>;
+            return <p className="text-center text-muted-foreground">{t('currency.errors.noDataForVND')}</p>;
         }
 
-        // Lấy tỉ giá VND so với USD làm mốc
+        // Get VND rate compared to USD as baseline
         const usdToVndRate = rates.VND;
 
         return (
@@ -102,14 +104,14 @@ const CurrencyPage = () => {
                     const usdToCurrentCurrencyRate = rates[currency];
                     if (!usdToCurrentCurrencyRate) return null;
 
-                    // Công thức tính tỉ giá chéo: (Tỉ giá USD/VND) / (Tỉ giá USD/TIỀN_TỆ_KHÁC)
+                    // Cross rate calculation formula: (USD/VND rate) / (USD/OTHER_CURRENCY rate)
                     const convertedRate = usdToVndRate / usdToCurrentCurrencyRate;
 
                     return (
                         <Card key={currency} className="text-center">
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-lg">{currency}</CardTitle>
-                                <CardDescription>1 {currency} đổi sang VND</CardDescription>
+                                <CardDescription>{t('currency.rates.convertTo', { currency })}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -127,10 +129,10 @@ const CurrencyPage = () => {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-green-600 dark:text-green-400">Tỉ Giá Tham Khảo</h1>
+                    <h1 className="text-3xl font-bold text-green-600 dark:text-green-400">{t('currency.title')}</h1>
                     <p className="text-gray-600 dark:text-gray-400 mt-1">
-                        Tỉ giá các đồng tiền phổ biến so với Việt Nam Đồng (VND) - 
-                        {lastUpdated ? ` Cập nhật ${lastUpdated.toLocaleString('vi-VN')}` : ' Đang cập nhật...'}
+                        {t('currency.subtitle')} - 
+                        {lastUpdated ? ` ${t('currency.lastUpdated', { time: lastUpdated.toLocaleString('vi-VN') })}` : ` ${t('currency.updating')}`}
                     </p>
                 </div>
             </div>
@@ -140,17 +142,17 @@ const CurrencyPage = () => {
                 <CardHeader className="pb-4">
                     <CardTitle className="flex items-center space-x-2 text-green-600">
                         <ArrowRight className="w-5 h-5" />
-                        <span>Chuyển Đổi Tiền Tệ</span>
+                        <span>{t('currency.converter.title')}</span>
                     </CardTitle>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Đổi tiền Việt Nam sang các ngoại tệ</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('currency.converter.subtitle')}</p>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Số tiền (VND)</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('currency.converter.vndAmount')}</label>
                             <Input
                                 type="text"
-                                placeholder="Nhập số tiền VND"
+                                placeholder={t('currency.converter.vndAmountPlaceholder')}
                                 value={vndAmount}
                                 onChange={handleVndAmountChange}
                                 className="text-lg"
@@ -158,7 +160,7 @@ const CurrencyPage = () => {
                         </div>
                         
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Chuyển sang</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('currency.converter.convertTo')}</label>
                             <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
                                 <SelectTrigger className="text-lg">
                                     <SelectValue />
@@ -174,7 +176,7 @@ const CurrencyPage = () => {
                         </div>
                         
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Kết quả</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('currency.converter.result')}</label>
                             <div className="h-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800 flex items-center">
                                 <span className="text-lg font-semibold text-green-600 dark:text-green-400">
                                     {convertedAmount.toLocaleString('en-US', { 
@@ -192,9 +194,9 @@ const CurrencyPage = () => {
                 <CardHeader className="pb-4">
                     <CardTitle className="flex items-center space-x-2 text-green-600">
                         <DollarSign className="w-5 h-5" />
-                        <span>Tỷ Giá Hôm Nay</span>
+                        <span>{t('currency.rates.title')}</span>
                     </CardTitle>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Tỷ giá các đồng tiền phổ biến quy đổi sang VND</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('currency.rates.subtitle')}</p>
                 </CardHeader>
                 <CardContent>
                     {renderContent()}

@@ -53,11 +53,13 @@ import { useSettings } from '../../../shared/contexts/SettingsContext.jsx'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
 import BalanceTrendChart from '../components/BalanceTrendChart.jsx'
 import ExpenseByCategoryChart from '../components/ExpenseByCategoryChart.jsx'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 
 const WalletDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { refreshWallets } = useContext(WalletContext)
+  const { t } = useLanguage()
   const [walletDetails, setWalletDetails] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [page, setPage] = useState(0)
@@ -73,10 +75,10 @@ const WalletDetail = () => {
       const response = await walletService.getWalletDetails(id)
       setWalletDetails(response.data.data)
     } catch (error) {
-      toast.error(error.response?.data?.message || "Lỗi khi tải dữ liệu ví.")
+      toast.error(error.response?.data?.message || t('wallets.detail.loadError'))
       navigate('/wallets')
     }
-  }, [id, navigate])
+  }, [id, navigate, t])
 
   const fetchTransactions = useCallback(async (currentPage) => {
     setTransactionsLoading(true)
@@ -86,11 +88,11 @@ const WalletDetail = () => {
       setTransactions(response.data.data.content || [])
       setTotalPages(response.data.data.totalPages)
     } catch (error) {
-      toast.error("Lỗi khi tải lịch sử giao dịch.")
+      toast.error(t('wallets.detail.loadTransactionsError'))
     } finally {
       setTransactionsLoading(false)
     }
-  }, [id])
+  }, [id, t])
 
   useEffect(() => {
     setLoading(true)
@@ -107,10 +109,10 @@ const WalletDetail = () => {
       await walletService.deleteWallet(walletDetails.wallet.id)
       await refreshWallets()
       navigate('/wallets', {
-        state: { message: `Ví "${walletDetails.wallet.name}" đã được xóa thành công.`, type: 'success' }
+        state: { message: t('wallets.detail.deleteSuccess', { walletName: walletDetails.wallet.name }), type: 'success' }
       })
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi xóa ví.')
+      toast.error(error.response?.data?.message || t('wallets.detail.deleteError'))
       setIsDeleteDialogOpen(false)
     }
   }
@@ -119,17 +121,22 @@ const WalletDetail = () => {
     if (!walletDetails?.wallet) return
     const isArchiving = !walletDetails.wallet.isArchived
     const action = isArchiving ? walletService.archiveWallet : walletService.unarchiveWallet
-    const successMessage = isArchiving ? 'lưu trữ' : 'khôi phục'
+    const actionKey = isArchiving ? 'archived' : 'restored'
     try {
       const response = await action(walletDetails.wallet.id)
       setWalletDetails(prevDetails => ({
         ...prevDetails,
         wallet: response.data.data
       }))
-      toast.success(`Ví "${walletDetails.wallet.name}" đã được ${successMessage} thành công.`)
+      toast.success(t('wallets.detail.archiveSuccess', { 
+        walletName: walletDetails.wallet.name, 
+        action: t(`wallets.detail.archiveActions.${actionKey}`)
+      }))
       refreshWallets()
     } catch (error) {
-      toast.error(error.response?.data?.message || `Lỗi khi ${successMessage} ví.`)
+      toast.error(error.response?.data?.message || t('wallets.detail.archiveError', { 
+        action: t(`wallets.detail.archiveActions.${actionKey}`)
+      }))
     }
   }
 
@@ -144,7 +151,7 @@ const WalletDetail = () => {
   }
 
   if (!walletDetails?.wallet) {
-    return <div>Không tìm thấy ví.</div>
+    return <div>{t('wallets.detail.notFound')}</div>
   }
 
   const { wallet, monthlyIncome, monthlyExpense, netChange, balanceHistory, expenseByCategory } = walletDetails
@@ -164,7 +171,7 @@ const WalletDetail = () => {
           <div className="flex items-center gap-2 shrink-0">
             {!wallet.isArchived && (
                 <Button onClick={() => navigate('/wallets/add-money', { state: { walletId: id } })} className="rounded-md">
-                  <PlusCircle className="w-4 h-4 mr-2" /> Nạp tiền
+                  <PlusCircle className="w-4 h-4 mr-2" /> {t('wallets.detail.addMoney')}
                 </Button>
             )}
             <DropdownMenu>
@@ -177,20 +184,20 @@ const WalletDetail = () => {
                 {!wallet.isArchived && (
                     <>
                       <DropdownMenuItem onSelect={() => navigate(`/wallets/${id}/edit`)}>
-                        <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
+                        <Edit className="mr-2 h-4 w-4" /> {t('wallets.detail.editWallet')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => navigate('/wallets/share', { state: { walletId: id } })}>
-                        <Share2 className="mr-2 h-4 w-4" /> Chia sẻ
+                        <Share2 className="mr-2 h-4 w-4" /> {t('wallets.detail.shareWallet')}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
                 )}
                 <DropdownMenuItem onSelect={handleArchiveToggle}>
                   {wallet.isArchived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
-                  {wallet.isArchived ? 'Khôi phục' : 'Lưu trữ'}
+                  {wallet.isArchived ? t('wallets.detail.restoreWallet') : t('wallets.detail.archiveWallet')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setIsDeleteDialogOpen(true)} className="text-red-600 focus:text-red-600 focus:bg-red-50">
-                  <Trash2 className="mr-2 h-4 w-4" /> Xóa ví
+                  <Trash2 className="mr-2 h-4 w-4" /> {t('wallets.detail.deleteWallet')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -200,9 +207,9 @@ const WalletDetail = () => {
         {wallet.isArchived && (
             <Alert variant="default" className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700">
               <Info className="h-4 w-4 text-blue-600" />
-              <AlertTitle className="text-blue-800 dark:text-blue-300">Ví đã được lưu trữ</AlertTitle>
+              <AlertTitle className="text-blue-800 dark:text-blue-300">{t('wallets.detail.archivedTitle')}</AlertTitle>
               <AlertDescription className="text-blue-700 dark:text-blue-400">
-                Ví này hiện đang ở chế độ chỉ xem. Để thực hiện các thay đổi, bạn cần khôi phục lại ví.
+                {t('wallets.detail.archivedDescription')}
               </AlertDescription>
             </Alert>
         )}
@@ -210,30 +217,30 @@ const WalletDetail = () => {
         <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-6", wallet.isArchived && 'opacity-60 pointer-events-none')}>
           <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white flex flex-col justify-between p-6">
             <div>
-              <p className="text-green-100 text-sm">Số Dư Hiện Tại</p>
+              <p className="text-green-100 text-sm">{t('wallets.detail.currentBalance')}</p>
               <p className="text-4xl font-bold tracking-tight">{formatCurrency(wallet.balance, wallet.currency, settings)}</p>
-              <p className="text-green-200 text-sm mt-2 italic">{wallet.description || 'Không có mô tả'}</p>
+              <p className="text-green-200 text-sm mt-2 italic">{wallet.description || t('wallets.detail.noDescription')}</p>
             </div>
           </Card>
           <div className="grid grid-cols-1 grid-rows-3 gap-4">
             <Card className="flex items-center p-4">
               <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg mr-4"><TrendingUp className="w-6 h-6 text-green-600" /></div>
               <div>
-                <p className="text-muted-foreground text-sm">Thu Nhập Tháng</p>
+                <p className="text-muted-foreground text-sm">{t('wallets.detail.monthlyIncome')}</p>
                 <p className="text-xl font-bold text-green-600">{formatCurrency(monthlyIncome, wallet.currency, settings)}</p>
               </div>
             </Card>
             <Card className="flex items-center p-4">
               <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg mr-4"><TrendingDown className="w-6 h-6 text-red-600" /></div>
               <div>
-                <p className="text-muted-foreground text-sm">Chi Tiêu Tháng</p>
+                <p className="text-muted-foreground text-sm">{t('wallets.detail.monthlyExpense')}</p>
                 <p className="text-xl font-bold text-red-600">{formatCurrency(monthlyExpense, wallet.currency, settings)}</p>
               </div>
             </Card>
             <Card className="flex items-center p-4">
               <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-4"><CalendarDays className="w-6 h-6 text-blue-600" /></div>
               <div>
-                <p className="text-muted-foreground text-sm">Thay Đổi Ròng</p>
+                <p className="text-muted-foreground text-sm">{t('wallets.detail.netChange')}</p>
                 <p className={cn("text-xl font-bold", netChange >= 0 ? 'text-green-600' : 'text-red-600')}>
                   {netChange >= 0 ? '+' : ''}{formatCurrency(netChange, wallet.currency, settings)}
                 </p>
@@ -244,20 +251,20 @@ const WalletDetail = () => {
 
         <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-6", wallet.isArchived && 'opacity-60 pointer-events-none')}>
           <Card>
-            <CardHeader><CardTitle>Xu Hướng Số Dư</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t('wallets.detail.balanceTrend')}</CardTitle></CardHeader>
             <CardContent>
               {balanceHistory && balanceHistory.length > 0 ? (
                   <BalanceTrendChart data={balanceHistory} currency={wallet.currency} />
               ) : (
                   <div className="h-64 flex flex-col items-center justify-center text-center text-muted-foreground">
                     <BarChart className="w-12 h-12 mb-2"/>
-                    <p>Chưa có đủ dữ liệu để vẽ biểu đồ.</p>
+                    <p>{t('wallets.detail.noChartData')}</p>
                   </div>
               )}
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle>Chi Tiêu Theo Danh Mục</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t('wallets.detail.expenseByCategory')}</CardTitle></CardHeader>
             <CardContent>
               {expenseByCategory && expenseByCategory.length > 0 ? (
                   <ExpenseByCategoryChart
@@ -268,7 +275,7 @@ const WalletDetail = () => {
               ) : (
                   <div className="h-64 flex flex-col items-center justify-center text-center text-muted-foreground">
                     <PieChart className="w-12 h-12 mb-2"/>
-                    <p>Chưa có dữ liệu chi tiêu theo danh mục.</p>
+                    <p>{t('wallets.detail.noCategoryData')}</p>
                   </div>
               )}
             </CardContent>
@@ -277,10 +284,10 @@ const WalletDetail = () => {
 
         <Card className={cn(wallet.isArchived && 'opacity-60 pointer-events-none')}>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Lịch Sử Giao Dịch</CardTitle>
+            <CardTitle>{t('wallets.detail.transactionHistory')}</CardTitle>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={wallet.isArchived}><Filter className="w-4 h-4 mr-2" />Lọc</Button>
-              <Button variant="outline" size="sm" disabled={wallet.isArchived}><Download className="w-4 h-4 mr-2" />Xuất file</Button>
+              <Button variant="outline" size="sm" disabled={wallet.isArchived}><Filter className="w-4 h-4 mr-2"/>{t('wallets.detail.filterButton')}</Button>
+              <Button variant="outline" size="sm" disabled={wallet.isArchived}><Download className="w-4 h-4 mr-2"/>{t('wallets.detail.exportButton')}</Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -295,7 +302,7 @@ const WalletDetail = () => {
                             {tx.type === 'INCOME' ? <ArrowUpCircle className="w-8 h-8 text-green-500" /> : <ArrowDownCircle className="w-8 h-8 text-red-500" />}
                             <div>
                               <p className="font-semibold">{tx.description}</p>
-                              <p className="text-sm text-muted-foreground">{tx.category || 'Chưa phân loại'} • {formatDate(tx.date, settings)}</p>
+                              <p className="text-sm text-muted-foreground">{tx.category || t('wallets.detail.uncategorized')} • {formatDate(tx.date, settings)}</p>
                             </div>
                           </div>
                           <p className={cn("text-lg font-bold", tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600')}>
@@ -308,13 +315,13 @@ const WalletDetail = () => {
                       <div className="flex items-center justify-center pt-6 space-x-2">
                         <Button variant="outline" size="sm" onClick={() => handlePageChange(page - 1)} disabled={page === 0}>
                           <ChevronLeft className="h-4 w-4" />
-                          <span>Trước</span>
+                          <span>{t('wallets.detail.pagination.previous')}</span>
                         </Button>
                         <span className="text-sm font-medium">
-                          Trang {page + 1} / {totalPages}
+                          {t('wallets.detail.pagination.pageOf', { current: page + 1, total: totalPages })}
                         </span>
                         <Button variant="outline" size="sm" onClick={() => handlePageChange(page + 1)} disabled={page === totalPages - 1}>
-                          <span>Sau</span>
+                          <span>{t('wallets.detail.pagination.next')}</span>
                           <ChevronRight className="h-4 w-4" />
                         </Button>
                       </div>
@@ -323,7 +330,7 @@ const WalletDetail = () => {
             ) : (
                 <div className="text-center py-16">
                   <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground">Chưa có giao dịch nào trong ví này</p>
+                  <p className="text-muted-foreground">{t('wallets.detail.noTransactions')}</p>
                 </div>
             )}
           </CardContent>
@@ -332,12 +339,12 @@ const WalletDetail = () => {
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Bạn có chắc chắn muốn xóa ví?</AlertDialogTitle>
-              <AlertDialogDescription>Hành động này không thể được hoàn tác. Thao tác này sẽ xóa vĩnh viễn ví<span className="font-bold"> "{wallet?.name}" </span>và tất cả dữ liệu liên quan.</AlertDialogDescription>
+              <AlertDialogTitle>{t('wallets.list.deleteConfirm.title')}</AlertDialogTitle>
+              <AlertDialogDescription>{t('wallets.list.deleteConfirm.description', { walletName: wallet?.name })}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Hủy</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">Xóa</AlertDialogAction>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">{t('common.delete')}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

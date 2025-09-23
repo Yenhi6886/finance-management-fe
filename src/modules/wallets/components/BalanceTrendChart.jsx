@@ -10,16 +10,17 @@ import {
 } from 'recharts'
 import { useSettings } from '../../../shared/contexts/SettingsContext.jsx'
 import { useTheme } from '../../../shared/contexts/ThemeContext.jsx'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 import { formatCurrency, formatDate } from '../../../shared/utils/formattingUtils.js'
 
-const CustomTooltip = ({ active, payload, label, currency, settings }) => {
+const CustomTooltip = ({ active, payload, label, currency, settings, t }) => {
     if (active && payload && payload.length) {
         return (
             <div className="rounded-lg border bg-background p-2 shadow-sm">
                 <div className="grid grid-cols-2 gap-2">
                     <div className="flex flex-col space-y-1">
             <span className="text-[0.70rem] uppercase text-muted-foreground">
-              Ngày
+              {t('charts.balanceTrend.date')}
             </span>
                         <span className="font-bold text-muted-foreground">
               {formatDate(label, settings)}
@@ -27,7 +28,7 @@ const CustomTooltip = ({ active, payload, label, currency, settings }) => {
                     </div>
                     <div className="flex flex-col space-y-1">
             <span className="text-[0.70rem] uppercase text-muted-foreground">
-              Số dư
+              {t('charts.balanceTrend.balance')}
             </span>
                         <span className="font-bold">
               {formatCurrency(payload[0].value, currency, settings)}
@@ -41,6 +42,7 @@ const CustomTooltip = ({ active, payload, label, currency, settings }) => {
 }
 
 const BalanceTrendChart = ({ data, currency }) => {
+    const { t } = useLanguage()
     const { settings } = useSettings()
     const { theme } = useTheme()
     const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
@@ -76,7 +78,7 @@ const BalanceTrendChart = ({ data, currency }) => {
                     tickFormatter={(value) => `${(value / 1000000).toFixed(0)}tr`}
                 />
                 <Tooltip
-                    content={<CustomTooltip currency={currency} settings={settings} />}
+                    content={<CustomTooltip currency={currency} settings={settings} t={t} />}
                     cursor={{ fill: 'rgba(16, 185, 129, 0.1)' }}
                 />
                 <defs>

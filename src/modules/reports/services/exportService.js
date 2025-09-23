@@ -18,7 +18,7 @@ const exportService = {
       responseType: 'arraybuffer'
     });
     const disposition = res.headers['content-disposition'] || res.headers['Content-Disposition'];
-    let fileName = 'BaoCaoTaiChinh.xlsx';
+    let fileName = 'FinancialReport.xlsx';
     if (disposition) {
       const match = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(disposition);
       const raw = decodeURIComponent(match?.[1] || match?.[2] || '');
@@ -32,7 +32,7 @@ const exportService = {
       responseType: 'arraybuffer'
     });
     const disposition = res.headers['content-disposition'] || res.headers['Content-Disposition'];
-    let fileName = 'BaoCaoTaiChinh.pdf';
+    let fileName = 'FinancialReport.pdf';
     if (disposition) {
       const match = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(disposition);
       const raw = decodeURIComponent(match?.[1] || match?.[2] || '');

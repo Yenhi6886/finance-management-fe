@@ -1,6 +1,7 @@
 import React from 'react'
 import Lottie from 'lottie-react'
 import { cn } from '../lib/utils.js'
+import { useLanguage } from '../shared/contexts/LanguageContext.jsx'
 import loadingAnimation from '../assets/loading.json'
 
 const LoadingSpinner = ({ size = 'md', className }) => {
@@ -42,7 +43,10 @@ const LottieLoader = ({ size = 'md', className }) => {
   )
 }
 
-const LoadingScreen = ({ message = 'Đang tải...'   }) => {
+const LoadingScreen = ({ message }) => {
+  const { t } = useLanguage();
+  const defaultMessage = message || t('common.loading');
+  
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
       <div className="text-center">

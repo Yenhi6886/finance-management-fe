@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 import { Button } from '../../../components/ui/button.jsx'
 import { Input } from '../../../components/ui/input.jsx'
 import { Label } from '../../../components/ui/label.jsx'
@@ -26,6 +27,7 @@ const GoogleIcon = ({ className = "w-5 h-5" }) => (
 const Register = () => {
     const navigate = useNavigate()
     const { register, loading } = useAuth()
+    const { t } = useLanguage()
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -110,24 +112,24 @@ const Register = () => {
             newErrors.username = usernameErrors[0]
         }
 
-        // Xác thực email
+        // Email validation
         if (!formData.email) {
-            newErrors.email = 'Email là bắt buộc'
+            newErrors.email = t('auth.register.validation.emailRequired')
         } else if (!isValidEmail(formData.email)) {
-            newErrors.email = 'Email không hợp lệ'
+            newErrors.email = t('auth.register.validation.emailInvalid')
         }
 
-        // Xác thực mật khẩu
+        // Password validation
         const passwordErrors = validatePassword(formData.password)
         if (passwordErrors.length > 0) {
             newErrors.password = passwordErrors[0]
         }
 
-        // Xác thực xác nhận mật khẩu
+        // Confirm password validation
         if (!formData.confirmPassword) {
-            newErrors.confirmPassword = 'Xác nhận mật khẩu là bắt buộc'
+            newErrors.confirmPassword = t('auth.register.validation.confirmPasswordRequired')
         } else if (formData.confirmPassword !== formData.password) {
-            newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp'
+            newErrors.confirmPassword = t('auth.register.validation.passwordMismatch')
         }
 
         setErrors(newErrors)
@@ -138,7 +140,7 @@ const Register = () => {
         e.preventDefault()
 
         if (!agreedToTerms) {
-            setErrors({ terms: 'Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo mật để tiếp tục.' })
+            setErrors({ terms: t('auth.register.validation.termsRequired') })
             return
         }
 
@@ -152,12 +154,12 @@ const Register = () => {
             await register(registerData)
             navigate('/login', {
                 state: {
-                    message: 'Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản của bạn.'
+                    message: t('auth.register.success')
                 }
             })
         } catch (error) {
-            // nếu AuthContext ném lỗi có message, hiển thị chung
-            const message = error?.response?.data?.message || error?.message || 'Đăng ký thất bại. Vui lòng thử lại.'
+            // If AuthContext throws error with message, display it
+            const message = error?.response?.data?.message || error?.message || t('auth.register.error')
             setErrors({ general: message })
         }
     }
@@ -173,7 +175,7 @@ const Register = () => {
             <div className="w-full border-t border-border mb-4"></div>
 
             <div className="text-center mb-16 mt-8">
-                <h1 className="text-4xl font-bold text-foreground">Tạo tài khoản mới</h1>
+                <h1 className="text-4xl font-bold text-foreground">{t('auth.register.title')}</h1>
             </div>
 
             <div className="w-full max-w-lg">
@@ -181,7 +183,7 @@ const Register = () => {
                     <a href="http://localhost:8080/api/auth/oauth2/google" className="w-full">
                         <Button variant="outline" className="w-full h-12 bg-green-50 hover:bg-green-100 border-green-200 text-green-700 hover:text-green-800 transition-colors">
                             <GoogleIcon className="w-5 h-5 mr-2" />
-                            Đăng ký với Google
+                            {t('auth.register.googleSignUp')}
                         </Button>
                     </a>
                 </div>
@@ -192,7 +194,7 @@ const Register = () => {
                     </div>
                     <div className="relative flex justify-center text-sm">
                         <span className="bg-background px-4 text-muted-foreground">
-                            hoặc đăng ký bằng email
+                            {t('auth.register.orSignUpWithEmail')}
                         </span>
                     </div>
                 </div>
@@ -204,11 +206,11 @@ const Register = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label htmlFor="lastName" className="text-sm text-muted-foreground mb-1 block">Họ <span className="text-red-500">*</span></Label>
+                            <Label htmlFor="lastName" className="text-sm text-muted-foreground mb-1 block">{t('auth.register.lastName')} <span className="text-red-500">*</span></Label>
                             <Input
                                 id="lastName"
                                 name="lastName"
-                                placeholder="Họ"
+                                placeholder={t('auth.register.lastName')}
                                 value={formData.lastName}
                                 onChange={handleChange}
                                 onBlur={(e) => validateFieldRealTime('lastName', e.target.value)}
@@ -224,11 +226,11 @@ const Register = () => {
                             )}
                         </div>
                         <div>
-                            <Label htmlFor="firstName" className="text-sm text-muted-foreground mb-1 block">Tên <span className="text-red-500">*</span></Label>
+                            <Label htmlFor="firstName" className="text-sm text-muted-foreground mb-1 block">{t('auth.register.firstName')} <span className="text-red-500">*</span></Label>
                             <Input
                                 id="firstName"
                                 name="firstName"
-                                placeholder="Tên"
+                                placeholder={t('auth.register.firstName')}
                                 value={formData.firstName}
                                 onChange={handleChange}
                                 onBlur={(e) => validateFieldRealTime('firstName', e.target.value)}
@@ -246,11 +248,11 @@ const Register = () => {
                     </div>
 
                     <div>
-                        <Label htmlFor="username" className="text-sm text-muted-foreground mb-1 block">Tên đăng nhập <span className="text-red-500">*</span></Label>
+                        <Label htmlFor="username" className="text-sm text-muted-foreground mb-1 block">{t('auth.register.username')} <span className="text-red-500">*</span></Label>
                         <Input
                             id="username"
                             name="username"
-                            placeholder="Tên đăng nhập"
+                            placeholder={t('auth.register.username')}
                             value={formData.username}
                             onChange={handleChange}
                             onBlur={(e) => validateFieldRealTime('username', e.target.value)}
@@ -267,12 +269,12 @@ const Register = () => {
                     </div>
 
                     <div>
-                        <Label htmlFor="email" className="text-sm text-muted-foreground mb-1 block">Email <span className="text-red-500">*</span></Label>
+                        <Label htmlFor="email" className="text-sm text-muted-foreground mb-1 block">{t('auth.register.email')} <span className="text-red-500">*</span></Label>
                         <Input
                             id="email"
                             name="email"
                             type="email"
-                            placeholder="Email"
+                            placeholder={t('auth.register.email')}
                             value={formData.email}
                             onChange={handleChange}
                             onBlur={(e) => validateFieldRealTime('email', e.target.value)}
@@ -289,13 +291,13 @@ const Register = () => {
                     </div>
 
                     <div>
-                        <Label htmlFor="password" className="text-sm text-muted-foreground mb-1 block">Mật khẩu <span className="text-red-500">*</span></Label>
+                        <Label htmlFor="password" className="text-sm text-muted-foreground mb-1 block">{t('auth.register.password')} <span className="text-red-500">*</span></Label>
                         <div className="relative">
                             <Input
                                 id="password"
                                 name="password"
                                 type={showPassword ? 'text' : 'password'}
-                                placeholder="Nhập mật khẩu"
+                                placeholder={t('auth.register.enterPassword')}
                                 value={formData.password}
                                 onChange={handleChange}
                                 onBlur={(e) => validateFieldRealTime('password', e.target.value)}
@@ -320,13 +322,13 @@ const Register = () => {
                     </div>
 
                     <div>
-                        <Label htmlFor="confirmPassword" className="text-sm text-muted-foreground mb-1 block">Xác nhận mật khẩu <span className="text-red-500">*</span></Label>
+                        <Label htmlFor="confirmPassword" className="text-sm text-muted-foreground mb-1 block">{t('auth.register.confirmPassword')} <span className="text-red-500">*</span></Label>
                         <div className="relative">
                             <Input
                                 id="confirmPassword"
                                 name="confirmPassword"
                                 type={showConfirmPassword ? 'text' : 'password'}
-                                placeholder="Xác nhận lại mật khẩu"
+                                placeholder={t('auth.register.confirmPasswordPlaceholder')}
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
                                 onBlur={(e) => validateFieldRealTime('confirmPassword', e.target.value)}
@@ -364,10 +366,10 @@ const Register = () => {
                             className="w-4 h-4 mt-0.5 border-border rounded text-green-600 focus:ring-green-500"
                         />
                         <label htmlFor="terms-register" className="text-sm text-muted-foreground leading-relaxed">
-                            Bằng cách đăng ký, tôi đồng ý với{' '}
-                            <a href="#" className="text-green-600 hover:underline">Điều khoản dịch vụ</a>
-                            {' '}và{' '}
-                            <a href="#" className="text-green-600 hover:underline">Chính sách bảo mật</a>
+                            {t('auth.register.termsText.prefix')}{' '}
+                            <a href="#" className="text-green-600 hover:underline">{t('auth.register.termsText.terms')}</a>
+                            {' '}{t('auth.register.termsText.and')}{' '}
+                            <a href="#" className="text-green-600 hover:underline">{t('auth.register.termsText.privacy')}</a>
                             <span className="text-red-500 ml-1">*</span>
                         </label>
                     </div>
@@ -385,15 +387,15 @@ const Register = () => {
                         }`}
                         disabled={loading || !agreedToTerms}
                     >
-                        {loading ? 'Đang xử lý...' : 'Tạo tài khoản'}
+                        {loading ? t('auth.register.processing') : t('auth.register.createAccount')}
                     </Button>
                 </form>
 
                 <div className="mt-6 text-center">
                     <p className="text-sm text-muted-foreground">
-                        Đã có tài khoản?{' '}
+                        {t('auth.register.haveAccount')}{' '}
                         <Link to="/login" className="text-primary hover:underline font-semibold">
-                            Đăng nhập
+                            {t('auth.register.loginLink')}
                         </Link>
                     </p>
                 </div>

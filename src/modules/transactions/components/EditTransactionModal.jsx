@@ -5,9 +5,10 @@ import { Button } from '../../../components/ui/button.jsx';
 import { Input } from '../../../components/ui/input.jsx';
 import { Label } from '../../../components/ui/label.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx';
-import { DateTimePicker } from '../../../components/ui/datetime-picker.jsx';
+import { FMDatePicker } from '../../../components/ui/fm-date-picker.jsx';
 import { useWallet } from '../../../shared/hooks/useWallet.js';
 import { useNotification } from '../../../shared/contexts/NotificationContext.jsx';
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx';
 import { categoryService } from '../services/categoryService.js';
 import { transactionService } from '../services/transactionService.js';
 import { toast } from 'sonner';
@@ -20,6 +21,7 @@ import { IconComponent } from '../../../shared/config/icons.js';
 import { validateTransaction, validateField } from '../../../shared/utils/validationUtils.js';
 
 const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transaction }) => {
+    const { t } = useLanguage();
     const { wallets } = useWallet();
     const { settings } = useSettings();
     const { refreshNotifications } = useNotification();
@@ -41,20 +43,20 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                 const response = await categoryService.getCategories();
                 setCategories(response.data.data || []);
             } catch (error) {
-                toast.error('Không thể tải danh mục.');
+                toast.error(t('transactions.messages.errors.loadCategories'));
             }
         };
         fetchCategories();
-    }, []);
+    }, [t]);
 
-    // Hàm kiểm tra ngày tương lai
+    // Function to check future date
     const isFutureDate = (dateString) => {
         const selectedDate = new Date(dateString);
         const now = new Date();
         return selectedDate > now;
     };
 
-    // Hàm format ngày để hiển thị
+    // Function to format date for display
     const formatDateForDisplay = (dateString) => {
         return formatDateTime(dateString);
     };
@@ -105,7 +107,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                 required: false,
                 allowNewLines: true,
                 allowEmojis: true,
-                fieldName: 'Ghi chú'
+                fieldName: t('transactions.edit.validation.fieldNameDescription')
             },
             dateOptions: {
                 allowFuture: true,
@@ -119,7 +121,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
         const validation = validateTransaction(formData, validationOptions);
         let errors = validation.errors;
 
-        // Thêm validation cho số tiền không vượt quá số dư ví (cho cả khoản thu và chi)
+        // Add validation for amount not exceeding wallet balance (for both income and expense)
         if (amount && walletId) {
             const selectedWallet = wallets.find(w => w.id.toString() === walletId);
             if (selectedWallet) {
@@ -127,7 +129,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                 const walletBalance = parseFloat(selectedWallet.balance);
                 
                 if (amountValue > walletBalance) {
-                    errors.amount = `Số tiền không được vượt quá số dư hiện tại (${formatCurrency(walletBalance, 'VND', settings)})`;
+                    errors.amount = t('transactions.edit.validation.amountExceedsBalance', { balance: formatCurrency(walletBalance, 'VND', settings) });
                 }
             }
         }
@@ -136,7 +138,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
         return Object.keys(errors).length === 0;
     };
 
-    // Hàm xác thực thời gian thực
+    // Real-time validation function
     const validateFieldRealTime = (fieldName, value) => {
         const options = {
             categories,
@@ -151,7 +153,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
         if (!validation.isValid) {
             errorMessage = validation.errors[0];
         } else {
-            // Thêm validation cho số tiền không vượt quá số dư ví (cho cả khoản thu và chi)
+            // Add validation for amount not exceeding wallet balance (for both income and expense)
             if (fieldName === 'amount' && value && walletId) {
                 const selectedWallet = wallets.find(w => w.id.toString() === walletId);
                 if (selectedWallet) {
@@ -159,7 +161,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                     const walletBalance = parseFloat(selectedWallet.balance);
                     
                     if (amountValue > walletBalance) {
-                        errorMessage = `Số tiền không được vượt quá số dư hiện tại (${formatCurrency(walletBalance, 'VND', settings)})`;
+                        errorMessage = t('transactions.edit.validation.amountExceedsBalance', { balance: formatCurrency(walletBalance, 'VND', settings) });
                     }
                 }
             }
@@ -190,12 +192,12 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                 date: new Date(date).toISOString(),
             };
             await transactionService.updateTransaction(transaction.id, transactionData);
-            toast.success('Cập nhật giao dịch thành công!');
+            toast.success(t('transactions.messages.transactionUpdated'));
             refreshNotifications();
             onTransactionUpdated();
             onClose();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật.');
+            toast.error(error.response?.data?.message || t('transactions.messages.errors.updateTransaction'));
         }
     }
 
@@ -228,12 +230,12 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
         setLoading(true);
         try {
             await transactionService.deleteTransaction(transaction.id);
-            toast.success('Xóa giao dịch thành công!');
+            toast.success(t('transactions.messages.transactionDeleted'));
             refreshNotifications();
             onTransactionUpdated();
             onClose();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xóa.');
+            toast.error(error.response?.data?.message || t('transactions.messages.errors.deleteTransaction'));
         } finally {
             setLoading(false);
         }
@@ -244,16 +246,16 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>
-                        Chi Tiết{' '}
+                        {t('transactions.edit.title')}{' '}
                         {transaction.type === 'INCOME' ?
-                            <span className='text-green-600'>Giao Dịch Thu</span> :
-                            <span className='text-red-600'>Giao Dịch Chi</span>}
+                            <span className='text-green-600'>{t('transactions.edit.incomeTitle')}</span> :
+                            <span className='text-red-600'>{t('transactions.edit.expenseTitle')}</span>}
                     </DialogTitle>
-                    <DialogDescription>Chỉnh sửa hoặc xóa giao dịch của bạn tại đây.</DialogDescription>
+                    <DialogDescription>{t('transactions.edit.subtitle')}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor={`amount-edit`}>Số tiền *</Label>
+                        <Label htmlFor={`amount-edit`}>{t('transactions.edit.form.amount')} *</Label>
                         <Input 
                             id={`amount-edit`} 
                             type="number" 
@@ -263,7 +265,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                                 validateFieldRealTime('amount', e.target.value);
                             }}
                             onBlur={(e) => validateFieldRealTime('amount', e.target.value)}
-                            placeholder="0" 
+                            placeholder={t('transactions.edit.form.amountPlaceholder')} 
                             step="0.01"
                             min="0"
                             max="999999999"
@@ -276,7 +278,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                         )}
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor={`category-edit`}>Danh mục *</Label>
+                        <Label htmlFor={`category-edit`}>{t('transactions.edit.form.category')} *</Label>
                         <Select 
                             onValueChange={(value) => {
                                 setCategoryId(value);
@@ -284,7 +286,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                             }} 
                             value={categoryId}
                         >
-                            <SelectTrigger><SelectValue placeholder="Chọn danh mục" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder={t('transactions.edit.form.categoryPlaceholder')} /></SelectTrigger>
                             <SelectContent>
                                 {categories.map(cat => (
                                     <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
@@ -299,7 +301,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                         )}
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor={`wallet-edit`}>Ví *</Label>
+                        <Label htmlFor={`wallet-edit`}>{t('transactions.edit.form.wallet')} *</Label>
                         <Select 
                             onValueChange={(value) => {
                                 setWalletId(value);
@@ -312,7 +314,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                             value={walletId}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Chọn ví">
+                                <SelectValue placeholder={t('transactions.edit.form.walletPlaceholder')}>
                                     {walletId && wallets.find(w => w.id.toString() === walletId) && (
                                         <div className="flex items-center space-x-2">
                                             <IconComponent name={wallets.find(w => w.id.toString() === walletId).icon} className="w-4 h-4" />
@@ -340,7 +342,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                         )}
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor={`description-edit`}>Ghi chú</Label>
+                        <Label htmlFor={`description-edit`}>{t('transactions.edit.form.description')}</Label>
                         <Input 
                             id={`description-edit`} 
                             value={description} 
@@ -349,20 +351,20 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                                 validateFieldRealTime('description', e.target.value);
                             }}
                             onBlur={(e) => validateFieldRealTime('description', e.target.value)}
-                            placeholder="Ghi chú về giao dịch..." 
+                            placeholder={t('transactions.edit.form.descriptionPlaceholder')} 
                             maxLength={500}
                         />
                         <div className="flex justify-between text-xs text-gray-500">
                             <div className="flex flex-col">
-                                <span>Nhập tối đa 500 ký tự, có thể xuống dòng</span>
-                                <span className="text-gray-400">Hỗ trợ emoji và ký tự đặc biệt</span>
+                                <span>{t('transactions.modal.form.descriptionHints.maxLength')}</span>
+                                <span className="text-gray-400">{t('transactions.modal.form.descriptionHints.features')}</span>
                             </div>
                             <div className="flex flex-col items-end">
                                 <span className={description.length > 450 ? 'text-orange-500' : description.length > 480 ? 'text-red-500' : ''}>
                                     {description.length}/500
                                 </span>
                                 <span className="text-gray-400">
-                                    {description.split(/\s+/).filter(word => word.length > 0).length} từ
+                                    {description.split(/\s+/).filter(word => word.length > 0).length} {t('transactions.modal.form.descriptionHints.wordCount')}
                                 </span>
                             </div>
                         </div>
@@ -374,8 +376,8 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                         )}
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor={`date-edit`}>Thời gian *</Label>
-                        <DateTimePicker
+                        <Label htmlFor={`date-edit`}>{t('transactions.edit.form.date')} *</Label>
+                        <FMDatePicker
                             value={date ? new Date(date) : null}
                             onChange={(selectedDate) => {
                                 if (selectedDate) {
@@ -387,7 +389,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                                     validateFieldRealTime('date', '');
                                 }
                             }}
-                            placeholder="Chọn ngày và giờ"
+                            placeholder={t('transactions.modal.form.datePlaceholder')}
                         />
                         {errors.date && (
                             <div className="flex items-center gap-1 text-sm text-red-500">
@@ -400,25 +402,25 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button type="button" variant="destructive" size="sm" className="rounded bg-red-600 hover:bg-red-700">
-                                    <Trash2 className="mr-2 h-4 w-4"/>Xóa
+                                    <Trash2 className="mr-2 h-4 w-4"/>{t('transactions.edit.form.delete')}
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                                 <AlertDialogHeader>
-                                    <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
-                                    <AlertDialogDescription>Hành động này không thể hoàn tác. Giao dịch sẽ bị xóa vĩnh viễn và số dư ví sẽ được cập nhật lại.</AlertDialogDescription>
+                                    <AlertDialogTitle>{t('transactions.edit.confirmDelete.title')}</AlertDialogTitle>
+                                    <AlertDialogDescription>{t('transactions.edit.confirmDelete.description')}</AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                    <AlertDialogCancel size="sm" className="rounded">Hủy</AlertDialogCancel>
+                                    <AlertDialogCancel size="sm" className="rounded">{t('transactions.edit.confirmDelete.cancel')}</AlertDialogCancel>
                                     <AlertDialogAction size="sm" className={cn("rounded", loading && 'cursor-not-allowed')} onClick={handleDelete} disabled={loading}>
-                                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Tiếp tục xóa
+                                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}{t('transactions.edit.confirmDelete.confirm')}
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
                         <Button type="submit" disabled={loading} size="sm" className="rounded">
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Lưu Thay Đổi
+                            {t('transactions.edit.form.save')}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -428,25 +430,25 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
             <AlertDialog open={showFutureDateConfirm} onOpenChange={setShowFutureDateConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận ngày tương lai</AlertDialogTitle>
+                        <AlertDialogTitle>{t('transactions.edit.confirmFutureDate.title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Bạn đang cập nhật giao dịch với ngày <strong>{formatDateForDisplay(date)}</strong> (ngày tương lai).
+                            {t('transactions.edit.confirmFutureDate.description', { date: formatDateForDisplay(date) })}
                             <br />
                             <br />
-                            <strong>Thông tin giao dịch:</strong>
+                            <strong>{t('transactions.edit.confirmFutureDate.transactionInfo')}</strong>
                             <br />
-                            • Loại: {transaction?.type === 'INCOME' ? 'Khoản thu' : 'Khoản chi'}
+                            • {t('transactions.edit.confirmFutureDate.transactionType')}: {transaction?.type === 'INCOME' ? t('transactions.list.defaultIncome') : t('transactions.list.defaultExpense')}
                             <br />
-                            • Số tiền: {formatCurrency(parseFloat(amount), 'VND', settings)}
+                            • {t('transactions.edit.confirmFutureDate.transactionAmount')}: {formatCurrency(parseFloat(amount), 'VND', settings)}
                             <br />
-                            • Ngày: {formatDateForDisplay(date)}
+                            • {t('transactions.edit.confirmFutureDate.transactionDate')}: {formatDateForDisplay(date)}
                             <br />
                             <br />
-                            Bạn có chắc chắn muốn tiếp tục?
+                            {t('transactions.edit.confirmFutureDate.confirmMessage')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogCancel>{t('transactions.edit.confirmFutureDate.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={async () => {
                                 setShowFutureDateConfirm(false);
@@ -455,7 +457,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                                 setLoading(false);
                             }}
                         >
-                            Xác nhận
+                            {t('transactions.edit.confirmFutureDate.confirm')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 import { authService } from '../services/authService.js'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card.jsx'
 import { Button } from '../../../components/ui/button.jsx'
@@ -8,6 +9,7 @@ import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 const ActivateAccount = () => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [status, setStatus] = useState('activating') // 'activating', 'success', 'error'
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -16,7 +18,7 @@ const ActivateAccount = () => {
 
     if (!token) {
       setStatus('error')
-      setErrorMessage('Đường dẫn kích hoạt không hợp lệ hoặc thiếu token.')
+      setErrorMessage(t('auth.activateAccount.invalidLink'))
       return
     }
 
@@ -28,14 +30,14 @@ const ActivateAccount = () => {
         setTimeout(() => {
           navigate('/login', {
             state: {
-              message: 'Tài khoản đã được kích hoạt thành công! Vui lòng đăng nhập.'
+              message: t('auth.activateAccount.successMessage')
             }
           })
-        }, 3000) // Đợi 3 giây trước khi chuyển hướng
+        }, 3000) // Wait 3 seconds before redirect
 
       } catch (error) {
         setStatus('error')
-        const message = error.response?.data?.message || 'Kích hoạt tài khoản thất bại. Token có thể đã hết hạn hoặc không hợp lệ.'
+        const message = error.response?.data?.message || t('auth.activateAccount.errorMessage')
         setErrorMessage(message)
       }
     }
@@ -49,17 +51,17 @@ const ActivateAccount = () => {
         return (
             <div className="flex flex-col items-center justify-center space-y-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-lg font-medium text-muted-foreground">Đang kích hoạt tài khoản của bạn...</p>
-              <p className="text-sm text-muted-foreground">Vui lòng đợi trong giây lát.</p>
+              <p className="text-lg font-medium text-muted-foreground">{t('auth.activateAccount.activating')}</p>
+              <p className="text-sm text-muted-foreground">{t('auth.activateAccount.pleaseWait')}</p>
             </div>
         )
       case 'success':
         return (
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <CheckCircle className="h-12 w-12 text-green-500" />
-              <p className="text-lg font-medium">Kích hoạt thành công!</p>
+              <p className="text-lg font-medium">{t('auth.activateAccount.successTitle')}</p>
               <p className="text-sm text-muted-foreground">
-                Tài khoản của bạn đã sẵn sàng. Sẽ tự động chuyển đến trang đăng nhập sau 3 giây.
+                {t('auth.activateAccount.successDescription')}
               </p>
             </div>
         )
@@ -67,10 +69,10 @@ const ActivateAccount = () => {
         return (
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <AlertCircle className="h-12 w-12 text-destructive" />
-              <p className="text-lg font-medium text-destructive">Kích hoạt thất bại</p>
+              <p className="text-lg font-medium text-destructive">{t('auth.activateAccount.errorTitle')}</p>
               <p className="text-sm text-muted-foreground">{errorMessage}</p>
               <Button asChild>
-                <Link to="/login">Quay lại trang đăng nhập</Link>
+                <Link to="/login">{t('auth.activateAccount.backToLogin')}</Link>
               </Button>
             </div>
         )
@@ -83,7 +85,7 @@ const ActivateAccount = () => {
       <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader>
-            <CardTitle className="text-center text-2xl font-bold">Kích hoạt tài khoản</CardTitle>
+            <CardTitle className="text-center text-2xl font-bold">{t('auth.activateAccount.title')}</CardTitle>
           </CardHeader>
           <CardContent className="py-8">
             {renderContent()}

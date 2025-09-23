@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/contexts/AuthContext.jsx';
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx';
 import { useTheme } from '../../../shared/contexts/ThemeContext.jsx';
 import { WalletContext } from '../../../shared/contexts/WalletContext.jsx';
 import { Avatar } from '../../../components/ui/avatar.jsx';
@@ -32,6 +33,7 @@ import {
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const { wallets } = useContext(WalletContext);
   const navigate = useNavigate();
@@ -51,12 +53,12 @@ const ProfilePage = () => {
 
   const profileSections = [
     {
-      title: 'Tài khoản',
+      title: t('profile.menu.account'),
       items: [
         {
           id: 'profile',
-          title: 'Thông tin cá nhân',
-          subtitle: 'Quản lý thông tin và tài khoản của bạn',
+          title: t('profile.menu.accountDesc'),
+          subtitle: t('profile.menu.accountDesc'),
           icon: UserIcon,
           href: '/profile/personal-info',
           color: 'text-blue-600',
@@ -65,12 +67,12 @@ const ProfilePage = () => {
       ],
     },
     {
-      title: 'Cài đặt',
+      title: t('profile.menu.settings'),
       items: [
         {
           id: 'security',
-          title: 'Đăng nhập & bảo mật',
-          subtitle: 'Đổi mật khẩu, bảo mật tài khoản',
+          title: t('profile.menu.security'),
+          subtitle: t('profile.menu.securityDesc'),
           icon: ShieldCheckIcon,
           href: '/change-password',
           color: 'text-orange-600',
@@ -78,8 +80,8 @@ const ProfilePage = () => {
         },
         {
           id: 'appearance',
-          title: 'Giao diện',
-          subtitle: `Chế độ ${theme === 'light' ? 'sáng' : 'tối'}`,
+          title: t('profile.menu.appearance'),
+          subtitle: theme === 'light' ? t('profile.menu.appearanceLight') : t('profile.menu.appearanceDark'),
           icon: theme === 'light' ? SunIcon : MoonIcon,
           action: toggleTheme,
           color: theme === 'light' ? 'text-yellow-600' : 'text-indigo-600',
@@ -88,8 +90,8 @@ const ProfilePage = () => {
         },
         {
           id: 'general',
-          title: 'Cài đặt chung',
-          subtitle: 'Ngôn ngữ, múi giờ, định dạng',
+          title: t('profile.menu.general'),
+          subtitle: t('profile.menu.generalDesc'),
           icon: SettingsIcon,
           href: '/settings',
           color: 'text-gray-600',
@@ -189,26 +191,25 @@ const ProfilePage = () => {
                         <LogOutIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-semibold text-base text-red-600 dark:text-red-400">Đăng xuất</p>
+                        <p className="font-semibold text-base text-red-600 dark:text-red-400">{t('profile.menu.logout')}</p>
                       </div>
                       <ChevronRightIcon className="w-5 h-5 text-red-400 dark:text-red-500 ml-4" />
                     </button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Xác nhận đăng xuất</AlertDialogTitle>
+                      <AlertDialogTitle>{t('profile.menu.logoutConfirm')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này không?
+                        {t('profile.menu.logoutDesc')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Hủy</AlertDialogCancel>
-                      <AlertDialogAction
-                          onClick={handleLogout}
-                          disabled={isLoggingOut}
-                          className="bg-red-600 hover:bg-red-700 text-white"
+                      <AlertDialogCancel>Hủy</AlertDialogCancel>                      <AlertDialogAction
+                        onClick={handleLogout}
+                        disabled={isLoggingOut}
+                        className="bg-red-600 hover:bg-red-700 text-white"
                       >
-                        {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
+                        {isLoggingOut ? t('profile.menu.loggingOut') : t('profile.menu.logout')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

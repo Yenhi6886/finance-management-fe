@@ -5,6 +5,7 @@ import { AreaChart, BarChart } from '../../../components/charts/ChartComponents.
 import { LoadingScreen } from '../../../components/Loading.jsx'
 import InitialLoadingScreen from '../../../components/InitialLoadingScreen.jsx'
 import { useInitialLoading } from '../../../shared/contexts/InitialLoadingContext.jsx'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 import { dashboardService } from '../services/dashboardService.js'
 import { WalletContext } from '../../../shared/contexts/WalletContext.jsx'
 import { useDateFormat } from '../../../shared/hooks/useDateFormat.js'
@@ -38,6 +39,7 @@ const Dashboard = () => {
   const { wallets, loading: walletLoading } = useContext(WalletContext);
   const { showInitialLoading, hideInitialLoading, isInitialLoading, hasShownInitialLoading } = useInitialLoading();
   const { formatDate, formatDateTime } = useDateFormat();
+  const { t } = useLanguage();
 
   const [selectedWalletId, setSelectedWalletId] = useState('all');
   const [dashboardData, setDashboardData] = useState(null);
@@ -77,7 +79,7 @@ const Dashboard = () => {
       } catch (err) {
         if (!controller.signal.aborted) {
           if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
-            setError("Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.");
+            setError(t('dashboard.errors.loadData'));
             console.error('Error fetching dashboard data:', err);
           }
         }
@@ -123,13 +125,13 @@ const Dashboard = () => {
     }).format(date);
   };
 
-  if (loading || walletLoading) return <LoadingScreen message="Đang tải dữ liệu dashboard..." />;
+  if (loading || walletLoading) return <LoadingScreen message={t('dashboard.loadingDashboard')} />;
 
   if (error) {
     return (
         <Alert variant="destructive" className="mt-4">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Lỗi</AlertTitle>
+          <AlertTitle>{t('common.error')}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
     );
@@ -146,42 +148,42 @@ const Dashboard = () => {
   const totalSpending = spendingByCategory.reduce((sum, item) => sum + item.totalAmount, 0);
 
   const stats = [
-    { title: 'Tổng Số Dư', value: formatCurrencyShort(summary.totalBalanceVND), icon: DollarSignIcon, color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/50' },
-    { title: 'Thu Nhập Tháng', value: formatCurrencyShort(summary.monthlyIncome), icon: TrendingUpIcon, color: 'text-green-600', bgColor: 'bg-green-100 dark:bg-green-900/50' },
-    { title: 'Chi Tiêu Tháng', value: formatCurrencyShort(summary.monthlyExpense), icon: CreditCardIcon, color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/50' },
-    { title: 'Tổng số ví', value: summary.totalWallets, icon: PiggyBankIcon, color: 'text-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900/50' },
-    { title: 'Tăng Trưởng Tháng', value: `${(summary.monthlyGrowth || 0).toFixed(2)}%`, icon: ActivityIcon, color: 'text-cyan-600', bgColor: 'bg-cyan-100 dark:bg-cyan-900/50' },
-    { title: 'Tổng Giao Dịch Tháng', value: summary.totalTransactions, icon: WalletIcon, color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/50' },
+    { title: t('dashboard.totalBalance'), value: formatCurrencyShort(summary.totalBalanceVND), icon: DollarSignIcon, color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/50' },
+    { title: t('dashboard.monthlyIncome'), value: formatCurrencyShort(summary.monthlyIncome), icon: TrendingUpIcon, color: 'text-green-600', bgColor: 'bg-green-100 dark:bg-green-900/50' },
+    { title: t('dashboard.monthlyExpense'), value: formatCurrencyShort(summary.monthlyExpense), icon: CreditCardIcon, color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/50' },
+    { title: t('dashboard.totalWallets'), value: summary.totalWallets, icon: PiggyBankIcon, color: 'text-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900/50' },
+    { title: t('dashboard.monthlyGrowth'), value: `${(summary.monthlyGrowth || 0).toFixed(2)}%`, icon: ActivityIcon, color: 'text-cyan-600', bgColor: 'bg-cyan-100 dark:bg-cyan-900/50' },
+    { title: t('dashboard.totalTransactions'), value: summary.totalTransactions, icon: WalletIcon, color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/50' },
   ];
 
   const incomeExpenseChartData = {
     labels: dashboardData?.incomeExpenseTrend.map(d => d.month) || [],
     datasets: [
-      { label: 'Thu Nhập', data: dashboardData?.incomeExpenseTrend.map(d => d.income) || [], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.1)', borderWidth: 3, fill: true, tension: 0.4 },
-      { label: 'Chi Tiêu', data: dashboardData?.incomeExpenseTrend.map(d => d.expense) || [], borderColor: 'rgb(239, 68, 68)', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 3, fill: true, tension: 0.4 }
+      { label: t('dashboard.income'), data: dashboardData?.incomeExpenseTrend.map(d => d.income) || [], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.1)', borderWidth: 3, fill: true, tension: 0.4 },
+      { label: t('dashboard.expense'), data: dashboardData?.incomeExpenseTrend.map(d => d.expense) || [], borderColor: 'rgb(239, 68, 68)', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 3, fill: true, tension: 0.4 }
     ]
   };
 
   const weeklySpendingChartData = {
     labels: dashboardData?.weeklySpending.map(d => d.label) || [],
-    datasets: [{ label: 'Chi Tiêu Hàng Ngày', data: dashboardData?.weeklySpending.map(d => d.value) || [], backgroundColor: 'rgba(34, 197, 94, 0.7)', borderWidth: 0, borderRadius: 4, borderSkipped: false }]
+    datasets: [{ label: t('dashboard.dailySpending'), data: dashboardData?.weeklySpending.map(d => d.value) || [], backgroundColor: 'rgba(34, 197, 94, 0.7)', borderWidth: 0, borderRadius: 4, borderSkipped: false }]
   };
 
   return (
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Tổng quan tài chính của bạn - Cập nhật {new Date().toLocaleDateString('vi-VN')}</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('dashboard.title')}</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">{t('dashboard.subtitle')} {new Date().toLocaleDateString('vi-VN')}</p>
           </div>
           <div className="mt-3 sm:mt-0">
             <Select value={selectedWalletId} onValueChange={setSelectedWalletId}>
               <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Chọn ví để xem" />
+                <SelectValue placeholder={t('dashboard.selectWallet')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
-                  Tất cả các ví
+                  {t('dashboard.allWallets')}
                 </SelectItem>
                 {wallets.map(wallet => (
                     <SelectItem key={wallet.id} value={wallet.id.toString()}>
@@ -199,8 +201,8 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
-            const isPositive = stat.title === 'Tăng Trưởng Tháng' && (summary.monthlyGrowth || 0) >= 0;
-            const isNegative = stat.title === 'Tăng Trưởng Tháng' && (summary.monthlyGrowth || 0) < 0;
+            const isPositive = stat.title === t('dashboard.monthlyGrowth') && (summary.monthlyGrowth || 0) >= 0;
+            const isNegative = stat.title === t('dashboard.monthlyGrowth') && (summary.monthlyGrowth || 0) < 0;
             return (
                 <Card key={index} className="relative overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group min-w-0">
                   <CardContent className="p-3 md:p-4">
@@ -223,8 +225,8 @@ const Dashboard = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <div>
-                <CardTitle className="flex items-center space-x-2"><BarChart3Icon className="w-5 h-5 text-blue-600" /><span>Thu Nhập vs Chi Tiêu</span></CardTitle>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Xu hướng tài chính 9 tháng gần nhất</p>
+                <CardTitle className="flex items-center space-x-2"><BarChart3Icon className="w-5 h-5 text-blue-600" /><span>{t('dashboard.incomeVsExpense')}</span></CardTitle>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('dashboard.trendAnalysis')}</p>
               </div>
             </CardHeader>
             <CardContent><div className="h-64"><AreaChart data={incomeExpenseChartData} /></div></CardContent>
@@ -233,11 +235,11 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
-            <CardHeader className="pb-4"><CardTitle className="flex items-center space-x-2"><ActivityIcon className="w-5 h-5 text-orange-600" /><span>Chi Tiêu Theo Tuần</span></CardTitle><p className="text-sm text-gray-600 dark:text-gray-400">Thói quen chi tiêu hàng ngày</p></CardHeader>
+            <CardHeader className="pb-4"><CardTitle className="flex items-center space-x-2"><ActivityIcon className="w-5 h-5 text-orange-600" /><span>{t('dashboard.weeklySpending')}</span></CardTitle><p className="text-sm text-gray-600 dark:text-gray-400">{t('dashboard.weeklySpendingDesc')}</p></CardHeader>
             <CardContent><div className="h-48"><BarChart data={weeklySpendingChartData} /></div></CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-4"><CardTitle>Danh Mục Chi Tiêu Hàng Đầu</CardTitle><p className="text-sm text-gray-600 dark:text-gray-400">Các khoản chi lớn nhất tháng này</p></CardHeader>
+            <CardHeader className="pb-4"><CardTitle>{t('dashboard.topCategories')}</CardTitle><p className="text-sm text-gray-600 dark:text-gray-400">{t('dashboard.topCategoriesDesc')}</p></CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {topSpendingCategories.length > 0 ? topSpendingCategories.map((category, index) => (
@@ -250,24 +252,24 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </div>
-                )) : (<p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Không có chi tiêu nào.</p>)}
+                )) : (<p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{t('dashboard.noCategories')}</p>)}
               </div>
             </CardContent>
           </Card>
         </div>
 
         <Card>
-          <CardHeader className="pb-4"><CardTitle>Hành Động Nhanh</CardTitle><p className="text-sm text-gray-600 dark:text-gray-400">Các thao tác thường dùng</p></CardHeader>
+          <CardHeader className="pb-4"><CardTitle>{t('dashboard.quickActions')}</CardTitle><p className="text-sm text-gray-600 dark:text-gray-400">{t('dashboard.quickActionsDesc')}</p></CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button onClick={handleAddWallet} className="p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-400 hover:bg-blue-50 dark:hover:border-blue-600 dark:hover:bg-blue-900/50 transition-all duration-300 group">
-                <div className="flex flex-col items-center space-y-2"><div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-full group-hover:scale-110 transition-transform"><WalletIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div><div className="text-center"><p className="font-semibold text-gray-900 dark:text-white">Thêm Ví</p><p className="text-sm text-gray-600 dark:text-gray-400">Tạo ví mới để quản lý</p></div></div>
+                <div className="flex flex-col items-center space-y-2"><div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-full group-hover:scale-110 transition-transform"><WalletIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div><div className="text-center"><p className="font-semibold text-gray-900 dark:text-white">{t('navigation.addWallet')}</p><p className="text-sm text-gray-600 dark:text-gray-400">{t('dashboard.addWalletDesc')}</p></div></div>
               </button>
               <button onClick={handleAddCategory} className="p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl hover:border-purple-400 hover:bg-purple-50 dark:hover:border-purple-600 dark:hover:bg-purple-900/50 transition-all duration-300 group">
-                <div className="flex flex-col items-center space-y-2"><div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-full group-hover:scale-110 transition-transform"><FolderPlusIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" /></div><div className="text-center"><p className="font-semibold text-gray-900 dark:text-white">Thêm Danh Mục Thu Chi</p><p className="text-sm text-gray-600 dark:text-gray-400">Thêm, sửa, xóa danh mục</p></div></div>
+                <div className="flex flex-col items-center space-y-2"><div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-full group-hover:scale-110 transition-transform"><FolderPlusIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" /></div><div className="text-center"><p className="font-semibold text-gray-900 dark:text-white">{t('dashboard.addCategory')}</p><p className="text-sm text-gray-600 dark:text-gray-400">{t('dashboard.addCategoryDesc')}</p></div></div>
               </button>
               <button onClick={handleViewWalletList} className="p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl hover:border-green-400 hover:bg-green-50 dark:hover:border-green-600 dark:hover:bg-green-900/50 transition-all duration-300 group">
-                <div className="flex flex-col items-center space-y-2"><div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-full group-hover:scale-110 transition-transform"><ListIcon className="w-6 h-6 text-green-600 dark:text-green-400" /></div><div className="text-center"><p className="font-semibold text-gray-900 dark:text-white">Xem Danh Sách Ví</p><p className="text-sm text-gray-600 dark:text-gray-400">Quản lý tất cả ví</p></div></div>
+                <div className="flex flex-col items-center space-y-2"><div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-full group-hover:scale-110 transition-transform"><ListIcon className="w-6 h-6 text-green-600 dark:text-green-400" /></div><div className="text-center"><p className="font-semibold text-gray-900 dark:text-white">{t('dashboard.viewWalletList')}</p><p className="text-sm text-gray-600 dark:text-gray-400">{t('dashboard.viewWalletListDesc')}</p></div></div>
               </button>
             </div>
           </CardContent>
@@ -276,8 +278,8 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <div><CardTitle>Giao Dịch Gần Đây</CardTitle><p className="text-sm text-gray-600 dark:text-gray-400 mt-1">5 giao dịch mới nhất</p></div>
-              <button className="text-primary hover:text-primary/80 text-sm font-medium">Xem tất cả</button>
+              <div><CardTitle>{t('dashboard.recentTransactions')}</CardTitle><p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('dashboard.recentTransactionsDesc')}</p></div>
+              <button className="text-primary hover:text-primary/80 text-sm font-medium">{t('common.viewAll')}</button>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -297,12 +299,12 @@ const Dashboard = () => {
                       </div>
                       <p className={`font-bold text-sm flex-shrink-0 ml-2 ${t.type === 'INCOME' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{t.type === 'INCOME' ? '+' : '-'}{formatCurrencyShort(t.amount)}</p>
                     </div>
-                )) : (<p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Không có giao dịch nào gần đây.</p>)}
+                )) : (<p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{t('dashboard.noTransactions')}</p>)}
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-4"><CardTitle>Chi Tiêu Theo Danh Mục</CardTitle><p className="text-sm text-gray-600 dark:text-gray-400">Phân tích chi tiêu tháng này</p></CardHeader>
+            <CardHeader className="pb-4"><CardTitle>{t('dashboard.categoryBreakdown')}</CardTitle><p className="text-sm text-gray-600 dark:text-gray-400">{t('dashboard.categoryBreakdownDesc')}</p></CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {spendingByCategory.length > 0 ? spendingByCategory.map((category, index) => (
@@ -316,7 +318,7 @@ const Dashboard = () => {
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2"><div className="h-2 rounded-full transition-all duration-500 ease-out" style={{ width: `${totalSpending > 0 ? (category.totalAmount / totalSpending) * 100 : 0}%`, backgroundColor: category.color }}></div></div>
                     </div>
-                )) : (<p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Không có chi tiêu nào trong tháng này.</p>)}
+                )) : (<p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{t('dashboard.noSpending')}</p>)}
               </div>
             </CardContent>
           </Card>

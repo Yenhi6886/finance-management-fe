@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx';
 import { authService } from '../services/authService.js';
 import { validationUtils } from '../../../shared/utils/validationUtils.js';
 import { Button } from '../../../components/ui/button.jsx';
@@ -10,6 +11,7 @@ import { KeyIcon, ArrowLeftIcon, MailCheckIcon } from 'lucide-react';
 import { errorHandler } from '../../../shared/utils/errorHandler.js';
 
 const ForgotPassword = () => {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -38,7 +40,7 @@ const ForgotPassword = () => {
 
   const handleRequest = useCallback(async () => {
     if (!validationUtils.isValidEmail(email)) {
-      setErrors({ email: { message: 'Email không hợp lệ' } });
+      setErrors({ email: { message: t('auth.forgotPassword.validation.emailInvalid') } });
       return;
     }
 
@@ -79,15 +81,15 @@ const ForgotPassword = () => {
             <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
               <MailCheckIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
-            <CardTitle className="text-2xl font-bold">Kiểm tra email của bạn</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('auth.forgotPassword.success.title')}</CardTitle>
             <CardDescription>
-              Nếu email của bạn tồn tại trong hệ thống, một liên kết để đặt lại mật khẩu đã được gửi đến.
+              {t('auth.forgotPassword.success.description')}
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-4 text-center">
             <p className="text-sm text-muted-foreground">
-              Vui lòng kiểm tra hộp thư (bao gồm cả thư mục spam) và làm theo hướng dẫn để hoàn tất việc đặt lại mật khẩu.
+              {t('auth.forgotPassword.success.instruction')}
             </p>
           </CardContent>
 
@@ -98,12 +100,12 @@ const ForgotPassword = () => {
               onClick={handleResend}
               disabled={!canResend || loading}
             >
-              {canResend ? 'Gửi lại link' : `Gửi lại sau ${countdown}s`}
+              {canResend ? t('auth.forgotPassword.success.resendLink') : t('auth.forgotPassword.success.resendCountdown', { seconds: countdown })}
             </Button>
             <Link to="/login" className="w-full">
               <Button variant="outline" className="w-full">
                 <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                Quay lại đăng nhập
+                {t('auth.forgotPassword.success.backToLogin')}
               </Button>
             </Link>
           </CardFooter>
@@ -119,21 +121,21 @@ const ForgotPassword = () => {
           <div className="mx-auto w-12 h-12 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center mb-4">
             <KeyIcon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
           </div>
-          <CardTitle className="text-2xl font-bold">Quên mật khẩu</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t('auth.forgotPassword.title')}</CardTitle>
           <CardDescription>
-            Nhập email để nhận link đặt lại mật khẩu.
+            {t('auth.forgotPassword.description')}
           </CardDescription>
         </CardHeader>
         
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.forgotPassword.emailLabel')}</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="Nhập địa chỉ email đã đăng ký"
+                placeholder={t('auth.forgotPassword.emailPlaceholder')}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -151,19 +153,19 @@ const ForgotPassword = () => {
               className="w-full" 
               disabled={loading}
             >
-              {loading ? 'Đang gửi...' : 'Gửi link reset'}
+              {loading ? t('auth.forgotPassword.sending') : t('auth.forgotPassword.sendResetLink')}
             </Button>
           </form>
         </CardContent>
 
         <CardFooter className="flex flex-col space-y-4">
           <div className="text-center text-sm text-muted-foreground">
-            Nhớ ra mật khẩu?{' '}
+            {t('auth.forgotPassword.rememberPassword')}{' '}
             <Link 
               to="/login" 
               className="text-primary-600 hover:text-primary-500 font-medium"
             >
-              Đăng nhập ngay
+              {t('auth.forgotPassword.loginNow')}
             </Link>
           </div>
         </CardFooter>

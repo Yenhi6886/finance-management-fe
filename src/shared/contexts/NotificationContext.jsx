@@ -40,18 +40,18 @@ export const NotificationProvider = ({ children }) => {
     const markAllAsRead = useCallback(async () => {
         if (!isAuthenticated || unreadCount === 0) return;
 
-        // Cập nhật UI ngay lập tức để người dùng thấy thay đổi
+        // Update UI immediately so user sees the change
         setUnreadCount(0);
         setNotifications(prevNotifications =>
             prevNotifications.map(n => ({ ...n, isRead: true }))
         );
 
-        // Gửi yêu cầu lên API trong nền
+        // Send request to API in background
         try {
             await notificationService.markAllAsRead();
         } catch (error) {
             console.error('Failed to mark notifications as read:', error);
-            // Nếu API thất bại, khôi phục lại trạng thái cũ
+            // If API fails, restore the previous state
             fetchUnreadCount();
             fetchNotifications();
         }

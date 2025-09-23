@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../auth/contexts/AuthContext.jsx'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 import { Button } from '../../../components/ui/button.jsx'
 import { Input } from '../../../components/ui/input.jsx'
 import { Label } from '../../../components/ui/label.jsx'
@@ -8,8 +9,9 @@ import { Avatar } from '../../../components/ui/avatar.jsx'
 import { CameraIcon, Loader2 } from 'lucide-react'
 
 const Profile = () => {
-  // Lấy hàm uploadAvatar từ AuthContext
+  // Get uploadAvatar function from AuthContext
   const { user, updateProfile, loading, uploadAvatar } = useAuth()
+  const { t } = useLanguage()
 
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -20,12 +22,12 @@ const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl || null)
   const [isUploading, setIsUploading] = useState(false)
 
-  // Đồng bộ avatarPreview khi user.avatarUrl thay đổi
+  // Sync avatarPreview when user.avatarUrl changes
   useEffect(() => {
     setAvatarPreview(user?.avatarUrl || null)
   }, [user?.avatarUrl])
 
-  // Đồng bộ formData khi user thay đổi
+  // Sync formData when user changes
   useEffect(() => {
     setFormData({
       firstName: user?.firstName || '',
@@ -86,18 +88,18 @@ const Profile = () => {
   return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Thông tin cá nhân</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('profile.title')}</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Quản lý thông tin tài khoản của bạn
+            {t('profile.subtitle')}
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Ảnh đại diện</CardTitle>
+              <CardTitle>{t('profile.avatar')}</CardTitle>
               <CardDescription>
-                Nhấp vào ảnh để thay đổi.
+                {t('profile.avatarDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -126,7 +128,7 @@ const Profile = () => {
                     disabled={isUploading}
                 />
                 <p className="text-xs text-gray-500 text-center">
-                  Hỗ trợ JPG, PNG. Tối đa 5MB.
+                  {t('profile.avatarSupport')}
                 </p>
               </div>
             </CardContent>
@@ -134,43 +136,43 @@ const Profile = () => {
 
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Thông tin tài khoản</CardTitle>
+              <CardTitle>{t('profile.accountInfo')}</CardTitle>
               <CardDescription>
-                Cập nhật các thông tin cá nhân của bạn.
+                {t('profile.accountInfoDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Tên đăng nhập</Label>
+                  <Label htmlFor="username">{t('profile.username')}</Label>
                   <Input id="username" type="text" value={user?.username || ''} disabled className="bg-gray-100 dark:bg-gray-800" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('profile.email')}</Label>
                   <Input id="email" type="email" value={user?.email || ''} disabled className="bg-gray-100 dark:bg-gray-800" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">Họ</Label>
-                    <Input id="firstName" name="firstName" type="text" placeholder="Nhập họ của bạn" value={formData.firstName} onChange={handleChange} />
+                    <Label htmlFor="firstName">{t('profile.firstName')}</Label>
+                    <Input id="firstName" name="firstName" type="text" placeholder={t('profile.firstNamePlaceholder')} value={formData.firstName} onChange={handleChange} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Tên</Label>
-                    <Input id="lastName" name="lastName" type="text" placeholder="Nhập tên của bạn" value={formData.lastName} onChange={handleChange} />
+                    <Label htmlFor="lastName">{t('profile.lastName')}</Label>
+                    <Input id="lastName" name="lastName" type="text" placeholder={t('profile.lastNamePlaceholder')} value={formData.lastName} onChange={handleChange} />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phoneNumber">Số điện thoại</Label>
-                  <Input id="phoneNumber" name="phoneNumber" type="tel" placeholder="Nhập số điện thoại" value={formData.phoneNumber} onChange={handleChange} />
+                  <Label htmlFor="phoneNumber">{t('profile.phoneNumber')}</Label>
+                  <Input id="phoneNumber" name="phoneNumber" type="tel" placeholder={t('profile.phoneNumberPlaceholder')} value={formData.phoneNumber} onChange={handleChange} />
                 </div>
 
                 <div className="flex justify-end space-x-4">
                   <Button type="button" variant="outline" onClick={resetForm}>
-                    Hủy
+                    {t('common.cancel')}
                   </Button>
                   <Button type="submit" disabled={loading}>
-                    {loading ? 'Đang cập nhật...' : 'Cập nhật thông tin'}
+                    {loading ? t('profile.saving') : t('profile.saveButton')}
                   </Button>
                 </div>
               </form>

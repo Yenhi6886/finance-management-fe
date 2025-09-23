@@ -5,10 +5,11 @@ import { Input } from '../../../components/ui/input.jsx';
 import { Label } from '../../../components/ui/label.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx';
 import { Textarea } from '../../../components/ui/textarea.jsx';
-import { DateTimePicker } from '../../../components/ui/datetime-picker.jsx';
+import { FMDatePicker } from '../../../components/ui/fm-date-picker.jsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog.jsx';
 import { useWallet } from '../../../shared/hooks/useWallet.js';
 import { useNotification } from '../../../shared/contexts/NotificationContext.jsx';
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx';
 import { categoryService } from '../services/categoryService.js';
 import { transactionService } from '../services/transactionService.js';
 import { toast } from 'sonner';
@@ -21,6 +22,7 @@ import { IconComponent } from '../../../shared/config/icons.js';
 import { validateTransaction, validateField } from '../../../shared/utils/validationUtils.js';
 
 const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateConfirm }) => {
+    const { t } = useLanguage();
     const { wallets, currentWallet } = useWallet();
     const { settings } = useSettings();
     const [amount, setAmount] = useState('');
@@ -49,11 +51,11 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                 const response = await categoryService.getCategories();
                 setCategories(response.data.data || []);
             } catch (error) {
-                toast.error('Không thể tải danh mục.');
+                toast.error(t('transactions.messages.errors.loadCategories'));
             }
         };
         fetchCategories();
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         if(initialCategoryId) {
@@ -106,7 +108,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                 required: false,
                 allowNewLines: true,
                 allowEmojis: true,
-                fieldName: 'Ghi chú'
+                fieldName: t('transactions.modal.form.description')
             },
             dateOptions: {
                 allowFuture: true,
@@ -128,7 +130,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                 const walletBalance = parseFloat(selectedWallet.balance);
                 
                 if (amountValue > walletBalance) {
-                    errors.amount = `Số tiền không được vượt quá số dư hiện tại (${formatCurrency(walletBalance, 'VND', settings)})`;
+                    errors.amount = `${t('transactions.modal.validation.amountExceedsBalance')} (${formatCurrency(walletBalance, 'VND', settings)})`;
                 }
             }
         }
@@ -160,7 +162,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                     const walletBalance = parseFloat(selectedWallet.balance);
                     
                     if (amountValue > walletBalance) {
-                        errorMessage = `Số tiền không được vượt quá số dư hiện tại (${formatCurrency(walletBalance, 'VND', settings)})`;
+                        errorMessage = `${t('transactions.modal.validation.amountExceedsBalance')} (${formatCurrency(walletBalance, 'VND', settings)})`;
                     }
                 }
             }
@@ -221,7 +223,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
             };
             await onFormSubmit(transactionData);
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Có lỗi xảy ra.');
+            toast.error(error.response?.data?.message || t('transactions.messages.errors.general'));
         } finally {
             setLoading(false);
         }
@@ -230,7 +232,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor={`amount-${type}`}>Số tiền *</Label>
+                <Label htmlFor={`amount-${type}`}>{t('transactions.modal.form.amount')} *</Label>
                 <Input 
                     id={`amount-${type}`} 
                     type="number" 
@@ -240,7 +242,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                         validateFieldRealTime('amount', e.target.value);
                     }}
                     onBlur={(e) => validateFieldRealTime('amount', e.target.value)}
-                    placeholder="0" 
+                    placeholder={t('transactions.modal.form.amountPlaceholder')} 
                     step="0.01"
                     min="0"
                     max="999999999"
@@ -253,7 +255,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                 )}
             </div>
             <div className="space-y-2">
-                <Label htmlFor={`category-${type}`}>Danh mục *</Label>
+                <Label htmlFor={`category-${type}`}>{t('transactions.modal.form.category')} *</Label>
                 <Select 
                     onValueChange={(value) => {
                         setCategoryId(value);
@@ -261,7 +263,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                     }} 
                     value={categoryId}
                 >
-                    <SelectTrigger><SelectValue placeholder="Chọn danh mục" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t('transactions.modal.form.categoryPlaceholder')} /></SelectTrigger>
                     <SelectContent>
                         {categories.map(cat => (
                             <SelectItem
@@ -282,7 +284,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                 )}
             </div>
             <div className="space-y-2">
-                <Label htmlFor={`wallet-${type}`}>Ví *</Label>
+                <Label htmlFor={`wallet-${type}`}>{t('transactions.modal.form.wallet')} *</Label>
                 <Select 
                     onValueChange={(value) => {
                         setWalletId(value);
@@ -295,7 +297,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                     value={walletId}
                 >
                     <SelectTrigger>
-                        <SelectValue placeholder="Chọn ví">
+                        <SelectValue placeholder={t('transactions.modal.form.walletPlaceholder')}>
                             {walletId && wallets.find(w => w.id.toString() === walletId) && (
                                 <div className="flex items-center space-x-2">
                                     <IconComponent name={wallets.find(w => w.id.toString() === walletId).icon} className="w-4 h-4" />
@@ -327,7 +329,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                 )}
             </div>
             <div className="space-y-2">
-                <Label htmlFor={`description-${type}`}>Ghi chú</Label>
+                <Label htmlFor={`description-${type}`}>{t('transactions.modal.form.description')}</Label>
                 <Textarea
                     id={`description-${type}`}
                     value={description}
@@ -336,22 +338,22 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                         validateFieldRealTime('description', e.target.value);
                     }}
                     onBlur={(e) => validateFieldRealTime('description', e.target.value)}
-                    placeholder={`Ghi chú về khoản ${type === 'income' ? 'thu' : 'chi'}...`}
+                    placeholder={t(`transactions.modal.form.descriptionPlaceholder.${type}`)}
                     rows={3}
                     maxLength={500}
                     className="resize-none"
                 />
                 <div className="flex justify-between text-xs text-gray-500">
                     <div className="flex flex-col">
-                        <span>Nhập tối đa 500 ký tự, có thể xuống dòng</span>
-                        <span className="text-gray-400">Hỗ trợ emoji và ký tự đặc biệt</span>
+                        <span>{t('transactions.modal.form.descriptionHints.maxLength')}</span>
+                        <span className="text-gray-400">{t('transactions.modal.form.descriptionHints.features')}</span>
                     </div>
                     <div className="flex flex-col items-end">
                         <span className={description.length > 450 ? 'text-orange-500' : description.length > 480 ? 'text-red-500' : ''}>
                             {description.length}/500
                         </span>
                         <span className="text-gray-400">
-                            {description.split(/\s+/).filter(word => word.length > 0).length} từ
+                            {description.split(/\s+/).filter(word => word.length > 0).length} {t('transactions.modal.form.descriptionHints.wordCount')}
                         </span>
                     </div>
                 </div>
@@ -363,8 +365,8 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                 )}
             </div>
             <div className="space-y-2">
-                <Label htmlFor={`date-${type}`}>Thời gian *</Label>
-                <DateTimePicker
+                <Label htmlFor={`date-${type}`}>{t('transactions.modal.form.date')} *</Label>
+                <FMDatePicker
                     value={date ? new Date(date) : null}
                     onChange={(selectedDate) => {
                         if (selectedDate) {
@@ -376,7 +378,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                             validateFieldRealTime('date', '');
                         }
                     }}
-                    placeholder="Chọn ngày và giờ"
+                    placeholder={t('transactions.modal.form.datePlaceholder')}
                 />
                 {errors.date && (
                     <div className="flex items-center gap-1 text-sm text-red-500">
@@ -388,7 +390,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
             <DialogFooter className="pt-4 sm:justify-end flex">
                 <Button type="submit" disabled={loading} size="sm" className={cn('rounded', type === 'expense' && 'bg-red-600 hover:bg-red-700')}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Thêm Khoản {type === 'income' ? 'Thu' : 'Chi'}
+                    {t(`transactions.modal.form.${type === 'income' ? 'addIncome' : 'addExpense'}`)}
                 </Button>
             </DialogFooter>
         </form>
@@ -396,6 +398,7 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
 };
 
 const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded, initialCategoryId }) => {
+    const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState(initialType);
     const { refreshWallets } = useWallet();
     const { refreshNotifications } = useNotification();
@@ -431,16 +434,15 @@ const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded,
         const newTransaction = response.data.data;
 
         if (newTransaction.type === 'EXPENSE' && newTransaction.budgetExceeded) {
-
-            toast.warning(`Bạn đã chi tiêu vượt ngân sách cho danh mục '${newTransaction.category}'.`, {
+            toast.warning(`${t('transactions.messages.errors.budgetExceeded')} '${newTransaction.category}'.`, {
                 icon: <AlertTriangle className="w-4 h-4" />,
                 duration: 5000,
                 closeButton: true,
             });
         } else if (newTransaction.type === 'INCOME' && newTransaction.incomeTargetReached) {
-            toast.success('Chúc mừng! Bạn đã đạt mục tiêu thu nhập cho danh mục này.');
+            toast.success(t('transactions.messages.incomeTargetReached'));
         } else {
-            toast.success(`Thêm khoản ${newTransaction.type === 'INCOME' ? 'thu' : 'chi'} thành công!`);
+            toast.success(t('transactions.messages.transactionAdded'));
         }
 
         await refreshWallets();
@@ -454,8 +456,8 @@ const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded,
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <div className="flex border-b">
-                        <button onClick={() => setActiveTab('expense')} className={cn('flex-1 py-3 text-sm font-semibold border-b-2', activeTab === 'expense' ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-primary')}>Thêm Khoản Chi</button>
-                        <button onClick={() => setActiveTab('income')} className={cn('flex-1 py-3 text-sm font-semibold border-b-2', activeTab === 'income' ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-primary')}>Thêm Khoản Thu</button>
+                        <button onClick={() => setActiveTab('expense')} className={cn('flex-1 py-3 text-sm font-semibold border-b-2', activeTab === 'expense' ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-primary')}>{t('transactions.actions.addExpense')}</button>
+                        <button onClick={() => setActiveTab('income')} className={cn('flex-1 py-3 text-sm font-semibold border-b-2', activeTab === 'income' ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-primary')}>{t('transactions.actions.addIncome')}</button>
                     </div>
                 </DialogHeader>
                 <div className="py-4">
@@ -468,25 +470,25 @@ const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded,
             <AlertDialog open={showFutureDateConfirm} onOpenChange={setShowFutureDateConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận ngày tương lai</AlertDialogTitle>
+                        <AlertDialogTitle>{t('transactions.modal.confirmFutureDate.title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Bạn đang tạo giao dịch với ngày <strong>{pendingTransactionData && formatDateForDisplay(pendingTransactionData.date)}</strong> (ngày tương lai).
+                            {t('transactions.modal.confirmFutureDate.description')} <strong>{pendingTransactionData && formatDateForDisplay(pendingTransactionData.date)}</strong> {t('transactions.modal.confirmFutureDate.futureDate')}.
                             <br />
                             <br />
-                            <strong>Thông tin giao dịch:</strong>
+                            <strong>{t('transactions.modal.confirmFutureDate.transactionInfo')}</strong>
                             <br />
-                            • Loại: {pendingTransactionData?.type === 'INCOME' ? 'Khoản thu' : 'Khoản chi'}
+                            • {t('transactions.modal.confirmFutureDate.transactionType')}: {pendingTransactionData?.type === 'INCOME' ? t('transactions.actions.addIncome') : t('transactions.actions.addExpense')}
                             <br />
-                            • Số tiền: {pendingTransactionData && formatCurrency(pendingTransactionData.amount, 'VND', {})}
+                            • {t('transactions.modal.confirmFutureDate.transactionAmount')}: {pendingTransactionData && formatCurrency(pendingTransactionData.amount, 'VND', {})}
                             <br />
-                            • Ngày: {pendingTransactionData && formatDateForDisplay(pendingTransactionData.date)}
+                            • {t('transactions.modal.confirmFutureDate.transactionDate')}: {pendingTransactionData && formatDateForDisplay(pendingTransactionData.date)}
                             <br />
                             <br />
-                            Bạn có chắc chắn muốn tiếp tục?
+                            {t('transactions.modal.confirmFutureDate.confirmMessage')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogCancel>{t('transactions.modal.confirmFutureDate.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={async () => {
                                 setShowFutureDateConfirm(false);
@@ -495,7 +497,7 @@ const AddTransactionModal = ({ isOpen, onClose, initialType, onTransactionAdded,
                                 }
                             }}
                         >
-                            Xác nhận
+                            {t('transactions.modal.confirmFutureDate.confirm')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

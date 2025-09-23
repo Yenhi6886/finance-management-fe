@@ -14,6 +14,7 @@ import {
 } from 'chart.js'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import { useTheme } from '../../shared/contexts/ThemeContext.jsx'
+import { useLanguage } from '../../shared/contexts/LanguageContext.jsx'
 
 ChartJS.register(
     CategoryScale,
@@ -48,6 +49,9 @@ const useChartTheme = () => {
 
 export const LineChart = ({ data, options = {} }) => {
   const theme = useChartTheme();
+  const { currentLanguage } = useLanguage();
+  const locale = currentLanguage === 'vi' ? 'vi-VN' : 'en-US';
+  
   const defaultOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -61,7 +65,7 @@ export const LineChart = ({ data, options = {} }) => {
         grid: { color: theme.gridColor },
         ticks: {
           color: theme.textColor,
-          callback: value => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', notation: 'compact' }).format(value)
+          callback: value => new Intl.NumberFormat(locale, { style: 'currency', currency: 'VND', notation: 'compact' }).format(value)
         }
       }
     },
@@ -72,6 +76,9 @@ export const LineChart = ({ data, options = {} }) => {
 
 export const BarChart = ({ data, options = {} }) => {
   const theme = useChartTheme();
+  const { currentLanguage } = useLanguage();
+  const locale = currentLanguage === 'vi' ? 'vi-VN' : 'en-US';
+  
   const defaultOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -84,7 +91,7 @@ export const BarChart = ({ data, options = {} }) => {
       y: {
         ticks: {
           color: theme.textColor,
-          callback: value => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', notation: 'compact' }).format(value)
+          callback: value => new Intl.NumberFormat(locale, { style: 'currency', currency: 'VND', notation: 'compact' }).format(value)
         }
       }
     },
@@ -95,6 +102,8 @@ export const BarChart = ({ data, options = {} }) => {
 
 export const DoughnutChart = ({ data, options = {} }) => {
   const theme = useChartTheme();
+  const { currentLanguage } = useLanguage();
+  const locale = currentLanguage === 'vi' ? 'vi-VN' : 'en-US';
 
   const defaultOptions = {
     responsive: true,
@@ -138,7 +147,7 @@ export const DoughnutChart = ({ data, options = {} }) => {
             const value = context.parsed || 0;
             const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
             const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-            const formattedValue = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+            const formattedValue = new Intl.NumberFormat(locale, { style: 'currency', currency: 'VND' }).format(value);
             return `${label}: ${formattedValue} (${percentage}%)`;
           }
         }

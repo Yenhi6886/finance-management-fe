@@ -6,6 +6,7 @@ import { WalletProvider } from './shared/contexts/WalletContext.jsx'
 import { SettingsProvider } from './shared/contexts/SettingsContext.jsx'
 import { NotificationProvider } from './shared/contexts/NotificationContext.jsx'
 import { InitialLoadingProvider } from './shared/contexts/InitialLoadingContext.jsx'
+import { LanguageProvider } from './shared/contexts/LanguageContext.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import DashboardLayout from './components/DashboardLayout.jsx'
 // Auth pages
@@ -46,9 +47,10 @@ import OAuthCallback from './modules/auth/pages/oauth-callback.jsx'
 function App() {
   return (
       <ThemeProvider>
-        <AuthProvider>
-          <InitialLoadingProvider>
-            <SettingsProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <InitialLoadingProvider>
+              <SettingsProvider>
               <WalletProvider>
                 <NotificationProvider>
                   <Router>
@@ -113,7 +115,8 @@ function App() {
             </SettingsProvider>
           </InitialLoadingProvider>
         </AuthProvider>
-      </ThemeProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   )
 }
 

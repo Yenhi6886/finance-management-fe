@@ -3,6 +3,7 @@ import useEmblaCarousel from 'embla-carousel-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx'
 import { Button } from '../../../components/ui/button.jsx'
 import { walletService } from '../services/walletService.js'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 import {
   EyeIcon,
   EditIcon,
@@ -54,6 +55,8 @@ import moneyAnimation from '../../../assets/icons/money.json'
 import shareAnimation from '../../../assets/icons/share.json'
 
 const SlidingTabs = ({ view, setView, activeCount, archivedCount }) => {
+  const { t } = useLanguage()
+  
   return (
       <div className="relative w-full max-w-sm mx-auto p-1 flex items-center bg-muted rounded-lg">
         <div
@@ -64,13 +67,13 @@ const SlidingTabs = ({ view, setView, activeCount, archivedCount }) => {
             onClick={() => setView('active')}
             className={`relative z-10 w-1/2 py-1.5 text-sm font-semibold rounded-md transition-colors duration-300 ${view === 'active' ? 'text-white' : 'text-muted-foreground'}`}
         >
-          Ví Hoạt Động ({activeCount})
+          {t('wallets.list.activeWalletsTab', { count: activeCount })}
         </button>
         <button
             onClick={() => setView('archived')}
             className={`relative z-10 w-1/2 py-1.5 text-sm font-semibold rounded-md transition-colors duration-300 ${view === 'archived' ? 'text-white' : 'text-muted-foreground'}`}
         >
-          Ví Lưu Trữ ({archivedCount})
+          {t('wallets.list.archivedWalletsTab', { count: archivedCount })}
         </button>
       </div>
   )
@@ -80,6 +83,7 @@ const WalletList = () => {
   const { refreshWallets } = useContext(WalletContext)
   const { currentWallet, selectWallet } = useWallet()
   const { settings, loading: settingsLoading } = useSettings()
+  const { t } = useLanguage()
 
   const [activeWallets, setActiveWallets] = useState([])
   const [archivedWallets, setArchivedWallets] = useState([])
@@ -138,32 +142,32 @@ const WalletList = () => {
 
   const walletActions = [
     {
-      title: 'Xem Danh Sách Ví',
-      description: 'Di chuyển đến danh sách ví của bạn',
+      title: t('wallets.list.actions.viewList'),
+      description: t('wallets.list.actions.viewListDesc'),
       icon: listIconAnimation,
       action: () => walletListRef.current?.scrollIntoView({ behavior: 'smooth' })
     },
     {
-      title: 'Thêm Ví Mới',
-      description: 'Tạo một tài khoản ví mới để theo dõi',
+      title: t('wallets.list.actions.addWallet'),
+      description: t('wallets.list.actions.addWalletDesc'),
       icon: addWalletAnimation,
       path: '/wallets/add'
     },
     {
-      title: 'Chuyển Tiền',
-      description: 'Di chuyển số dư giữa các ví của bạn',
+      title: t('wallets.list.actions.transferMoney'),
+      description: t('wallets.list.actions.transferMoneyDesc'),
       icon: transferAnimation,
       path: '/wallets/transfer'
     },
     {
-      title: 'Nạp Tiền Vào Ví',
-      description: 'Ghi nhận một khoản thu nhập hoặc nạp tiền',
+      title: t('wallets.list.actions.addMoney'),
+      description: t('wallets.list.actions.addMoneyDesc'),
       icon: moneyAnimation,
       path: '/wallets/add-money'
     },
     {
-      title: 'Chia Sẻ Ví',
-      description: 'Mời người khác cùng quản lý chi tiêu',
+      title: t('wallets.list.actions.shareWallet'),
+      description: t('wallets.list.actions.shareWalletDesc'),
       icon: shareAnimation,
       path: '/wallets/share'
     }
@@ -180,7 +184,7 @@ const WalletList = () => {
       setArchivedWallets(archivedResponse.data.data || [])
     } catch (error) {
       console.error('Error fetching wallets:', error)
-      toast.error('Không thể tải danh sách ví.')
+      toast.error(t('wallets.list.loadError'))
     } finally {
       setWalletsLoading(false)
     }
@@ -208,7 +212,7 @@ const WalletList = () => {
 
   const handleDeleteClick = (wallet) => {
     if (view === 'archived') {
-      toast.info('Bạn cần khôi phục ví trước khi xóa.')
+      toast.info(t('wallets.list.archiveRestoreInfo'))
       return
     }
     setWalletToDelete(wallet)
@@ -220,10 +224,10 @@ const WalletList = () => {
     try {
       await walletService.deleteWallet(walletToDelete.id)
       await refreshWallets()
-      toast.success(`Ví "${walletToDelete.name}" đã được xóa thành công.`)
+      toast.success(t('wallets.list.deleteSuccess', { walletName: walletToDelete.name }))
       await fetchWalletsData()
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi xóa ví.')
+      toast.error(error.response?.data?.message || t('wallets.list.deleteError'))
     } finally {
       setIsDeleteDialogOpen(false)
       setWalletToDelete(null)
@@ -234,15 +238,20 @@ const WalletList = () => {
     setIsTogglingArchive(wallet.id)
     const isArchiving = view === 'active'
     const action = isArchiving ? walletService.archiveWallet : walletService.unarchiveWallet
-    const successMessage = isArchiving ? 'lưu trữ' : 'khôi phục'
+    const actionKey = isArchiving ? 'archived' : 'restored'
 
     try {
       await action(wallet.id)
-      toast.success(`Ví "${wallet.name}" đã được ${successMessage} thành công.`)
+      toast.success(t('wallets.list.archiveSuccess', { 
+        walletName: wallet.name, 
+        action: t(`wallets.list.archiveActions.${actionKey}`)
+      }))
       await fetchWalletsData()
       await refreshWallets()
     } catch (error) {
-      toast.error(error.response?.data?.message || `Lỗi khi ${successMessage} ví.`)
+      toast.error(error.response?.data?.message || t('wallets.list.archiveError', { 
+        action: t(`wallets.list.archiveActions.${actionKey}`)
+      }))
     } finally {
       setIsTogglingArchive(null)
     }
@@ -251,9 +260,9 @@ const WalletList = () => {
   const handleSetDefault = async (wallet) => {
     try {
       selectWallet(wallet)
-      toast.success(`Ví "${wallet.name}" đã được đặt làm ví mặc định.`)
+      toast.success(t('wallets.list.setDefaultSuccess', { walletName: wallet.name }))
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi đặt ví mặc định.')
+      toast.error(t('wallets.list.setDefaultError'))
     }
   }
 
@@ -272,21 +281,21 @@ const WalletList = () => {
   }, [walletsToDisplay]);
 
   const permissionDisplay = {
-    VIEW: { text: 'Chỉ xem', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300' },
-    EDIT: { text: 'Chỉnh sửa', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' },
-    OWNER: { text: 'Toàn quyền', className: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' }
+    VIEW: { text: t('wallets.list.permissions.view'), className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300' },
+    EDIT: { text: t('wallets.list.permissions.edit'), className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' },
+    OWNER: { text: t('wallets.list.permissions.owner'), className: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' }
   }
 
   if (walletsLoading || settingsLoading) {
-    return <div>Đang tải dữ liệu...</div>
+    return <div>{t('wallets.list.loading')}</div>
   }
 
   return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-green-600">Ví Tiền & Chức Năng</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-green-600">{t('wallets.list.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Quản lý ví và thực hiện các giao dịch một cách nhanh chóng.
+            {t('wallets.list.subtitle')}
           </p>
         </div>
 
@@ -295,7 +304,7 @@ const WalletList = () => {
             <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-600">
-                  Bảng Điều Khiển Ví
+                  {t('wallets.list.controlPanel')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -324,11 +333,11 @@ const WalletList = () => {
           <div className="space-y-6 h-full flex flex-col">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg text-green-600">Tổng Quan Số Dư</CardTitle>
+                <CardTitle className="text-lg text-green-600">{t('wallets.list.overview')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Tổng số dư các ví đang hoạt động</p>
+                  <p className="text-sm text-muted-foreground">{t('wallets.list.overviewDesc')}</p>
                   <p className="text-3xl font-bold tracking-tight">{formatCurrency(totalBalance, 'VND', settings)}</p>
                 </div>
                 <Button
@@ -337,7 +346,7 @@ const WalletList = () => {
                   className="w-full text-green-600 border-green-600 hover:bg-green-50"
                   onClick={() => navigate('/dollar')}
                 >
-                  Tham khảo tỷ giá
+                  {t('wallets.list.exchangeRate')}
                 </Button>
               </CardContent>
             </Card>
@@ -345,17 +354,17 @@ const WalletList = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg text-green-600">
                   <WalletCards className="w-5 h-5" />
-                  Tổng Số Ví
+                  {t('wallets.list.totalWallets')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Ví đang hoạt động:</span>
+                    <span className="text-sm text-muted-foreground">{t('wallets.list.activeWallets')}</span>
                     <span className="text-xl font-bold tracking-tight">{activeWallets.length}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Ví đang lưu trữ:</span>
+                    <span className="text-sm text-muted-foreground">{t('wallets.list.archivedWallets')}</span>
                     <span className="text-xl font-bold tracking-tight">{archivedWallets.length}</span>
                   </div>
                 </div>
@@ -365,18 +374,18 @@ const WalletList = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg text-green-600">
                   <Star className="w-5 h-5 text-yellow-500" />
-                  Mẹo Hữu Ích
+                  {t('wallets.list.tips')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
-                    <span>Đặt tên và icon riêng cho từng ví để dễ dàng phân biệt.</span>
+                    <span>{t('wallets.list.tip1')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
-                    <span>Sử dụng ví lưu trữ cho các tài khoản ít dùng đến để giao diện gọn gàng.</span>
+                    <span>{t('wallets.list.tip2')}</span>
                   </li>
                 </ul>
               </CardContent>
@@ -386,7 +395,7 @@ const WalletList = () => {
 
         <div ref={walletListRef} className="pt-4 space-y-6">
           <div className="border-b pb-2">
-            <h2 className="text-2xl font-bold tracking-tight text-green-600">Danh Sách Ví Của Bạn</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-green-600">{t('wallets.list.walletListTitle')}</h2>
           </div>
 
           <div className="flex justify-center">
@@ -446,18 +455,18 @@ const WalletList = () => {
                                           <>
                                             <DropdownMenuItem onSelect={() => navigate(`/wallets/${wallet.id}`)}>
                                               <EyeIcon className="mr-2 h-4 w-4" />
-                                              <span>Xem chi tiết</span>
+                                              <span>{t('wallets.list.actions.viewDetails')}</span>
                                             </DropdownMenuItem>
                                             {canEdit && (
                                               <DropdownMenuItem onSelect={() => navigate(`/wallets/${wallet.id}/edit`)}>
                                                 <EditIcon className="mr-2 h-4 w-4" />
-                                                <span>Chỉnh sửa ví</span>
+                                                <span>{t('wallets.list.actions.editWallet')}</span>
                                               </DropdownMenuItem>
                                             )}
                                             {currentWallet?.id !== wallet.id && (
                                               <DropdownMenuItem onSelect={() => handleSetDefault(wallet)}>
                                                 <Star className="mr-2 h-4 w-4 text-yellow-500" />
-                                                <span>Đặt mặc định</span>
+                                                <span>{t('wallets.list.actions.setDefault')}</span>
                                               </DropdownMenuItem>
                                             )}
                                             <DropdownMenuSeparator />
@@ -468,14 +477,14 @@ const WalletList = () => {
                                             {isTogglingArchive === wallet.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
                                               view === 'archived' ? <ArchiveRestoreIcon className="mr-2 h-4 w-4" /> : <ArchiveIcon className="mr-2 h-4 w-4" />
                                             )}
-                                            <span>{view === 'archived' ? 'Khôi phục' : 'Lưu trữ'}</span>
+                                            <span>{view === 'archived' ? t('wallets.list.actions.restore') : t('wallets.list.actions.archive')}</span>
                                           </DropdownMenuItem>
                                         )}
                                         {isOwner && <DropdownMenuSeparator />}
                                         {isOwner && (
                                           <DropdownMenuItem onSelect={() => handleDeleteClick(wallet)} disabled={view === 'archived'} className="text-red-600 focus:text-red-600 focus:bg-red-50">
                                             <TrashIcon className="mr-2 h-4 w-4" />
-                                            <span>Xóa ví</span>
+                                            <span>{t('wallets.list.actions.delete')}</span>
                                           </DropdownMenuItem>
                                         )}
                                       </DropdownMenuContent>
@@ -483,14 +492,14 @@ const WalletList = () => {
                                   </div>
 
                                   <div className="flex-grow space-y-1">
-                                    <p className="text-sm text-muted-foreground">Số dư</p>
+                                    <p className="text-sm text-muted-foreground">{t('wallets.list.balance')}</p>
                                     <p className="text-3xl font-bold tracking-tight">{formatCurrency(wallet.balance, wallet.currency, settings)}</p>
                                   </div>
 
                                   {isShared && (
                                     <div className="mt-2 pt-2 border-t text-xs text-muted-foreground flex items-center gap-1.5">
                                       <UsersIcon className="w-3 h-3" />
-                                      <span>Được chia sẻ bởi {wallet.sharedBy}</span>
+                                      <span>{t('wallets.list.sharedBy', { owner: wallet.sharedBy })}</span>
                                     </div>
                                   )}
 
@@ -517,10 +526,10 @@ const WalletList = () => {
                 <div className="text-center">
                   <AnimatedIcon animationData={walletAnimation} size={64} className="text-muted-foreground/20 mx-auto mb-4" play={true} loop={true}/>
                   <h3 className="text-lg font-semibold mb-2">
-                    {view === 'active' ? 'Chưa có ví nào đang hoạt động' : 'Không có ví nào trong kho lưu trữ'}
+                    {view === 'active' ? t('wallets.list.noActiveWallets') : t('wallets.list.noArchivedWallets')}
                   </h3>
                   <p className="text-muted-foreground max-w-xs">
-                    {view === 'active' ? 'Tạo một ví mới hoặc khôi phục ví từ kho lưu trữ để chúng hiển thị tại đây.' : 'Bạn có thể khôi phục các ví đã lưu trữ để tiếp tục sử dụng.'}
+                    {view === 'active' ? t('wallets.list.noActiveWalletsDesc') : t('wallets.list.noArchivedWalletsDesc')}
                   </p>
                 </div>
               </div>
@@ -530,16 +539,14 @@ const WalletList = () => {
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Bạn có chắc chắn muốn xóa ví?</AlertDialogTitle>
+              <AlertDialogTitle>{t('wallets.list.deleteConfirm.title')}</AlertDialogTitle>
               <AlertDialogDescription>
-                Hành động này không thể được hoàn tác. Thao tác này sẽ xóa vĩnh viễn ví
-                <span className="font-bold">&quot;{walletToDelete?.name}&quot;</span>
-                và tất cả dữ liệu giao dịch liên quan.
+                {t('wallets.list.deleteConfirm.description', { walletName: walletToDelete?.name })}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Hủy</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">Xóa</AlertDialogAction>
+              <AlertDialogCancel>{t('wallets.list.deleteConfirm.cancel')}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">{t('wallets.list.deleteConfirm.confirm')}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

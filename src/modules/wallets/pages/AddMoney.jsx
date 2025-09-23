@@ -25,9 +25,11 @@ import { IconComponent } from '../../../shared/config/icons.js'
 import { useWallet } from '../../../shared/hooks/useWallet.js'
 import { validateDescription } from '../../../shared/utils/validationUtils.js'
 import { AlertTriangle } from 'lucide-react'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 
 const AddMoney = () => {
   const { currentWallet } = useWallet();
+  const { t } = useLanguage();
   const [wallets, setWallets] = useState([])
   const [selectedWallet, setSelectedWallet] = useState('')
   const [amount, setAmount] = useState('')
@@ -54,9 +56,9 @@ const AddMoney = () => {
       setRecentTransactions(transRes.data.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Không thể tải dữ liệu cần thiết.');
+      toast.error(t('wallets.addMoney.loadDataError'));
     }
-  }, [currentWallet]);
+  }, [currentWallet, t]);
 
   useEffect(() => {
     fetchData();
@@ -65,14 +67,14 @@ const AddMoney = () => {
   const validateForm = () => {
     const newErrors = {}
     if (!selectedWallet) {
-      newErrors.selectedWallet = 'Vui lòng chọn ví'
+      newErrors.selectedWallet = t('wallets.addMoney.validationErrors.walletRequired')
     }
     if (!amount || parseFloat(amount) <= 0) {
-      newErrors.amount = `Số tiền phai lớn hơn ${formatCurrency(0, 'VND', settings)}`
+      newErrors.amount = t('wallets.addMoney.validationErrors.amountRequired')
     } else if (parseFloat(amount) < 1000) {
-      newErrors.amount = `Số tiền tối thiểu là ${formatCurrency(1000, 'VND', settings)}`
+      newErrors.amount = t('wallets.addMoney.validationErrors.amountMinimum')
     } else if (parseFloat(amount) > 1000000000) {
-      newErrors.amount = `Số tiền nạp mỗi lần tối đa là ${formatCurrency(1000000000, 'VND', settings)} (1 tỉ)`
+      newErrors.amount = t('wallets.addMoney.validationErrors.amountMaximum')
     }
     
     // Kiểm tra số dư ví sau khi nạp không vượt quá 999 tỉ
@@ -85,7 +87,10 @@ const AddMoney = () => {
         const maxBalance = 999000000000 // 999 tỉ
         
         if (newBalance > maxBalance) {
-          newErrors.amount = `Số dư ví sau khi nạp sẽ là ${formatCurrency(newBalance, 'VND', settings)}, vượt quá giới hạn ${formatCurrency(maxBalance, 'VND', settings)} (999 tỉ)`
+          newErrors.amount = t('wallets.addMoney.validationErrors.balanceExceeded', { 
+            newBalance: formatCurrency(newBalance, 'VND', settings),
+            maxBalance: formatCurrency(maxBalance, 'VND', settings)
+          })
         }
       }
     }
@@ -98,7 +103,7 @@ const AddMoney = () => {
       required: false,
       allowNewLines: true,
       allowEmojis: true,
-      fieldName: 'Ghi chú'
+      fieldName: t('wallets.addMoney.note')
     });
     
     if (!noteValidation.isValid) {
@@ -118,7 +123,7 @@ const AddMoney = () => {
       required: false,
       allowNewLines: true,
       allowEmojis: true,
-      fieldName: 'Ghi chú'
+      fieldName: t('wallets.addMoney.note')
     });
     
     if (!validation.isValid) {
@@ -154,7 +159,7 @@ const AddMoney = () => {
     try {
       const transactionData = {
         amount: parseFloat(amount),
-        method: 'Nạp tiền',
+        method: t('wallets.addMoney.method'),
         description: note.trim() || '',
       };
 
@@ -171,7 +176,7 @@ const AddMoney = () => {
       resetForm();
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi nạp tiền');
+      toast.error(error.response?.data?.message || t('wallets.addMoney.addError'));
     } finally {
       setLoading(false);
     }
@@ -184,12 +189,12 @@ const AddMoney = () => {
         <div className="space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Nạp Tiền</h1>
-              <p className="text-muted-foreground mt-2">Thêm tiền vào ví của bạn</p>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{t('wallets.addMoney.title')}</h1>
+              <p className="text-muted-foreground mt-2">{t('wallets.addMoney.subtitle')}</p>
             </div>
             <div className="mt-4 sm:mt-0">
               <Button onClick={() => window.history.back()} variant="ghost" size="sm" className="h-10 px-4 text-sm font-light bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-800/30 text-green-600 dark:text-green-400 rounded-sm border-0">
-                <ArrowLeftIcon className="w-4 h-4 mr-1" /> Quay lại
+                <ArrowLeftIcon className="w-4 h-4 mr-1" /> {t('common.back')}
               </Button>
             </div>
           </div>
@@ -198,14 +203,14 @@ const AddMoney = () => {
               <div className="bg-card rounded-lg shadow-lg border border-border">
                 <div className="p-8">
                   <div className="flex items-center space-x-3 mb-6">
-                    <h2 className="text-2xl font-semibold text-foreground">Thông Tin Nạp Tiền</h2>
+                    <h2 className="text-2xl font-semibold text-foreground">{t('wallets.addMoney.formTitle')}</h2>
                   </div>
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label htmlFor="walletSelect">Chọn ví <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="walletSelect">{t('wallets.addMoney.selectWallet')} <span className="text-red-500">*</span></Label>
                       <Select onValueChange={setSelectedWallet} value={selectedWallet}>
                         <SelectTrigger className={`w-full h-12 ${errors.selectedWallet ? 'border-red-500' : 'border-border'}`}>
-                          <SelectValue placeholder="Chọn ví để nạp tiền">
+                          <SelectValue placeholder={t('wallets.addMoney.selectWalletPlaceholder')}>
                             {selectedWallet && wallets.find(w => w.id.toString() === selectedWallet) && (
                                 <div className="flex items-center space-x-2">
                                   <IconComponent name={wallets.find(w => w.id.toString() === selectedWallet).icon} className="w-4 h-4" />
@@ -226,7 +231,7 @@ const AddMoney = () => {
                               ))
                           ) : (
                               <SelectItem value="no-wallet" disabled>
-                                Không có ví nào
+                                {t('wallets.addMoney.noWalletsAvailable')}
                               </SelectItem>
                           )}
                         </SelectContent>
@@ -234,15 +239,15 @@ const AddMoney = () => {
                       {errors.selectedWallet && <p className="text-sm text-red-500">{errors.selectedWallet}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="amount">Số tiền <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="amount">{t('wallets.addMoney.amount')} <span className="text-red-500">*</span></Label>
                       <div className="relative">
-                        <Input id="amount" type="number" placeholder="Nhập số tiền" value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 pl-4 pr-12 ${errors.amount ? 'border-red-500' : ''}`} min="1000" max="1000000000" step="1000" />
+                        <Input id="amount" type="number" placeholder={t('wallets.addMoney.amountPlaceholder')} value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 pl-4 pr-12 ${errors.amount ? 'border-red-500' : ''}`} min="1000" max="1000000000" step="1000" />
                         <span className="text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2">₫</span>
                       </div>
                       {errors.amount && <p className="text-sm text-red-500">{errors.amount}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label>Số tiền nhanh</Label>
+                      <Label>{t('wallets.addMoney.quickAmounts')}</Label>
                       <div className="grid grid-cols-4 gap-3">
                         {[100000, 500000, 1000000, 1000000000].map(quickAmount => (
                             <Button key={quickAmount} variant="ghost" size="sm" onClick={() => setAmount(quickAmount.toString())} className="h-10 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg">
@@ -252,10 +257,10 @@ const AddMoney = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="note">Ghi chú</Label>
+                      <Label htmlFor="note">{t('wallets.addMoney.note')}</Label>
                       <textarea 
                         id="note" 
-                        placeholder="Ghi chú về giao dịch này..." 
+                        placeholder={t('wallets.addMoney.notePlaceholder')} 
                         value={note} 
                         onChange={(e) => {
                           setNote(e.target.value);
@@ -268,15 +273,15 @@ const AddMoney = () => {
                       />
                       <div className="flex justify-between text-xs text-gray-500">
                         <div className="flex flex-col">
-                          <span>Nhập tối đa 500 ký tự, có thể xuống dòng</span>
-                          <span className="text-gray-400">Hỗ trợ emoji và ký tự đặc biệt</span>
+                          <span>{t('wallets.addMoney.noteHelp')}</span>
+                          <span className="text-gray-400">{t('wallets.addMoney.noteSupport')}</span>
                         </div>
                         <div className="flex flex-col items-end">
                           <span className={note.length > 450 ? 'text-orange-500' : note.length > 480 ? 'text-red-500' : ''}>
                             {note.length}/500
                           </span>
                           <span className="text-gray-400">
-                            {note.split(/\s+/).filter(word => word.length > 0).length} từ
+                            {note.split(/\s+/).filter(word => word.length > 0).length} {t('wallets.addMoney.wordCount')}
                           </span>
                         </div>
                       </div>
@@ -289,7 +294,7 @@ const AddMoney = () => {
                     </div>
                     <div className="pt-6">
                       <Button onClick={handleOpenConfirm} disabled={loading} className="w-full h-12 bg-green-600 hover:bg-green-700 text-white rounded-lg">
-                        {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang xử lý...</> : 'Nạp Tiền'}
+                        {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('wallets.addMoney.addingMoney')}</> : t('wallets.addMoney.addMoneyButton')}
                       </Button>
                     </div>
                   </div>
@@ -304,8 +309,8 @@ const AddMoney = () => {
                       <ReceiptIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-card-foreground">Giao Dịch Gần Đây</h3>
-                      <p className="text-xs text-muted-foreground mt-1">Click để nạp tiền tương tự</p>
+                      <h3 className="text-lg font-semibold text-card-foreground">{t('wallets.addMoney.recentTransactions')}</h3>
+                      <p className="text-xs text-muted-foreground mt-1">{t('wallets.addMoney.clickToAddSimilar')}</p>
                     </div>
                   </div>
                   {recentTransactions.length > 0 ? (
@@ -324,8 +329,8 @@ const AddMoney = () => {
                                   <PlusIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
                                 </div>
                                 <div>
-                                  <p className="font-medium text-card-foreground text-sm" title={`Nạp tiền vào ví ${t.walletName}`}>
-                                    {`Nạp tiền vào ví ${t.walletName}`.length > 25 ? `${`Nạp tiền vào ví ${t.walletName}`.substring(0, 25)}...` : `Nạp tiền vào ví ${t.walletName}`}
+                                  <p className="font-medium text-card-foreground text-sm" title={t('wallets.addMoney.addToWallet', { walletName: t.walletName })}>
+                                    {t('wallets.addMoney.addToWallet', { walletName: t.walletName }).length > 25 ? `${t('wallets.addMoney.addToWallet', { walletName: t.walletName }).substring(0, 25)}...` : t('wallets.addMoney.addToWallet', { walletName: t.walletName })}
                                   </p>
                                   <p className="text-xs text-muted-foreground">{formatDate(t.date)}</p>
                                 </div>
@@ -337,7 +342,7 @@ const AddMoney = () => {
                   ) : (
                       <div className="text-center py-4">
                         <ReceiptIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Chưa có giao dịch nào</p>
+                        <p className="text-sm text-muted-foreground">{t('wallets.addMoney.noTransactions')}</p>
                       </div>
                   )}
                 </div>
@@ -348,20 +353,20 @@ const AddMoney = () => {
                     <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
                       <StarIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
                     </div>
-                    <h3 className="text-lg font-semibold text-card-foreground">Mẹo Hữu Ích</h3>
+                    <h3 className="text-lg font-semibold text-card-foreground">{t('wallets.addMoney.tips')}</h3>
                   </div>
                   <div className="space-y-3 text-sm text-muted-foreground">
                     <div className="flex items-start space-x-2">
                       <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                      <p>Sử dụng ghi chú để theo dõi nguồn gốc của tiền.</p>
+                      <p>{t('wallets.addMoney.tip1')}</p>
                     </div>
                     <div className="flex items-start space-x-2">
                       <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                      <p>Kiểm tra kỹ thông tin ví và số tiền trước khi xác nhận.</p>
+                      <p>{t('wallets.addMoney.tip2')}</p>
                     </div>
                     <div className="flex items-start space-x-2">
                       <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                      <p>Thường xuyên kiểm tra lịch sử giao dịch để quản lý tài chính tốt hơn.</p>
+                      <p>{t('wallets.addMoney.tip3')}</p>
                     </div>
                   </div>
                 </div>
@@ -373,25 +378,25 @@ const AddMoney = () => {
         <AlertDialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Xác nhận Nạp Tiền</AlertDialogTitle>
+              <AlertDialogTitle>{t('wallets.addMoney.confirmDialog.title')}</AlertDialogTitle>
               <AlertDialogDescription asChild>
                 <div className="pt-2 text-sm">
-                  <p className="mb-4">Vui lòng kiểm tra lại thông tin nạp tiền trước khi xác nhận.</p>
+                  <p className="mb-4">{t('wallets.addMoney.confirmDialog.description')}</p>
                   <div className="space-y-3 rounded-md border bg-muted/50 p-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Nạp vào ví:</span>
+                      <span className="text-muted-foreground">{t('wallets.addMoney.confirmDialog.wallet')}</span>
                       <div className="flex items-center space-x-2">
                         <IconComponent name={wallets.find(w => w.id.toString() === selectedWallet)?.icon} className="w-4 h-4" />
                         <span className="font-semibold text-foreground">{wallets.find(w => w.id.toString() === selectedWallet)?.name}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Số tiền:</span>
+                      <span className="text-muted-foreground">{t('wallets.addMoney.confirmDialog.amount')}</span>
                       <span className="font-bold text-lg text-green-600">{formatCurrency(parseFloat(amount || 0), 'VND', settings)}</span>
                     </div>
                     {note.trim() && (
                         <div className="flex justify-between items-start pt-2 border-t">
-                          <span className="text-muted-foreground">Ghi chú:</span>
+                          <span className="text-muted-foreground">{t('wallets.addMoney.confirmDialog.note')}</span>
                           <span className="font-semibold text-foreground text-right pl-4">{note}</span>
                         </div>
                     )}
@@ -400,8 +405,8 @@ const AddMoney = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Hủy</AlertDialogCancel>
-              <AlertDialogAction onClick={handleAddMoney}>Xác nhận</AlertDialogAction>
+              <AlertDialogCancel>{t('wallets.addMoney.confirmDialog.cancel')}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleAddMoney}>{t('wallets.addMoney.confirmDialog.confirm')}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -412,13 +417,16 @@ const AddMoney = () => {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
                 <CheckCircleIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
               </div>
-              <DialogTitle className="text-center">Nạp Tiền Thành Công!</DialogTitle>
+              <DialogTitle className="text-center">{t('wallets.addMoney.successDialog.title')}</DialogTitle>
               <DialogDescription className="text-center">
-                Đã nạp thành công {formatCurrency(successData.amount, successData.currency || 'VND', settings)} vào ví {successData.walletName}.
+                {t('wallets.addMoney.successDialog.description', { 
+                  amount: formatCurrency(successData.amount, successData.currency || 'VND', settings),
+                  walletName: successData.walletName
+                })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button onClick={() => setIsSuccessModalOpen(false)} className="w-full">Đóng</Button>
+              <Button onClick={() => setIsSuccessModalOpen(false)} className="w-full">{t('common.close')}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

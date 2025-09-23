@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { PlusCircle, Trash2, BadgePlus, Edit, MoreVertical, TrendingUp, TrendingDown, ArrowRightLeft, ChevronLeft, ChevronRight, EyeIcon, X, FileText, ArrowUpCircle, ArrowDownCircle, PieChart } from 'lucide-react';
 import { useSettings } from '../../../shared/contexts/SettingsContext.jsx';
 import { useTheme } from '../../../shared/contexts/ThemeContext.jsx';
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx';
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
 import { useDateFormat } from '../../../shared/hooks/useDateFormat.js';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../../../components/ui/dropdown-menu.jsx';
@@ -20,6 +21,7 @@ import { cn } from '../../../lib/utils.js';
 import { LoadingSpinner } from '../../../components/Loading.jsx';
 
 const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => {
+    const { t } = useLanguage();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [budgetAmount, setBudgetAmount] = useState('');
@@ -45,7 +47,9 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
         if (amountValue > LARGE_AMOUNT_THRESHOLD) {
             return {
                 isLarge: true,
-                message: `${fieldName} của bạn là ${amountValue.toLocaleString('vi-VN')} VND (hơn 100 tỉ). Bạn có chắc chắn muốn tiếp tục?`
+                message: fieldName === t('transactions.categories.form.budgetAmount') 
+                    ? t('transactions.categories.confirmLargeAmount.budgetMessage', { amount: amountValue.toLocaleString('vi-VN') })
+                    : t('transactions.categories.confirmLargeAmount.incomeMessage', { amount: amountValue.toLocaleString('vi-VN') })
             };
         }
         return { isLarge: false };
@@ -53,7 +57,7 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
 
     const handleSubmit = async () => {
         if (!name.trim()) {
-            toast.warning('Tên danh mục không được để trống.');
+            toast.warning(t('transactions.categories.form.validation.nameRequired'));
             return;
         }
 
@@ -65,7 +69,7 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
         let confirmMessage = '';
 
         if (budgetValue) {
-            const budgetCheck = checkLargeAmount(budgetValue, 'Ngân sách chi tiêu');
+            const budgetCheck = checkLargeAmount(budgetValue, t('transactions.categories.form.budgetAmount'));
             if (budgetCheck.isLarge) {
                 needsConfirmation = true;
                 confirmMessage = budgetCheck.message;
@@ -73,7 +77,7 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
         }
 
         if (incomeTargetValue && !needsConfirmation) {
-            const incomeCheck = checkLargeAmount(incomeTargetValue, 'Mục tiêu thu nhập');
+            const incomeCheck = checkLargeAmount(incomeTargetValue, t('transactions.categories.form.incomeTargetAmount'));
             if (incomeCheck.isLarge) {
                 needsConfirmation = true;
                 confirmMessage = incomeCheck.message;
@@ -115,15 +119,15 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
         try {
             if (category && category.id) {
                 await categoryService.updateCategory(category.id, requestData);
-                toast.success('Cập nhật danh mục thành công!');
+                toast.success(t('transactions.messages.categoryUpdated'));
             } else {
                 await categoryService.createCategory(requestData);
-                toast.success('Thêm danh mục thành công!');
+                toast.success(t('transactions.messages.categoryAdded'));
             }
             onCategoryUpdated();
             handleClose();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Có lỗi xảy ra.');
+            toast.error(error.response?.data?.message || t('transactions.messages.errors.general'));
         } finally {
             setLoading(false);
         }
@@ -142,30 +146,58 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
             <DialogContent>
-                <DialogHeader><DialogTitle>{category?.id ? 'Chỉnh Sửa' : 'Thêm'} Danh Mục</DialogTitle></DialogHeader>
+                <DialogHeader>
+                    <DialogTitle>
+                        {category?.id ? t('transactions.categories.editCategory') : t('transactions.categories.addCategory')}
+                    </DialogTitle>
+                </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Tên danh mục</Label>
-                        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Ăn uống, Di chuyển..." />
+                        <Label htmlFor="name">{t('transactions.categories.form.name')}</Label>
+                        <Input 
+                            id="name" 
+                            value={name} 
+                            onChange={(e) => setName(e.target.value)} 
+                            placeholder={t('transactions.categories.form.namePlaceholder')} 
+                        />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="budget">Ngân sách chi tiêu hàng tháng (tùy chọn)</Label>
-                        <Input id="budget" type="number" value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} placeholder="VD: 5000000" />
+                        <Label htmlFor="budget">{t('transactions.categories.form.budgetAmount')}</Label>
+                        <Input 
+                            id="budget" 
+                            type="number" 
+                            value={budgetAmount} 
+                            onChange={(e) => setBudgetAmount(e.target.value)} 
+                            placeholder={t('transactions.categories.form.budgetAmountPlaceholder')} 
+                        />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="incomeTarget">Mục tiêu thu nhập hàng tháng (tùy chọn)</Label>
-                        <Input id="incomeTarget" type="number" value={incomeTargetAmount} onChange={(e) => setIncomeTargetAmount(e.target.value)} placeholder="VD: 10000000" />
+                        <Label htmlFor="incomeTarget">{t('transactions.categories.form.incomeTargetAmount')}</Label>
+                        <Input 
+                            id="incomeTarget" 
+                            type="number" 
+                            value={incomeTargetAmount} 
+                            onChange={(e) => setIncomeTargetAmount(e.target.value)} 
+                            placeholder={t('transactions.categories.form.incomeTargetAmountPlaceholder')} 
+                        />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="description">Ghi chú</Label>
-                        <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Nhập ghi chú (tùy chọn)" />
+                        <Label htmlFor="description">{t('transactions.categories.form.description')}</Label>
+                        <Input 
+                            id="description" 
+                            value={description} 
+                            onChange={(e) => setDescription(e.target.value)} 
+                            placeholder={t('transactions.categories.form.descriptionPlaceholder')} 
+                        />
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="ghost" onClick={handleClose}>Hủy</Button>
+                    <Button variant="ghost" onClick={handleClose}>
+                        {t('transactions.categories.form.cancel')}
+                    </Button>
                     <Button onClick={handleSubmit} disabled={loading}>
                         {loading && <LoadingSpinner size="md" />}
-                        {category?.id ? 'Lưu Thay Đổi' : 'Thêm'}
+                        {category?.id ? t('transactions.categories.form.edit') : t('transactions.categories.form.add')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -174,23 +206,23 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
             <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận số tiền lớn</AlertDialogTitle>
+                        <AlertDialogTitle>{t('transactions.categories.confirmLargeAmount.title')}</AlertDialogTitle>
                         <AlertDialogDescription>
                             {pendingData && (
                                 <>
                                     {pendingData.budgetAmount && pendingData.budgetAmount > 100000000000 && (
-                                        <p>Ngân sách chi tiêu: {pendingData.budgetAmount.toLocaleString('vi-VN')} VND</p>
+                                        <p>{t('transactions.categories.form.budgetAmount')}: {pendingData.budgetAmount.toLocaleString('vi-VN')} VND</p>
                                     )}
                                     {pendingData.incomeTargetAmount && pendingData.incomeTargetAmount > 100000000000 && (
-                                        <p>Mục tiêu thu nhập: {pendingData.incomeTargetAmount.toLocaleString('vi-VN')} VND</p>
+                                        <p>{t('transactions.categories.form.incomeTargetAmount')}: {pendingData.incomeTargetAmount.toLocaleString('vi-VN')} VND</p>
                                     )}
-                                    <p className="mt-2">Bạn có chắc chắn muốn tiếp tục với số tiền này?</p>
+                                    <p className="mt-2">{t('transactions.categories.confirmLargeAmount.confirmMessage')}</p>
                                 </>
                             )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogCancel>{t('transactions.categories.confirmLargeAmount.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={async () => {
                                 setShowConfirmDialog(false);
@@ -199,7 +231,7 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
                                 }
                             }}
                         >
-                            Xác nhận
+                            {t('transactions.categories.confirmLargeAmount.confirm')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -209,7 +241,7 @@ const EditCategoryModal = ({ isOpen, onClose, onCategoryUpdated, category }) => 
 };
 
 
-const ProgressBar = ({ value, max, variant = 'expense', settings }) => {
+const ProgressBar = ({ value, max, variant = 'expense', settings, t }) => {
     const percentage = max > 0 ? (value / max) * 100 : 0;
     const clampedPercentage = Math.min(Math.max(percentage, 0), 100);
 
@@ -221,8 +253,8 @@ const ProgressBar = ({ value, max, variant = 'expense', settings }) => {
     }
 
     const tooltipContent = variant === 'expense'
-        ? `Đã chi: ${formatCurrency(value, 'VND', settings)}`
-        : `Đã thu: ${formatCurrency(value, 'VND', settings)}`;
+        ? `${t('transactions.categories.progress.spent')}: ${formatCurrency(value, 'VND', settings)}`
+        : `${t('transactions.categories.progress.earned')}: ${formatCurrency(value, 'VND', settings)}`;
 
     return (
         <TooltipProvider delayDuration={100}>
@@ -241,6 +273,7 @@ const ProgressBar = ({ value, max, variant = 'expense', settings }) => {
 };
 
 const DeleteCategoryDialog = ({ category, open, onOpenChange, onCategoryDeleted }) => {
+    const { t } = useLanguage();
     const [inputValue, setInputValue] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -256,11 +289,11 @@ const DeleteCategoryDialog = ({ category, open, onOpenChange, onCategoryDeleted 
         setLoading(true);
         try {
             await categoryService.deleteCategory(category.id);
-            toast.success(`Đã xóa danh mục "${category.name}".`);
+            toast.success(t('transactions.messages.categoryDeleted'));
             onCategoryDeleted();
             onOpenChange(false);
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Không thể xóa danh mục.');
+            toast.error(error.response?.data?.message || t('transactions.messages.errors.deleteCategory'));
         } finally {
             setLoading(false);
         }
@@ -272,28 +305,28 @@ const DeleteCategoryDialog = ({ category, open, onOpenChange, onCategoryDeleted 
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
+                    <AlertDialogTitle>{t('transactions.categories.confirmDelete.title')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Hành động này không thể hoàn tác. Tất cả các giao dịch thuộc danh mục <span className="font-bold text-foreground">{category.name}</span> sẽ được gỡ bỏ khỏi danh mục này.
+                        {t('transactions.categories.confirmDelete.description', { categoryName: category.name })}
                         <br/>
-                        Để xác nhận, vui lòng nhập <strong className="text-red-500">{category.name}</strong> vào ô bên dưới.
+                        {t('transactions.categories.confirmDelete.instruction', { categoryName: category.name })}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <Input
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Nhập tên danh mục để xác nhận"
+                    placeholder={t('transactions.categories.confirmDelete.inputPlaceholder')}
                     className="mt-2"
                 />
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Hủy</AlertDialogCancel>
+                    <AlertDialogCancel>{t('transactions.categories.confirmDelete.cancel')}</AlertDialogCancel>
                     <AlertDialogAction
                         disabled={!isInputMatching || loading}
                         onClick={handleDelete}
                         className="bg-red-600 hover:bg-red-700"
                     >
                         {loading && <LoadingSpinner size="md" />}
-                        Xóa Danh Mục
+                        {t('transactions.categories.confirmDelete.confirm')}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
@@ -307,6 +340,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
     const { settings } = useSettings();
     const { formatDate } = useDateFormat();
     const { theme } = useTheme();
+    const { t } = useLanguage();
 
     useEffect(() => {
         const fetchTransactions = async () => {
@@ -316,13 +350,13 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                 const response = await categoryService.getTransactionsByCategoryId(category.id);
                 setTransactions(response.data.data || []);
             } catch (error) {
-                toast.error('Không thể tải chi tiết giao dịch.');
+                toast.error(t('transactions.messages.errors.loadCategoryDetails'));
             } finally {
                 setLoading(false);
             }
         };
         fetchTransactions();
-    }, [category]);
+    }, [category, t]);
 
     const { totalIncome, totalExpense } = useMemo(() => {
         return transactions.reduce((acc, tx) => {
@@ -338,13 +372,13 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
     const chartData = useMemo(() => {
         const data = [];
         if (totalIncome > 0) {
-            data.push({ name: 'Tổng Thu', value: totalIncome });
+            data.push({ name: t('transactions.categories.summary.totalIncome'), value: totalIncome });
         }
         if (totalExpense > 0) {
-            data.push({ name: 'Tổng Chi', value: totalExpense });
+            data.push({ name: t('transactions.categories.summary.totalExpense'), value: totalExpense });
         }
         return data;
-    }, [totalIncome, totalExpense]);
+    }, [totalIncome, totalExpense, t]);
 
     const COLORS = ['#10b981', '#ef4444']; // Green for Income, Red for Expense
     const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -374,8 +408,8 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
         <Card className="mt-6 animate-in fade-in-0 slide-in-from-bottom-5 duration-500">
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                    <CardTitle>Chi Tiết Danh Mục: {category.name}</CardTitle>
-                    <CardDescription>Tổng quan thu chi và danh sách giao dịch.</CardDescription>
+                    <CardTitle>{t('transactions.categories.detail.title')}: {category.name}</CardTitle>
+                    <CardDescription>{t('transactions.categories.detail.subtitle')}</CardDescription>
                 </div>
                 <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
             </CardHeader>
@@ -383,7 +417,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                 {loading ? <div className="text-center py-16"><LoadingSpinner size="xl" /></div> : (
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                         <div className="lg:col-span-3">
-                            <h3 className="font-semibold mb-4">Lịch sử giao dịch</h3>
+                            <h3 className="font-semibold mb-4">{t('transactions.categories.summary.history')}</h3>
                             {transactions.length > 0 ? (
                                 <div className="divide-y max-h-96 overflow-y-auto pr-4">
                                     {transactions.map((tx) => (
@@ -391,7 +425,7 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                                             <div className="flex items-center gap-4">
                                                 {tx.type === 'INCOME' ? <ArrowUpCircle className="w-8 h-8 text-green-500 flex-shrink-0" /> : <ArrowDownCircle className="w-8 h-8 text-red-500 flex-shrink-0" />}
                                                 <div>
-                                                    <p className="font-semibold">{tx.description || (tx.type === 'INCOME' ? 'Khoản thu nhập' : 'Khoản chi tiêu')}</p>
+                                                    <p className="font-semibold">{tx.description || (tx.type === 'INCOME' ? t('transactions.list.defaultIncome') : t('transactions.list.defaultExpense'))}</p>
                                                     <p className="text-sm text-muted-foreground">{tx.walletName} • {formatDate(tx.date)}</p>
                                                 </div>
                                             </div>
@@ -404,13 +438,13 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                             ) : (
                                 <div className="text-center py-16 border rounded-lg">
                                     <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                                    <h3 className="text-lg font-semibold">Chưa có giao dịch nào</h3>
-                                    <p className="text-muted-foreground text-sm">Chưa có giao dịch nào được ghi nhận cho danh mục này.</p>
+                                    <h3 className="text-lg font-semibold">{t('transactions.categories.empty.title')}</h3>
+                                    <p className="text-muted-foreground text-sm">{t('transactions.categories.empty.subtitle')}</p>
                                 </div>
                             )}
                         </div>
                         <div className="lg:col-span-2 space-y-6">
-                            <h3 className="font-semibold mb-4">Tổng quan</h3>
+                            <h3 className="font-semibold mb-4">{t('transactions.categories.summary.overview')}</h3>
                             <div className="h-64 relative flex items-center justify-center">
                                 {hasChartData ? (
                                     <ResponsiveContainer width="100%" height="100%">
@@ -446,21 +480,21 @@ const CategoryDetailView = ({ category, onClose, onTransactionClick }) => {
                                 ) : (
                                     <div className="text-center text-muted-foreground">
                                         <PieChart className="w-12 h-12 mx-auto mb-2" />
-                                        <p>Chưa có dữ liệu thu chi.</p>
+                                        <p>{t('transactions.categories.empty.chart')}</p>
                                     </div>
                                 )}
                             </div>
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center p-3 bg-muted rounded-md text-sm">
-                                    <span>Tổng Thu</span>
+                                    <span>{t('transactions.categories.summary.totalIncome')}</span>
                                     <span className="font-bold text-green-600">{formatCurrency(totalIncome, 'VND', settings)}</span>
                                 </div>
                                 <div className="flex justify-between items-center p-3 bg-muted rounded-md text-sm">
-                                    <span>Tổng Chi</span>
+                                    <span>{t('transactions.categories.summary.totalExpense')}</span>
                                     <span className="font-bold text-red-500">{formatCurrency(totalExpense, 'VND', settings)}</span>
                                 </div>
                                 <div className="flex justify-between items-center p-3 bg-muted rounded-md border-t text-sm">
-                                    <span>Cân Bằng</span>
+                                    <span>{t('transactions.categories.summary.balance')}</span>
                                     <span className={cn("font-bold", (totalIncome - totalExpense) >= 0 ? 'text-foreground' : 'text-red-500')}>{formatCurrency(totalIncome - totalExpense, 'VND', settings)}</span>
                                 </div>
                             </div>
@@ -480,6 +514,7 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
     const [detailedCategory, setDetailedCategory] = useState(null);
     const [loading, setLoading] = useState(true);
     const { settings } = useSettings();
+    const { t } = useLanguage();
 
     // Generate random soft colors for category borders
     const generateSoftColor = (id) => {
@@ -528,11 +563,11 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
             const response = await categoryService.getCategories();
             setCategories(response.data.data || []);
         } catch (error) {
-            toast.error('Không thể tải danh sách danh mục.');
+            toast.error(t('transactions.messages.errors.loadCategories'));
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchCategories();
@@ -617,10 +652,10 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                     <Card className="mt-6">
                         <CardContent className="flex flex-col items-center justify-center text-center p-10">
                             <BadgePlus className="w-12 h-12 text-muted-foreground/50 mb-4" />
-                            <h3 className="text-lg font-semibold">Chưa có danh mục nào</h3>
-                            <p className="text-muted-foreground text-sm">Hãy bắt đầu bằng cách thêm danh mục đầu tiên.</p>
+                            <h3 className="text-lg font-semibold">{t('transactions.categories.empty.categories')}</h3>
+                            <p className="text-muted-foreground text-sm">{t('transactions.categories.empty.categoriesSubtitle')}</p>
                             <Button onClick={() => handleOpenEditModal()} className="mt-4 rounded-md">
-                                <PlusCircle className="mr-2 h-4 w-4" /> Thêm Danh Mục Đầu Tiên
+                                <PlusCircle className="mr-2 h-4 w-4" /> {t('transactions.categories.addCategory')}
                             </Button>
                         </CardContent>
                     </Card>
@@ -654,11 +689,19 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onSelect={() => handleViewDetails(cat)}><EyeIcon className="mr-2 h-4 w-4"/>Xem Chi Tiết</DropdownMenuItem>
-                                                                <DropdownMenuItem onSelect={() => onAddTransaction(String(cat.id))}><ArrowRightLeft className="mr-2 h-4 w-4"/>Thêm Giao Dịch</DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => handleViewDetails(cat)}>
+                                                                    <EyeIcon className="mr-2 h-4 w-4"/>{t('transactions.categories.viewCategory')}
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => onAddTransaction(String(cat.id))}>
+                                                                    <ArrowRightLeft className="mr-2 h-4 w-4"/>{t('transactions.actions.addExpense')}
+                                                                </DropdownMenuItem>
                                                                 <DropdownMenuSeparator />
-                                                                <DropdownMenuItem onSelect={() => handleOpenEditModal(cat)}><Edit className="mr-2 h-4 w-4"/>Chỉnh sửa</DropdownMenuItem>
-                                                                <DropdownMenuItem onSelect={() => handleOpenDeleteAlert(cat)} className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/50"><Trash2 className="mr-2 h-4 w-4"/>Xóa</DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => handleOpenEditModal(cat)}>
+                                                                    <Edit className="mr-2 h-4 w-4"/>{t('transactions.categories.editCategory')}
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => handleOpenDeleteAlert(cat)} className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/50">
+                                                                    <Trash2 className="mr-2 h-4 w-4"/>{t('transactions.categories.deleteCategory')}
+                                                                </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                     </CardHeader>
@@ -666,34 +709,40 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                                                         {showExpenseTracker && (
                                                                 <div className="space-y-2">
                                                                     <div className="flex justify-between items-center">
-                                                                        <p className="text-sm font-semibold flex items-center"><TrendingDown className="w-4 h-4 mr-2 text-red-500" /> Ngân sách chi tiêu</p>
+                                                                        <p className="text-sm font-semibold flex items-center">
+                                                                            <TrendingDown className="w-4 h-4 mr-2 text-red-500" /> 
+                                                                            {t('transactions.categories.form.budgetAmount')}
+                                                                        </p>
                                                                         <p className="text-sm font-bold">
-                                                                            {hasBudget ? formatCurrency(cat.budgetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">Không đặt</span>}
+                                                                            {hasBudget ? formatCurrency(cat.budgetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">{t('transactions.categories.status.notSet')}</span>}
                                                                         </p>
                                                                     </div>
-                                                                    <ProgressBar value={cat.spentAmount} max={hasBudget ? cat.budgetAmount : cat.spentAmount} variant="expense" settings={settings} />
+                                                                    <ProgressBar value={cat.spentAmount} max={hasBudget ? cat.budgetAmount : cat.spentAmount} variant="expense" settings={settings} t={t} />
                                                                     <div className="text-xs text-muted-foreground flex justify-between">
-                                                                        <span>Đã chi: {formatCurrency(cat.spentAmount, 'VND', settings)}</span>
-                                                                        {hasBudget && <span>Còn lại: {formatCurrency(cat.remainingAmount, 'VND', settings)}</span>}
+                                                                        <span>{t('transactions.categories.progress.spent')}: {formatCurrency(cat.spentAmount, 'VND', settings)}</span>
+                                                                        {hasBudget && <span>{t('transactions.categories.progress.remaining')}: {formatCurrency(cat.remainingAmount, 'VND', settings)}</span>}
                                                                     </div>
                                                                 </div>
                                                             )}
                                                             {showIncomeTracker && (
                                                                 <div className="space-y-2">
                                                                     <div className="flex justify-between items-center">
-                                                                        <p className="text-sm font-semibold flex items-center"><TrendingUp className="w-4 h-4 mr-2 text-green-500" /> Mục tiêu thu nhập</p>
+                                                                        <p className="text-sm font-semibold flex items-center">
+                                                                            <TrendingUp className="w-4 h-4 mr-2 text-green-500" /> 
+                                                                            {t('transactions.categories.form.incomeTargetAmount')}
+                                                                        </p>
                                                                         <p className="text-sm font-bold">
-                                                                            {hasIncomeTarget ? formatCurrency(cat.incomeTargetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">Không đặt</span>}
+                                                                            {hasIncomeTarget ? formatCurrency(cat.incomeTargetAmount, 'VND', settings) : <span className="text-muted-foreground italic text-xs">{t('transactions.categories.status.notSet')}</span>}
                                                                         </p>
                                                                     </div>
-                                                                    <ProgressBar value={cat.earnedAmount} max={hasIncomeTarget ? cat.incomeTargetAmount : cat.earnedAmount} variant="income" settings={settings} />
+                                                                    <ProgressBar value={cat.earnedAmount} max={hasIncomeTarget ? cat.incomeTargetAmount : cat.earnedAmount} variant="income" settings={settings} t={t} />
                                                                     <div className="text-xs text-muted-foreground flex justify-between">
-                                                                        <span>Đã thu: {formatCurrency(cat.earnedAmount, 'VND', settings)}</span>
+                                                                        <span>{t('transactions.categories.progress.earned')}: {formatCurrency(cat.earnedAmount, 'VND', settings)}</span>
                                                                     </div>
                                                                 </div>
                                                             )}
                                                             {!showExpenseTracker && !showIncomeTracker && (
-                                                                <p className="text-sm text-muted-foreground italic">Chưa đặt ngân sách hoặc mục tiêu</p>
+                                                                <p className="text-sm text-muted-foreground italic">{t('transactions.categories.status.noBudgetOrTarget')}</p>
                                                             )}
                                                         </CardContent>
                                                     </Card>

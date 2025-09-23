@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from '../modules/auth/contexts/AuthContext.jsx'
-import { useTheme } from '../shared/contexts/ThemeContext.jsx'
-import { useNotification } from '../shared/contexts/NotificationContext.jsx'
-import { cn } from '../lib/utils.js'
-import AnimatedIcon from './ui/AnimatedIcon'
-import { Button } from './ui/button'
-import { Avatar } from './ui/avatar'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'
-import { NotificationPanel } from '../../../../trans/fe/NotificationPanel.jsx'
+import { useAuth } from '../../modules/auth/contexts/AuthContext.jsx'
+import { useTheme } from '../../shared/contexts/ThemeContext.jsx'
+import { useNotification } from '../../shared/contexts/NotificationContext.jsx'
+import { useLanguage } from '../../shared/contexts/LanguageContext.jsx'
+import { cn } from '../../lib/utils.js'
+import AnimatedIcon from './AnimatedIcon.jsx'
+import { Button } from './button.jsx'
+import { Avatar } from './avatar.jsx'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip.jsx'
+import { NotificationPanel } from '../NotificationPanel.jsx'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from './ui/alert-dialog'
+} from './alert-dialog.jsx'
 import {
   SunIcon,
   MoonIcon,
@@ -29,16 +30,16 @@ import {
   KeyIcon,
 } from 'lucide-react'
 
-import listWalletAnimation from '../assets/icons/listwallet.json'
-import listWalletDarkAnimation from '../assets/icons/listwalletdark.json'
-import addWalletAnimation from '../assets/icons/addWallet.json'
-import dashboardAnimation from '../assets/icons/dashboard.json'
-import creditCardAnimation from '../assets/icons/credit.json'
-import chartAnimation from '../assets/icons/chart.json'
-import notificationAnimation from '../assets/icons/notification.json'
-import walletAnimation from '../assets/icons/wallet.json'
-import walletDarkAnimation from '../assets/icons/walletdark.json'
-import userAnimation from '../assets/icons/profile.json'
+import listWalletAnimation from '../../assets/icons/listwallet.json'
+import listWalletDarkAnimation from '../../assets/icons/listwalletdark.json'
+import addWalletAnimation from '../../assets/icons/addWallet.json'
+import dashboardAnimation from '../../assets/icons/dashboard.json'
+import creditCardAnimation from '../../assets/icons/credit.json'
+import chartAnimation from '../../assets/icons/chart.json'
+import notificationAnimation from '../../assets/icons/notification.json'
+import walletAnimation from '../../assets/icons/wallet.json'
+import walletDarkAnimation from '../../assets/icons/walletdark.json'
+import userAnimation from '../../assets/icons/profile.json'
 
 
 const Sidebar = ({ onToggleWalletPanel }) => {
@@ -49,7 +50,8 @@ const Sidebar = ({ onToggleWalletPanel }) => {
   const location = useLocation()
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
-  const { unreadCount } = useNotification();
+  const { unreadCount } = useNotification()
+  const { t } = useLanguage();
 
   const handleLogout = async () => {
     try {
@@ -213,7 +215,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                                 "absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out",
                                 showFirstMobileText ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
                             )}>
-                              <span className="text-[11px] font-semibold text-green-600 dark:text-green-400">Thêm ví ngay</span>
+                              <span className="text-[11px] font-semibold text-green-600 dark:text-green-400">{t('navigation.addWallet')}</span>
                             </div>
                             <div className={cn(
                                 "absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out",
@@ -223,7 +225,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                                   "text-[11px] font-semibold text-green-600 dark:text-green-300 bg-green-100 dark:bg-green-900/50 px-2.5 py-0.5 rounded-full transition-transform duration-300 ease-out",
                                   showFirstMobileText ? "scale-0" : "scale-100 delay-200"
                               )}>
-                                Xspend
+                                {t('common.appName')}
                               </span>
                             </div>
                           </div>

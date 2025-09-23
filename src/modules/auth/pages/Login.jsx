@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 import { Button } from '../../../components/ui/button.jsx'
 import { Input } from '../../../components/ui/input.jsx'
 import { Label } from '../../../components/ui/label.jsx'
@@ -21,6 +22,7 @@ const Login = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { login, loading } = useAuth()
+  const { t } = useLanguage()
 
   const [formData, setFormData] = useState({
     identifier: '',
@@ -46,7 +48,7 @@ const Login = () => {
     e.preventDefault()
     
     if (!agreedToTerms) {
-      setNotification('Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo mật để tiếp tục.')
+      setNotification(t('auth.login.termsRequired'))
       return
     }
     
@@ -69,7 +71,8 @@ const Login = () => {
         <div className="w-full border-t border-border mb-4"></div>
 
         <div className="text-center mb-16 mt-8">
-          <h1 className="text-4xl font-bold text-foreground">Chào mừng đến với XSPEND</h1>
+          <h1 className="text-4xl font-bold text-foreground">{t('auth.login.title')}</h1>
+          <p className="text-muted-foreground mt-2">{t('auth.login.subtitle')}</p>
         </div>
 
         <div className="w-full max-w-lg">
@@ -83,10 +86,10 @@ const Login = () => {
           )}
 
           <div className="mb-6">
-            <a href="http://localhost:8080/api/auth/oauth2/google" className="w-full">
+            <a href="http://localhost:8080/oauth2/authorization/google" className="w-full">
               <Button variant="outline" className="w-full h-12 bg-green-50 hover:bg-green-100 border-green-200 text-green-700 hover:text-green-800 transition-colors">
                 <GoogleIcon className="w-5 h-5 mr-2" />
-                Đăng nhập với Google
+                {t('auth.login.loginWithGoogle')}
               </Button>
             </a>
           </div>
@@ -97,19 +100,19 @@ const Login = () => {
             </div>
             <div className="relative flex justify-center text-sm">
                 <span className="bg-background px-4 text-muted-foreground">
-                  hoặc đăng nhập bằng email
+                  {t('auth.login.orLoginWith')}
                 </span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="identifier" className="text-sm text-muted-foreground mb-1 block">Email hoặc tên đăng nhập</Label>
+              <Label htmlFor="identifier" className="text-sm text-muted-foreground mb-1 block">{t('auth.login.emailOrUsername')}</Label>
               <Input
                   id="identifier"
                   name="identifier"
                   type="text"
-                  placeholder="Nhập email hoặc tên đăng nhập"
+                  placeholder={t('auth.login.emailOrUsernamePlaceholder')}
                   value={formData.identifier}
                   onChange={handleChange}
                   autoComplete="username"
@@ -118,13 +121,13 @@ const Login = () => {
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-sm text-muted-foreground mb-1 block">Mật khẩu</Label>
+              <Label htmlFor="password" className="text-sm text-muted-foreground mb-1 block">{t('auth.login.password')}</Label>
               <div className="relative">
                 <Input
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Nhập mật khẩu"
+                    placeholder={t('auth.login.passwordPlaceholder')}
                     value={formData.password}
                     onChange={handleChange}
                     autoComplete="current-password"
@@ -142,7 +145,7 @@ const Login = () => {
 
             <div className="flex justify-end mt-2">
               <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                Quên mật khẩu?
+                {t('auth.login.forgotPassword')}
               </Link>
             </div>
 
@@ -155,10 +158,10 @@ const Login = () => {
                   className="w-4 h-4 mt-0.5 border-border rounded text-green-600 focus:ring-green-500"
               />
               <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed">
-                Bằng cách đăng nhập, bạn đồng ý với{' '}
-                <a href="#" className="text-green-600 hover:underline">Điều khoản dịch vụ</a>
-                {' '}và{' '}
-                <a href="#" className="text-green-600 hover:underline">Chính sách bảo mật</a>
+                {t('auth.login.termsAgreement', {
+                  terms: <a href="#" className="text-green-600 hover:underline">{t('auth.login.termsOfService')}</a>,
+                  privacy: <a href="#" className="text-green-600 hover:underline">{t('auth.login.privacyPolicy')}</a>
+                })}
                 <span className="text-red-500 ml-1">*</span>
               </label>
             </div>
@@ -172,15 +175,15 @@ const Login = () => {
                 }`}
                 disabled={loading || !agreedToTerms}
             >
-              {loading ? 'Đang xử lý...' : 'Đăng nhập'}
+              {loading ? t('auth.login.processing') : t('auth.login.loginButton')}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Chưa có tài khoản?{' '}
+              {t('auth.login.noAccount')}{' '}
               <Link to="/register" className="text-primary hover:underline font-semibold">
-                Đăng ký ngay
+                {t('auth.login.signUpNow')}
               </Link>
             </p>
           </div>

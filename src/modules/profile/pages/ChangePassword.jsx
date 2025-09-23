@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../../auth/contexts/AuthContext.jsx'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 import { Button } from '../../../components/ui/button.jsx'
 import { Input } from '../../../components/ui/input.jsx'
 import { Label } from '../../../components/ui/label.jsx'
@@ -13,10 +14,11 @@ import { validationUtils } from '../../../shared/utils/validationUtils.js'
 
 const ChangePassword = () => {
   const { loading, deleteAccount } = useAuth()
+  const { t } = useLanguage()
   const [changePasswordLoading, setChangePasswordLoading] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const navigate = useNavigate();
-  const CONFIRMATION_PHRASE = 'xóa tài khoản';
+  const CONFIRMATION_PHRASE = t('profile.changePassword.deleteConfirm.placeholder');
 
   const { changePassword } = authService
 
@@ -57,7 +59,7 @@ const ChangePassword = () => {
 
     // Confirm password check
     if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp'
+      newErrors.confirmPassword = t('profile.changePassword.validationErrors.passwordMismatch')
     }
 
     // Nếu có lỗi thì set state và dừng lại
@@ -75,15 +77,15 @@ const ChangePassword = () => {
         newPassword: formData.newPassword,
       })
 
-      errorHandler.showSuccess('Đổi mật khẩu thành công!')
+      errorHandler.showSuccess(t('profile.changePassword.successMessage'))
       setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' })
 
       await authService.logout()
       navigate('/login', {
-        state: { message: 'Mật khẩu đã được thay đổi. Vui lòng đăng nhập lại.' }
+        state: { message: t('profile.changePassword.successMessage') }
       })
     } catch (error) {
-      errorHandler.handleApiError(error, 'Đổi mật khẩu thất bại')
+      errorHandler.handleApiError(error, t('profile.changePassword.updateError'))
     } finally {
       setChangePasswordLoading(false)
     }
@@ -94,7 +96,7 @@ const ChangePassword = () => {
     try {
       await deleteAccount();
     } catch (error) {
-      console.error("Xóa tài khoản thất bại từ component", error);
+      console.error(t('profile.changePassword.deleteAccountError'), error);
     }
   }
 
@@ -105,9 +107,9 @@ const ChangePassword = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bảo mật</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('profile.changePassword.title')}</h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Quản lý mật khẩu và các tùy chọn bảo mật tài khoản.
+          {t('profile.changePassword.subtitle')}
         </p>
       </div>
 
@@ -116,23 +118,23 @@ const ChangePassword = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <KeyRound className="w-5 h-5" />
-              <span>Đổi mật khẩu</span>
+              <span>{t('profile.changePassword.changePasswordTitle')}</span>
             </CardTitle>
             <CardDescription>
-              Nhập mật khẩu hiện tại và mật khẩu mới.
+              {t('profile.changePassword.changePasswordDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Current Password */}
               <div className="space-y-2">
-                <Label htmlFor="currentPassword">Mật khẩu hiện tại</Label>
+                <Label htmlFor="currentPassword">{t('profile.changePassword.currentPassword')}</Label>
                 <div className="relative">
                   <Input
                     id="currentPassword"
                     name="currentPassword"
                     type={showPasswords.current ? 'text' : 'password'}
-                    placeholder="Nhập mật khẩu hiện tại"
+                    placeholder={t('profile.changePassword.currentPasswordPlaceholder')}
                     value={formData.currentPassword}
                     onChange={handleChange}
                     className="pr-10"
@@ -149,13 +151,13 @@ const ChangePassword = () => {
 
               {/* New Password */}
               <div className="space-y-2">
-                <Label htmlFor="newPassword">Mật khẩu mới</Label>
+                <Label htmlFor="newPassword">{t('profile.changePassword.newPassword')}</Label>
                 <div className="relative">
                   <Input
                     id="newPassword"
                     name="newPassword"
                     type={showPasswords.new ? 'text' : 'password'}
-                    placeholder="Nhập mật khẩu mới"
+                    placeholder={t('profile.changePassword.newPasswordPlaceholder')}
                     value={formData.newPassword}
                     onChange={handleChange}
                     className="pr-10"
@@ -175,13 +177,13 @@ const ChangePassword = () => {
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Xác nhận mật khẩu mới</Label>
+                <Label htmlFor="confirmPassword">{t('profile.changePassword.confirmPassword')}</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showPasswords.confirm ? 'text' : 'password'}
-                    placeholder="Nhập lại mật khẩu mới"
+                    placeholder={t('profile.changePassword.confirmPasswordPlaceholder')}
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     className="pr-10"
@@ -204,7 +206,7 @@ const ChangePassword = () => {
                 className="w-full"
                 disabled={changePasswordLoading || loading}
               >
-                {changePasswordLoading ? 'Đang cập nhật...' : 'Đổi mật khẩu'}
+                {changePasswordLoading ? t('profile.changePassword.updating') : t('profile.changePassword.updateButton')}
               </Button>
             </form>
           </CardContent>
@@ -215,34 +217,34 @@ const ChangePassword = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2 text-destructive">
               <Trash2 className="w-5 h-5" />
-              <span>Khu vực nguy hiểm</span>
+              <span>{t('profile.changePassword.dangerZone')}</span>
             </CardTitle>
             <CardDescription>
-              Các hành động này không thể được hoàn tác.
+              {t('profile.changePassword.dangerZoneDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg flex justify-between items-center">
               <div>
                 <h4 className="font-semibold text-destructive">
-                  Xóa tài khoản
+                  {t('profile.changePassword.deleteAccount')}
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  Xóa vĩnh viễn tài khoản và tất cả dữ liệu.
+                  {t('profile.changePassword.deleteAccountDesc')}
                 </p>
               </div>
 
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm" disabled={loading}>
-                    {loading ? 'Đang xóa...' : 'Xóa tài khoản'}
+                    {loading ? t('profile.changePassword.deleting') : t('profile.changePassword.deleteButton')}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Bạn có chắc chắn muốn xóa tài khoản?</AlertDialogTitle>
+                    <AlertDialogTitle>{t('profile.changePassword.deleteConfirm.title')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Hành động này không thể hoàn tác. Để xác nhận, vui lòng nhập chính xác cụm từ <strong className="text-destructive dark:text-red-400">{CONFIRMATION_PHRASE}</strong> vào ô bên dưới.
+                      {t('profile.changePassword.deleteConfirm.description', { phrase: CONFIRMATION_PHRASE })}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <div className="my-2">
@@ -255,13 +257,13 @@ const ChangePassword = () => {
                     />
                   </div>
                   <AlertDialogFooter>
-                    <AlertDialogCancel onClick={handleCancelDelete}>Hủy</AlertDialogCancel>
+                    <AlertDialogCancel onClick={handleCancelDelete}>{t('common.cancel')}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDeleteAccount}
                       disabled={deleteConfirmationText.trim() !== CONFIRMATION_PHRASE || loading}
                       className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Tôi hiểu, xóa tài khoản
+                      {t('profile.changePassword.deleteConfirm.confirm')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

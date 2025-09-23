@@ -1,5 +1,6 @@
 import React from 'react'
 import { useWallet } from '../shared/hooks/useWallet.js'
+import { useLanguage } from '../shared/contexts/LanguageContext.jsx'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,7 @@ import { IconComponent } from '../shared/config/icons.js'
 
 const WalletSelector = () => {
   const { currentWallet, wallets, selectWallet, loading, getTotalBalance } = useWallet()
+  const { t } = useLanguage()
 
   const formatCurrency = (amount) => {
     if (typeof amount !== 'number') {
@@ -26,7 +28,7 @@ const WalletSelector = () => {
     return (
       <div className="flex items-center space-x-2 px-3 py-2 bg-muted rounded-md">
         <WalletIcon className="w-4 h-4 text-muted-foreground animate-pulse" />
-        <span className="text-sm text-muted-foreground">Đang tải...</span>
+        <span className="text-sm text-muted-foreground">{t('common.loading')}</span>
       </div>
     )
   }
@@ -51,9 +53,9 @@ const WalletSelector = () => {
       <DropdownMenuContent className="w-80" align="start">
         <DropdownMenuLabel>
           <div className="flex items-center justify-between">
-            <span>Chọn Ví</span>
+            <span>{t('walletSelector.selectWallet')}</span>
             <div className="text-xs text-muted-foreground">
-              Tổng: {formatCurrency(getTotalBalance())}
+              {t('walletSelector.total')}: {formatCurrency(getTotalBalance())}
             </div>
           </div>
         </DropdownMenuLabel>
@@ -94,7 +96,7 @@ const WalletSelector = () => {
         <DropdownMenuItem asChild>
           <a href="/wallets" className="flex items-center space-x-2 p-3">
             <WalletIcon className="w-4 h-4" />
-            <span>Quản lý ví</span>
+            <span>{t('walletSelector.manageWallets')}</span>
           </a>
         </DropdownMenuItem>
       </DropdownMenuContent>

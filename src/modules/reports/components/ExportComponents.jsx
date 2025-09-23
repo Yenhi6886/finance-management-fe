@@ -11,8 +11,10 @@ import { Download, Mail, FileText, Settings, Send, Loader2 } from 'lucide-react'
 import { useAuth } from '../../auth/contexts/AuthContext.jsx'
 import exportService from '../services/exportService.js'
 import emailService from '../services/emailService.js'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 
 const ExportDialog = ({ buildReportRequest, title }) => {
+  const { t } = useLanguage()
   const [exportFormat, setExportFormat] = useState('excel')
   const [loading, setLoading] = useState(false)
 
@@ -20,16 +22,16 @@ const ExportDialog = ({ buildReportRequest, title }) => {
     setLoading(true)
     try {
       const request = buildReportRequest?.()
-      if (!request) throw new Error('Thiếu tham số thời gian để xuất báo cáo')
+      if (!request) throw new Error(t('reports.export.errors.missingParams'))
       if (exportFormat === 'excel') {
         await exportService.exportExcel(request)
       } else {
         await exportService.exportPdf(request)
       }
-      toast.success(`Đã xuất ${title} thành công!`)
+      toast.success(t('reports.export.success', { title }))
     } catch (error) {
       console.error(error)
-      toast.error(error?.response?.data || 'Có lỗi xảy ra khi xuất dữ liệu')
+      toast.error(error?.response?.data || t('reports.export.errors.exportFailed'))
     } finally {
       setLoading(false)
     }
@@ -40,16 +42,16 @@ const ExportDialog = ({ buildReportRequest, title }) => {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Download className="w-4 h-4 mr-2" />
-          Xuất File
+          {t('reports.export.exportFile')}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Xuất {title}</DialogTitle>
+          <DialogTitle>{t('reports.export.exportTitle', { title })}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Định dạng file</Label>
+            <Label>{t('reports.export.fileFormat')}</Label>
             <Select value={exportFormat} onValueChange={setExportFormat}>
               <SelectTrigger>
                 <SelectValue />
@@ -75,7 +77,7 @@ const ExportDialog = ({ buildReportRequest, title }) => {
             disabled={loading}
             className="w-full"
           >
-            {loading ? 'Đang xuất...' : `Xuất ${exportFormat.toUpperCase()}`}
+            {loading ? t('reports.export.exporting') : t('reports.export.exportFormat', { format: exportFormat.toUpperCase() })}
           </Button>
         </div>
       </DialogContent>
@@ -84,7 +86,8 @@ const ExportDialog = ({ buildReportRequest, title }) => {
 }
 
 const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
-  const { user } = useAuth() // Lấy thông tin user hiện tại
+  const { user } = useAuth() // Get current user info
+  const { t } = useLanguage()
   const [emailSettings, setEmailSettings] = useState({
     targetEmail: '',
     dailyEnabled: false,
@@ -115,15 +118,15 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
             monthlyDayOfMonth: data?.monthlyDayOfMonth ?? 1,
           }))
         } else {
-          // Nếu chưa có cài đặt, dùng email người dùng làm mặc định
+          // If no settings yet, use user email as default
           setEmailSettings(prev => ({
             ...prev,
             targetEmail: user?.email || '',
           }))
         }
       } catch (e) {
-        console.warn('Không thể tải cài đặt email', e)
-        // Nếu có lỗi, vẫn dùng email người dùng làm mặc định
+        console.warn(t('reports.email.warnings.loadSettingsFailed'), e)
+        // If error, still use user email as default
         setEmailSettings(prev => ({
           ...prev,
           targetEmail: user?.email || '',
@@ -134,11 +137,11 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
   }, [user?.email, defaultTime.hour, defaultTime.minute])
 
   const handleSaveSettings = async () => {
-    // Kiểm tra email nếu có nhập
+    // Check email if entered
     if (emailSettings.targetEmail && emailSettings.targetEmail.trim() !== '') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(emailSettings.targetEmail.trim())) {
-        toast.error('Vui lòng nhập địa chỉ email hợp lệ!')
+        toast.error(t('reports.email.errors.invalidEmail'))
         return
       }
     }
@@ -146,32 +149,32 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
     setLoading(true)
     try {
       await emailService.saveSettings(emailSettings)
-      toast.success('Đã lưu cài đặt email thành công!')
+      toast.success(t('reports.email.success.settingsSaved'))
     } catch (error) {
       console.error(error)
-      toast.error('Có lỗi xảy ra khi lưu cài đặt')
+      toast.error(t('reports.email.errors.saveFailed'))
     } finally {
       setLoading(false)
     }
   }
 
   const handleSendNow = async () => {
-    // Kiểm tra email trước khi gửi
+    // Check email before sending
     if (!emailSettings.targetEmail || emailSettings.targetEmail.trim() === '') {
-      toast.error('Vui lòng nhập email nhận báo cáo trước khi gửi!')
+      toast.error(t('reports.email.errors.emailRequired'))
       return
     }
 
-    // Kiểm tra định dạng email
+    // Check email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(emailSettings.targetEmail.trim())) {
-      toast.error('Vui lòng nhập địa chỉ email hợp lệ!')
+      toast.error(t('reports.email.errors.invalidEmailFormat'))
       return
     }
 
     setLoading(true)
     try {
-      // gửi ngay: cần startDate/endDate từ UI cao hơn; ở đây đơn giản hóa, mặc định gửi hôm qua
+      // Send now: need startDate/endDate from higher UI; here simplified, default to yesterday
       const now = new Date()
       const start = new Date(now)
       start.setDate(now.getDate() - 1)
@@ -185,10 +188,10 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
         endDate: end.toISOString().slice(0,19)
       }
       await emailService.sendNow(reportRequest)
-      toast.success('Đã gửi email báo cáo ngay lập tức!')
+      toast.success(t('reports.email.success.emailSent'))
     } catch (error) {
       console.error(error)
-      toast.error('Gửi email thất bại')
+      toast.error(t('reports.email.errors.sendFailed'))
     } finally {
       setLoading(false)
     }
@@ -199,16 +202,16 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
       <DialogTrigger asChild>
         <Button variant="outline">
           <Settings className="w-4 h-4 mr-2" />
-          Cài Đặt Email
+          {t('reports.email.emailSettings')}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Cài Đặt Báo Cáo Email</DialogTitle>
+          <DialogTitle>{t('reports.email.emailReportSettings')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Email nhận báo cáo</Label>
+            <Label>{t('reports.email.targetEmail')}</Label>
             <Input 
               type="email" 
               value={emailSettings.targetEmail}
@@ -219,7 +222,7 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Giờ gửi</Label>
+              <Label>{t('reports.email.sendHour')}</Label>
               <Input
                 type="number"
                 min={0}
@@ -229,7 +232,7 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
               />
             </div>
             <div>
-              <Label>Phút gửi</Label>
+              <Label>{t('reports.email.sendMinute')}</Label>
               <Input
                 type="number"
                 min={0}
@@ -242,21 +245,21 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
           
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>Báo cáo hàng ngày</Label>
+              <Label>{t('reports.email.dailyReport')}</Label>
               <Switch 
                 checked={emailSettings.dailyEnabled}
                 onCheckedChange={(checked) => setEmailSettings(prev => ({...prev, dailyEnabled: checked}))}
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label>Báo cáo hàng tuần</Label>
+              <Label>{t('reports.email.weeklyReport')}</Label>
               <Switch 
                 checked={emailSettings.weeklyEnabled}
                 onCheckedChange={(checked) => setEmailSettings(prev => ({...prev, weeklyEnabled: checked}))}
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label>Báo cáo hàng tháng</Label>
+              <Label>{t('reports.email.monthlyReport')}</Label>
               <Switch 
                 checked={emailSettings.monthlyEnabled}
                 onCheckedChange={(checked) => setEmailSettings(prev => ({...prev, monthlyEnabled: checked}))}
@@ -266,7 +269,7 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Thứ (1-7)</Label>
+              <Label>{t('reports.email.weekDay')}</Label>
               <Input
                 type="number"
                 min={1}
@@ -276,7 +279,7 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
               />
             </div>
             <div>
-              <Label>Ngày trong tháng (1-31)</Label>
+              <Label>{t('reports.email.monthDay')}</Label>
               <Input
                 type="number"
                 min={1}
@@ -289,7 +292,7 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
 
           <div className="grid grid-cols-2 gap-3 pt-2">
             <Button onClick={handleSaveSettings} disabled={loading}>
-              {loading ? 'Đang lưu...' : 'Lưu Cài Đặt'}
+              {loading ? t('reports.email.saving') : t('reports.email.saveSettings')}
             </Button>
             <Button variant="secondary" onClick={handleSendNow} disabled={loading}>
               {loading ? (
@@ -297,7 +300,7 @@ const EmailSettingsDialog = ({ defaultTime = { hour: 8, minute: 0 } }) => {
               ) : (
                 <Send className="w-4 h-4 mr-2" />
               )}
-              {loading ? 'Đang gửi...' : 'Gửi Ngay'}
+              {loading ? t('reports.email.sending') : t('reports.email.sendNow')}
             </Button>
           </div>
         </div>

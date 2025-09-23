@@ -3,12 +3,16 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover.jsx';
 import { Button } from './ui/button.jsx';
 import { BellIcon, CheckCheck } from 'lucide-react';
 import { useNotification } from '../shared/contexts/NotificationContext.jsx';
+import { useLanguage } from '../shared/contexts/LanguageContext.jsx';
 import { cn } from '../lib/utils.js';
 import { formatDistanceToNow } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi, enUS } from 'date-fns/locale';
 
 export const NotificationPanel = ({ children }) => {
     const { notifications, unreadCount, fetchNotifications, markAllAsRead } = useNotification();
+    const { t, currentLanguage } = useLanguage();
+    
+    const dateLocale = currentLanguage === 'vi' ? vi : enUS;
 
     const handleOpenChange = (isOpen) => {
         if (isOpen) {
@@ -27,9 +31,9 @@ export const NotificationPanel = ({ children }) => {
             <PopoverContent className="w-80" side="right" align="end" sideOffset={12}>
                 <div className="grid gap-4">
                     <div className="space-y-2">
-                        <h4 className="font-medium leading-none">Thông Báo</h4>
+                        <h4 className="font-medium leading-none">{t('notifications.title')}</h4>
                         <p className="text-sm text-muted-foreground">
-                            Các cập nhật và cảnh báo gần đây.
+                            {t('notifications.subtitle')}
                         </p>
                     </div>
                     <div className="grid gap-2 max-h-96 overflow-y-auto">
@@ -45,7 +49,7 @@ export const NotificationPanel = ({ children }) => {
                                             {notification.message}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: vi })}
+                                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: dateLocale })}
                                         </p>
                                     </div>
                                 </div>
@@ -53,7 +57,7 @@ export const NotificationPanel = ({ children }) => {
                         ) : (
                             <div className="text-center py-8 text-muted-foreground">
                                 <CheckCheck className="mx-auto h-8 w-8 mb-2" />
-                                <p className="text-sm">Bạn không có thông báo mới.</p>
+                                <p className="text-sm">{t('notifications.noNotifications')}</p>
                             </div>
                         )}
                     </div>

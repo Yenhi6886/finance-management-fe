@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card.jsx';
 import { Button } from '../../../components/ui/button.jsx';
 import { Input } from '../../../components/ui/input.jsx';
@@ -33,21 +34,23 @@ import { IconComponent } from '../../../shared/config/icons.js';
 const PAGE_SIZE = 10;
 
 // Helper function to format transaction description
-const formatTransactionDescription = (transaction) => {
+const formatTransactionDescription = (transaction, t) => {
     // Check if it's a deposit transaction (INCOME type and description contains "Nạp tiền")
     if (transaction.type === 'INCOME' && transaction.description && transaction.description.includes('Nạp tiền')) {
-        return `Nạp tiền vào ví ${transaction.walletName}`;
+        return t('reports.helpers.addToWallet', { walletName: transaction.walletName });
     }
-    return transaction.description || (transaction.type === 'INCOME' ? 'Khoản thu' : 'Khoản chi');
+    return transaction.description || (transaction.type === 'INCOME' ? t('reports.helpers.defaultIncome') : t('reports.helpers.defaultExpense'));
 };
 
 const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
+    const { t } = useLanguage();
+
     if (totalPages <= 1) return null;
 
     return (
         <div className="flex items-center justify-end space-x-2 py-4">
             <span className="text-sm text-muted-foreground">
-                Trang {currentPage + 1} / {totalPages}
+                {t('reports.helpers.pagination', { current: currentPage + 1, total: totalPages })}
             </span>
             <Button
                 variant="outline"
@@ -56,7 +59,7 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
                 disabled={currentPage === 0}
             >
                 <ChevronLeft className="h-4 w-4" />
-                Trước
+                {t('common.previous')}
             </Button>
             <Button
                 variant="outline"
@@ -64,7 +67,7 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
                 onClick={() => onPageChange(currentPage + 1)}
                 disabled={currentPage >= totalPages - 1}
             >
-                Sau
+                {t('common.next')}
                 <ChevronRight className="h-4 w-4" />
             </Button>
         </div>
@@ -72,11 +75,12 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
 };
 
 const SlidingTabsReports = ({ activeTab, onTabChange }) => {
+    const { t } = useLanguage();
     const tabOptions = [
-        { value: 'period-report', label: 'Giao Dịch' },
-        { value: 'today-report', label: 'Hôm Nay' },
-        { value: 'budget-report', label: 'Ngân Sách' },
-        { value: 'email-settings', label: 'Báo Cáo Email' }
+        { value: 'period-report', label: t('reports.tabs.transactions') },
+        { value: 'today-report', label: t('reports.tabs.today') },
+        { value: 'budget-report', label: t('reports.tabs.budget') },
+        { value: 'email-settings', label: t('reports.tabs.emailSettings') }
     ];
 
     const getTranslateX = () => {
@@ -110,7 +114,8 @@ const SlidingTabsReports = ({ activeTab, onTabChange }) => {
 const TransactionMobileCard = ({ transaction, settings }) => {
     const isIncome = transaction.type === 'INCOME';
     const { formatDate } = useDateFormat();
-    
+    const { t } = useLanguage();
+
     return (
         <div className="p-4 bg-card border rounded-lg flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 overflow-hidden">
@@ -121,7 +126,7 @@ const TransactionMobileCard = ({ transaction, settings }) => {
                 )}
                 <div className="overflow-hidden">
                     <p className="font-semibold truncate">
-                        {formatTransactionDescription(transaction)}
+                        {formatTransactionDescription(transaction, t)}
                     </p>
                     <p className="text-sm text-muted-foreground">
                         {transaction.walletName} • {formatDate(transaction.date)}
@@ -139,6 +144,7 @@ const TransactionMobileCard = ({ transaction, settings }) => {
 };
 
 const Reports = () => {
+    const { t } = useLanguage();
     const { settings } = useSettings();
     const { wallets } = useWallet();
     const { user } = useAuth();
@@ -175,7 +181,7 @@ const Reports = () => {
             const res = await emailService.getSettings();
             setEmailSettings(res?.data || null);
         } catch (e) {
-            console.warn('Không thể tải cài đặt email', e);
+            console.warn(t('reports.helpers.errors.loadingError'), e);
         } finally {
             setIsEmailLoading(false);
         }
@@ -213,9 +219,9 @@ const Reports = () => {
             const endDate = `${dateRange.endDate}T23:59:59`;
             const minAmount = amountRange.minAmount && amountRange.minAmount.trim() !== '' ? amountRange.minAmount : null;
             const maxAmount = amountRange.maxAmount && amountRange.maxAmount.trim() !== '' ? amountRange.maxAmount : null;
-            
+
             console.log('Fetching with filters:', { startDate, endDate, minAmount, maxAmount, selectedPeriodWallet });
-            
+
             const response = selectedPeriodWallet === 'all'
                 ? await reportService.getTransactionsByTime(startDate, endDate, page, PAGE_SIZE, minAmount, maxAmount)
                 : await reportService.getTransactionsByWalletIdandByTime(selectedPeriodWallet, startDate, endDate, page, PAGE_SIZE, minAmount, maxAmount);
@@ -293,10 +299,10 @@ const Reports = () => {
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight text-green-600">
-                    Báo Cáo & Thống Kê
+                    {t('reports.title')}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                    Phân tích chi tiêu và theo dõi tình hình tài chính của bạn
+                    {t('reports.subtitle')}
                 </p>
             </div>
 
@@ -308,13 +314,13 @@ const Reports = () => {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Filter className="w-5 h-5" />
-                                Lọc Giao Dịch
+                                {t('reports.filter.title')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <Label>Từ ngày</Label>
+                                    <Label>{t('reports.filter.fromDate')}</Label>
                                     <FMDatePicker
                                         value={dateRange.startDate ? new Date(dateRange.startDate) : null}
                                         onChange={(selectedDate) => {
@@ -322,11 +328,11 @@ const Reports = () => {
                                                 setDateRange(prev => ({ ...prev, startDate: format(selectedDate, 'yyyy-MM-dd') }));
                                             }
                                         }}
-                                        placeholder="Chọn từ ngày"
+                                        placeholder={t('reports.filter.fromDatePlaceholder')}
                                     />
                                 </div>
                                 <div>
-                                    <Label>Đến ngày</Label>
+                                    <Label>{t('reports.filter.toDate')}</Label>
                                     <FMDatePicker
                                         value={dateRange.endDate ? new Date(dateRange.endDate) : null}
                                         onChange={(selectedDate) => {
@@ -334,15 +340,15 @@ const Reports = () => {
                                                 setDateRange(prev => ({ ...prev, endDate: format(selectedDate, 'yyyy-MM-dd') }));
                                             }
                                         }}
-                                        placeholder="Chọn đến ngày"
+                                        placeholder={t('reports.filter.toDatePlaceholder')}
                                     />
                                 </div>
                                 <div>
-                                    <Label>Ví</Label>
+                                    <Label>{t('reports.filter.wallet')}</Label>
                                     <Select value={selectedPeriodWallet} onValueChange={setSelectedPeriodWallet}>
-                                        <SelectTrigger><SelectValue placeholder="Chọn ví" /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder={t('reports.filter.walletPlaceholder')} /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="all">Tất cả ví</SelectItem>
+                                            <SelectItem value="all">{t('reports.filter.allWallets')}</SelectItem>
                                             {wallets.map(wallet => (
                                                 <SelectItem key={wallet.id} value={wallet.id.toString()}>
                                                     <div className="flex items-center gap-2">
@@ -357,7 +363,7 @@ const Reports = () => {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <Label>Từ số tiền</Label>
+                                    <Label>{t('reports.filter.fromAmount')}</Label>
                                     <Input
                                         type="number"
                                         placeholder="0"
@@ -366,10 +372,10 @@ const Reports = () => {
                                     />
                                 </div>
                                 <div>
-                                    <Label>Đến số tiền</Label>
+                                    <Label>{t('reports.filter.toAmount')}</Label>
                                     <Input
                                         type="number"
-                                        placeholder="Không giới hạn"
+                                        placeholder={t('reports.filter.noLimit')}
                                         value={amountRange.maxAmount}
                                         onChange={(e) => setAmountRange(prev => ({ ...prev, maxAmount: e.target.value }))}
                                     />
@@ -377,19 +383,19 @@ const Reports = () => {
                             </div>
                             <div className="flex items-center gap-2">
                                 <Button size="sm" onClick={handleFilterPeriod} disabled={isPeriodLoading}>
-                                    {isPeriodLoading ? <Loading /> : <><Filter className="w-4 h-4 mr-2" /> Lọc Dữ Liệu</>}
+                                    {isPeriodLoading ? <Loading /> : <><Filter className="w-4 h-4 mr-2" /> {t('reports.filter.filterData')}</>}
                                 </Button>
                                 <Button size="sm" variant="outline" onClick={handleClearFilters}>
-                                    Xóa Bộ Lọc
+                                    {t('reports.filter.clearFilters')}
                                 </Button>
-                                <ExportDialog title="Báo Cáo Giao Dịch" buildReportRequest={buildReportRequest} />
+                                <ExportDialog title={t('reports.export.transactionReport')} buildReportRequest={buildReportRequest} />
                             </div>
                             {periodData && (
                                 <div className="flex items-center gap-2">
-                                    <Badge variant="secondary">Tổng: {formatCurrency(totalAmountPeriod, 'VND', settings)}</Badge>
+                                    <Badge variant="secondary">{t('reports.filter.totalLabel')}: {formatCurrency(totalAmountPeriod, 'VND', settings)}</Badge>
                                     {(amountRange.minAmount || amountRange.maxAmount) && (
                                         <Badge variant="outline" className="text-blue-600 border-blue-600">
-                                            Đã lọc theo số tiền: {amountRange.minAmount ? `${formatCurrency(amountRange.minAmount, 'VND', settings)}` : '0'} - {amountRange.maxAmount ? formatCurrency(amountRange.maxAmount, 'VND', settings) : '∞'}
+                                            {t('reports.filter.filteredByAmount')}: {amountRange.minAmount ? `${formatCurrency(amountRange.minAmount, 'VND', settings)}` : '0'} - {amountRange.maxAmount ? formatCurrency(amountRange.maxAmount, 'VND', settings) : '∞'}
                                         </Badge>
                                     )}
                                 </div>
@@ -399,11 +405,11 @@ const Reports = () => {
                                 <table className="w-full">
                                     <thead className="border-b bg-muted/50">
                                     <tr>
-                                        <th className="p-3 text-left">STT</th>
-                                        <th className="p-3 text-left">Ngày Thu Chi</th>
-                                        <th className="p-3 text-left">Số Tiền</th>
-                                        <th className="p-3 text-left">Ghi Chú</th>
-                                        <th className="p-3 text-left">Ví</th>
+                                        <th className="p-3 text-left">{t('reports.table.stt')}</th>
+                                        <th className="p-3 text-left">{t('reports.table.date')}</th>
+                                        <th className="p-3 text-left">{t('reports.table.amount')}</th>
+                                        <th className="p-3 text-left">{t('reports.table.description')}</th>
+                                        <th className="p-3 text-left">{t('reports.table.wallet')}</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -417,12 +423,12 @@ const Reports = () => {
                                                 <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                                                     {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
                                                 </td>
-                                                <td className="p-3">{formatTransactionDescription(transaction)}</td>
+                                                <td className="p-3">{formatTransactionDescription(transaction, t)}</td>
                                                 <td className="p-3">{transaction.walletName}</td>
                                             </tr>
                                         ))
                                     ) : (
-                                        <tr><td colSpan="5" className="p-6 text-center text-muted-foreground">Không có dữ liệu</td></tr>
+                                        <tr><td colSpan="5" className="p-6 text-center text-muted-foreground">{t('reports.table.noData')}</td></tr>
                                     )}
                                     </tbody>
                                 </table>
@@ -433,7 +439,7 @@ const Reports = () => {
                                 ) : transactions.length > 0 ? (
                                     transactions.map((tx) => <TransactionMobileCard key={tx.id} transaction={tx} settings={settings} />)
                                 ) : (
-                                    <p className="p-6 text-center text-muted-foreground">Không có dữ liệu</p>
+                                    <p className="p-6 text-center text-muted-foreground">{t('reports.table.noData')}</p>
                                 )}
                             </div>
                             <PaginationControls currentPage={periodPage} totalPages={periodTotalPages} onPageChange={fetchPeriodData} />
@@ -447,13 +453,13 @@ const Reports = () => {
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <CardTitle className="flex items-center gap-2">
                                     <Calendar className="w-5 h-5" />
-                                    Thống Kê Hôm Nay ({formatDate(new Date(), settings)})
+                                    {t('reports.today.title', { date: formatDate(new Date(), settings) })}
                                 </CardTitle>
                                 <div className="flex w-full sm:w-auto items-center gap-4">
                                     <Select value={selectedTodayWallet} onValueChange={setSelectedTodayWallet}>
-                                        <SelectTrigger className="flex-1 sm:w-48"><SelectValue placeholder="Chọn ví" /></SelectTrigger>
+                                        <SelectTrigger className="flex-1 sm:w-48"><SelectValue placeholder={t('reports.filter.walletPlaceholder')} /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="all">Tất cả ví</SelectItem>
+                                            <SelectItem value="all">{t('reports.filter.allWallets')}</SelectItem>
                                             {wallets.map(wallet => (
                                                 <SelectItem key={wallet.id} value={wallet.id.toString()}>
                                                     <div className="flex items-center gap-2">
@@ -466,7 +472,7 @@ const Reports = () => {
                                     </Select>
                                     {todayData && (
                                         <Badge variant="secondary" className="text-base font-semibold">
-                                            Tổng: {formatCurrency(totalAmountToday, 'VND', settings)}
+                                            {t('reports.filter.totalLabel')}: {formatCurrency(totalAmountToday, 'VND', settings)}
                                         </Badge>
                                     )}
                                 </div>
@@ -477,10 +483,10 @@ const Reports = () => {
                                 <table className="w-full">
                                     <thead className="border-b bg-muted/50">
                                     <tr>
-                                        <th className="p-3 text-left">STT</th>
-                                        <th className="p-3 text-left">Số Tiền</th>
-                                        <th className="p-3 text-left">Ghi Chú</th>
-                                        <th className="p-3 text-left">Ví</th>
+                                        <th className="p-3 text-left">{t('reports.table.stt')}</th>
+                                        <th className="p-3 text-left">{t('reports.table.amount')}</th>
+                                        <th className="p-3 text-left">{t('reports.table.description')}</th>
+                                        <th className="p-3 text-left">{t('reports.table.wallet')}</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -493,12 +499,12 @@ const Reports = () => {
                                                 <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                                                     {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
                                                 </td>
-                                                <td className="p-3">{formatTransactionDescription(transaction)}</td>
+                                                <td className="p-3">{formatTransactionDescription(transaction, t)}</td>
                                                 <td className="p-3">{transaction.walletName}</td>
                                             </tr>
                                         ))
                                     ) : (
-                                        <tr><td colSpan="4" className="p-6 text-center text-muted-foreground">Không có giao dịch nào hôm nay</td></tr>
+                                        <tr><td colSpan="4" className="p-6 text-center text-muted-foreground">{t('reports.today.noTransactions')}</td></tr>
                                     )}
                                     </tbody>
                                 </table>
@@ -509,7 +515,7 @@ const Reports = () => {
                                 ) : todayTransactions.length > 0 ? (
                                     todayTransactions.map((tx) => <TransactionMobileCard key={tx.id} transaction={tx} settings={settings} />)
                                 ) : (
-                                    <p className="p-6 text-center text-muted-foreground">Không có giao dịch nào hôm nay</p>
+                                    <p className="p-6 text-center text-muted-foreground">{t('reports.today.noTransactions')}</p>
                                 )}
                             </div>
                             <PaginationControls currentPage={todayPage} totalPages={todayTotalPages} onPageChange={fetchTodayData} />
@@ -522,7 +528,7 @@ const Reports = () => {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <PieChart className="w-5 h-5" />
-                                Thống Kê Ngân Sách Tháng
+                                {t('reports.budget.title')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -581,11 +587,11 @@ const Reports = () => {
                                         <table className="w-full">
                                             <thead className="border-b bg-muted/50">
                                             <tr>
-                                                <th className="p-3 text-left">STT</th>
-                                                <th className="p-3 text-left">Ngày Thu Chi</th>
-                                                <th className="p-3 text-left">Số Tiền</th>
-                                                <th className="p-3 text-left">Ghi Chú</th>
-                                                <th className="p-3 text-left">Ví</th>
+                                                <th className="p-3 text-left">{t('reports.table.stt')}</th>
+                                                <th className="p-3 text-left">{t('reports.table.date')}</th>
+                                                <th className="p-3 text-left">{t('reports.table.amount')}</th>
+                                                <th className="p-3 text-left">{t('reports.table.description')}</th>
+                                                <th className="p-3 text-left">{t('reports.table.wallet')}</th>
                                             </tr>
                                             </thead>
                                             <tbody>
@@ -599,7 +605,7 @@ const Reports = () => {
                                                         <td className={`p-3 font-medium ${transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                                                             {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount, 'VND', settings)}
                                                         </td>
-                                                        <td className="p-3">{formatTransactionDescription(transaction)}</td>
+                                                        <td className="p-3">{formatTransactionDescription(transaction, t)}</td>
                                                         <td className="p-3">{transaction.walletName}</td>
                                                     </tr>
                                                 ))

@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../modules/auth/contexts/AuthContext.jsx'
 import { useTheme } from '../shared/contexts/ThemeContext.jsx'
 import { useNotification } from '../shared/contexts/NotificationContext.jsx'
+import { useLanguage } from '../shared/contexts/LanguageContext.jsx'
 import { cn } from '../lib/utils.js'
 import AnimatedIcon from './ui/AnimatedIcon.jsx'
 import { Button } from './ui/button.jsx'
@@ -53,6 +54,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const { unreadCount } = useNotification();
+  const { t } = useLanguage();
 
   const handleLogout = async () => {
     try {
@@ -102,32 +104,32 @@ const Sidebar = ({ onToggleWalletPanel }) => {
   const menuItems = [
     {
       id: 'dashboard',
-      title: 'Dashboard',
+      title: t('navigation.dashboard'),
       href: '/dashboard',
       icon: dashboardAnimation,
     },
     {
       id: 'transactions',
-      title: 'Thu Chi',
+      title: t('navigation.transactions'),
       href: '/transactions',
       icon: currentWalletNavIcon,
       size: 35,
     },
     {
       id: 'wallets',
-      title: 'Ví Tiền',
+      title: t('navigation.wallets'),
       href: '/wallets',
       icon: creditCardAnimation,
     },
     {
       id: 'reports',
-      title: 'Báo Cáo',
+      title: t('navigation.reports'),
       href: '/reports',
       icon: chartAnimation,
     },
     {
       id: 'dollar',
-      title: 'Tỉ giá',
+      title: t('navigation.currency'),
       href: '/dollar',
       icon: currentDollarIcon,
       size: 35,
@@ -136,14 +138,14 @@ const Sidebar = ({ onToggleWalletPanel }) => {
 
   const addWalletItem = {
     id: 'add-wallet',
-    title: 'Thêm Mới',
+    title: t('navigation.addWallet'),
     href: '/wallets/add',
     icon: addWalletAnimation,
   };
 
   const profileItem = {
     id: 'profile',
-    title: 'Cá nhân',
+    title: t('navigation.profile'),
     href: '/profile',
     icon: profileAnimation,
   };
@@ -194,7 +196,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                       loop={true}
                   />
                 </div>
-                <span className="text-xs text-center leading-tight truncate w-full font-light text-green-600 dark:text-green-400">Thêm Ví</span>
+                <span className="text-xs text-center leading-tight truncate w-full font-light text-green-600 dark:text-green-400">{t('navigation.addWallet')}</span>
               </Link>
             </div>
 
@@ -231,7 +233,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                                 "absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out",
                                 showFirstMobileText ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
                             )}>
-                              <span className="text-[11px] font-semibold text-green-600 dark:text-green-400">Thêm ví ngay</span>
+                              <span className="text-[11px] font-semibold text-green-600 dark:text-green-400">{t('navigation.addWallet')}</span>
                             </div>
                             <div className={cn(
                                 "absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out",
@@ -241,7 +243,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                                   "text-[11px] font-semibold text-green-600 dark:text-green-300 bg-green-100 dark:bg-green-900/50 px-2.5 py-0.5 rounded-full transition-transform duration-300 ease-out",
                                   showFirstMobileText ? "scale-0" : "scale-100 delay-200"
                               )}>
-                                Xspend
+                                {t('common.appName') || 'Xspend'}
                               </span>
                             </div>
                           </div>
@@ -287,7 +289,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                                   {theme === 'light' ? <MoonIcon className="w-4 h-4 text-green-600 dark:text-green-400" /> : <SunIcon className="w-4 h-4 text-green-600 dark:text-green-400" />}
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs font-normal"><p>{theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}</p></TooltipContent>
+                              <TooltipContent side="top" className="text-xs font-normal"><p>{theme === 'light' ? t('common.darkMode') : t('common.lightMode')}</p></TooltipContent>
                             </Tooltip>
                           </div>
                           <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '80ms' : '0ms' }}>
@@ -297,7 +299,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                                   <Link to="/profile/personal-info"><UserIcon className="w-4 h-4 text-green-600 dark:text-green-400" /></Link>
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs font-normal"><p>Thông tin cá nhân</p></TooltipContent>
+                              <TooltipContent side="top" className="text-xs font-normal"><p>{t('navigation.profile')}</p></TooltipContent>
                             </Tooltip>
                           </div>
                           <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '160ms' : '0ms' }}>
@@ -307,7 +309,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                                   <Link to="/change-password"><KeyIcon className="w-4 h-4 text-green-600 dark:text-green-400" /></Link>
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs font-normal"><p>Đổi mật khẩu</p></TooltipContent>
+                              <TooltipContent side="top" className="text-xs font-normal"><p>{t('navigation.changePassword')}</p></TooltipContent>
                             </Tooltip>
                           </div>
                           <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '240ms' : '0ms' }}>
@@ -317,7 +319,7 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                                   <Link to="/settings"><SettingsIcon className="w-4 h-4 text-green-600 dark:text-green-400" /></Link>
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs font-normal"><p>Cài đặt</p></TooltipContent>
+                              <TooltipContent side="top" className="text-xs font-normal"><p>{t('navigation.settings')}</p></TooltipContent>
                             </Tooltip>
                           </div>
                           <div className={`transition-all duration-400 ease-out ${isUserMenuAnimating ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-3 scale-90'}`} style={{ transitionDelay: isUserMenuAnimating ? '320ms' : '0ms' }}>
@@ -330,16 +332,16 @@ const Sidebar = ({ onToggleWalletPanel }) => {
                                     </Button>
                                   </AlertDialogTrigger>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="text-xs font-normal"><p>Đăng xuất</p></TooltipContent>
+                                <TooltipContent side="top" className="text-xs font-normal"><p>{t('common.logout')}</p></TooltipContent>
                               </Tooltip>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Xác nhận đăng xuất</AlertDialogTitle>
-                                  <AlertDialogDescription>Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này không?</AlertDialogDescription>
+                                  <AlertDialogTitle>{t('common.confirmLogout')}</AlertDialogTitle>
+                                  <AlertDialogDescription>{t('common.logoutConfirmation')}</AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => { handleLogout(); closeUserMenu(); }} className="bg-red-600 hover:bg-red-700 text-white">Đăng xuất</AlertDialogAction>
+                                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => { handleLogout(); closeUserMenu(); }} className="bg-red-600 hover:bg-red-700 text-white">{t('common.logout')}</AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>

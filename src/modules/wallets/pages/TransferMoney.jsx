@@ -26,6 +26,7 @@ import { toast } from 'sonner'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.jsx'
 import { IconComponent } from '../../../shared/config/icons.js'
 import { validateDescription } from '../../../shared/utils/validationUtils.js'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 import { AlertTriangle } from 'lucide-react'
 
 const TransferFormSkeleton = () => (
@@ -72,6 +73,7 @@ const PageStateDisplay = ({ icon, title, message, children }) => (
 )
 
 const TransferMoney = () => {
+  const { t } = useLanguage()
   const [wallets, setWallets] = useState([])
   const [fromWallet, setFromWallet] = useState('')
   const [toWallet, setToWallet] = useState('')
@@ -100,8 +102,8 @@ const TransferMoney = () => {
       setWallets(activeWallets);
       setRecentTransfers(transRes.data.data || []);
     } catch (error) {
-      console.error('Lỗi khi tải dữ liệu:', error);
-      setPageError('Không thể tải dữ liệu cần thiết. Vui lòng thử lại.');
+      console.error('Error loading data:', error);
+      setPageError(t('wallets.transfer.errors.loadData'));
       setPageStatus('error');
     }
   }
@@ -116,20 +118,20 @@ const TransferMoney = () => {
     const fromWalletData = wallets.find(w => w.id.toString() === fromWallet)
     const toWalletData = wallets.find(w => w.id.toString() === toWallet)
 
-    if (!fromWallet) newErrors.fromWallet = 'Vui lòng chọn ví nguồn'
-    if (!toWallet) newErrors.toWallet = 'Vui lòng chọn ví đích'
-    if (fromWallet && fromWallet === toWallet) newErrors.toWallet = 'Ví đích phải khác ví nguồn'
+    if (!fromWallet) newErrors.fromWallet = t('wallets.transfer.validation.fromWalletRequired')
+    if (!toWallet) newErrors.toWallet = t('wallets.transfer.validation.toWalletRequired')
+    if (fromWallet && fromWallet === toWallet) newErrors.toWallet = t('wallets.transfer.validation.differentWallets')
     if (fromWalletData && toWalletData && fromWalletData.currency !== toWalletData.currency) {
-      newErrors.toWallet = 'Hai ví phải cùng loại tiền tệ'
+      newErrors.toWallet = t('wallets.transfer.validation.sameCurrency')
     }
 
     const numericAmount = parseFloat(amount)
     if (!amount || numericAmount <= 0) {
-      newErrors.amount = 'Số tiền phải lớn hơn 0'
+      newErrors.amount = t('wallets.transfer.validation.amountRequired')
     } else if (numericAmount < 1000) {
-      newErrors.amount = 'Số tiền tối thiểu là 1,000'
+      newErrors.amount = t('wallets.transfer.validation.minimumAmount')
     } else if (fromWalletData && numericAmount > fromWalletData.balance) {
-      newErrors.amount = 'Số dư không đủ để thực hiện giao dịch'
+      newErrors.amount = t('wallets.transfer.validation.insufficientBalance')
     }
 
     // Xác thực ghi chú
@@ -140,7 +142,7 @@ const TransferMoney = () => {
       required: false,
       allowNewLines: true,
       allowEmojis: true,
-      fieldName: 'Ghi chú'
+      fieldName: t('wallets.transfer.form.note')
     });
     
     if (!descriptionValidation.isValid) {
@@ -160,7 +162,7 @@ const TransferMoney = () => {
       required: false,
       allowNewLines: true,
       allowEmojis: true,
-      fieldName: 'Ghi chú'
+      fieldName: t('wallets.transfer.form.note')
     });
     
     if (!validation.isValid) {
@@ -218,7 +220,7 @@ const TransferMoney = () => {
       resetForm();
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi chuyển tiền');
+      toast.error(error.response?.data?.message || t('wallets.transfer.errors.transferFailed'));
     } finally {
       setIsSubmitting(false)
     }
@@ -237,30 +239,30 @@ const TransferMoney = () => {
     }
     if (pageStatus === 'error') {
       return (
-          <PageStateDisplay icon={<Frown className="w-5 h-5 text-red-500" />} title="Đã xảy ra lỗi" message={pageError}>
-            <Button onClick={fetchData}><RefreshCwIcon className="w-4 h-4 mr-2" />Thử lại</Button>
+          <PageStateDisplay icon={<Frown className="w-5 h-5 text-red-500" />} title={t('wallets.transfer.errors.errorTitle')} message={pageError}>
+            <Button onClick={fetchData}><RefreshCwIcon className="w-4 h-4 mr-2" />{t('wallets.transfer.actions.retry')}</Button>
           </PageStateDisplay>
       )
     }
     if (pageStatus === 'success' && wallets.length < 2) {
-      const message = wallets.length === 0 ? 'Bạn chưa có ví nào. Hãy tạo ví mới để bắt đầu.' : 'Bạn cần ít nhất hai ví để thực hiện chuyển tiền.'
+      const message = wallets.length === 0 ? t('wallets.transfer.errors.noWallets') : t('wallets.transfer.errors.needTwoWallets')
       return (
-          <PageStateDisplay icon={<WalletCards className="w-8 h-8 text-blue-500" />} title="Chưa sẵn sàng để chuyển tiền" message={message}>
-            <Button asChild><Link to="/wallets/add"><PlusCircle className="w-4 h-4 mr-2" />Tạo ví mới</Link></Button>
+          <PageStateDisplay icon={<WalletCards className="w-8 h-8 text-blue-500" />} title={t('wallets.transfer.errors.notReady')} message={message}>
+            <Button asChild><Link to="/wallets/add"><PlusCircle className="w-4 h-4 mr-2" />{t('wallets.transfer.actions.createWallet')}</Link></Button>
           </PageStateDisplay>
       )
     }
 
     return (
         <div className="p-8">
-          <div className="flex items-center space-x-3 mb-6"><h2 className="text-2xl font-semibold text-foreground">Thông Tin Chuyển Tiền</h2></div>
+          <div className="flex items-center space-x-3 mb-6"><h2 className="text-2xl font-semibold text-foreground">{t('wallets.transfer.form.title')}</h2></div>
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
               <div className="space-y-2">
-                <Label htmlFor="fromWallet">Từ ví <span className="text-red-500">*</span></Label>
+                <Label htmlFor="fromWallet">{t('wallets.transfer.form.fromWallet')} <span className="text-red-500">*</span></Label>
                 <Select onValueChange={(value) => { setFromWallet(value); setToWallet(''); }} value={fromWallet}>
                   <SelectTrigger className={`w-full h-12 ${errors.fromWallet ? 'border-red-500' : 'border-border'}`}>
-                    <SelectValue placeholder="Chọn ví nguồn">
+                    <SelectValue placeholder={t('wallets.transfer.form.selectFromWallet')}>
                       {fromWallet && wallets.find(w => w.id === fromWallet) && (
                         <div className="flex items-center space-x-2">
                           <IconComponent name={wallets.find(w => w.id === fromWallet).icon} className="w-4 h-4" />
@@ -283,10 +285,10 @@ const TransferMoney = () => {
                 {errors.fromWallet && <p className="text-sm text-red-500">{errors.fromWallet}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="toWallet">Đến ví <span className="text-red-500">*</span></Label>
+                <Label htmlFor="toWallet">{t('wallets.transfer.form.toWallet')} <span className="text-red-500">*</span></Label>
                 <Select onValueChange={setToWallet} value={toWallet} disabled={!fromWallet}>
                   <SelectTrigger className={`w-full h-12 ${errors.toWallet ? 'border-red-500' : 'border-border'} ${!fromWallet ? 'bg-muted' : ''}`}>
-                    <SelectValue placeholder="Chọn ví đích">
+                    <SelectValue placeholder={t('wallets.transfer.form.selectToWallet')}>
                       {toWallet && toWallets.find(w => w.id === toWallet) && (
                         <div className="flex items-center space-x-2">
                           <IconComponent name={toWallets.find(w => w.id === toWallet).icon} className="w-4 h-4" />
@@ -307,20 +309,20 @@ const TransferMoney = () => {
                   </SelectContent>
                 </Select>
                 {errors.toWallet && <p className="text-sm text-red-500">{errors.toWallet}</p>}
-                {fromWallet && toWallets.length === 0 && <p className="text-sm text-yellow-600 mt-1">Không có ví đích hợp lệ (cần cùng loại tiền tệ).</p>}
+                {fromWallet && toWallets.length === 0 && <p className="text-sm text-yellow-600 mt-1">{t('wallets.transfer.form.noValidToWallets')}</p>}
               </div>
             </div>
-            {fromWallet && toWallet && <div className="flex justify-center"><Button onClick={handleSwapWallets} variant="ghost" size="sm" className="h-10 px-4 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-800/30 text-blue-700 dark:text-blue-400 rounded-lg"><RefreshCwIcon className="w-4 h-4 mr-2" />Hoán đổi ví</Button></div>}
+            {fromWallet && toWallet && <div className="flex justify-center"><Button onClick={handleSwapWallets} variant="ghost" size="sm" className="h-10 px-4 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-800/30 text-blue-700 dark:text-blue-400 rounded-lg"><RefreshCwIcon className="w-4 h-4 mr-2" />{t('wallets.transfer.form.swapWallets')}</Button></div>}
             <div className="space-y-2">
-              <Label htmlFor="amount">Số tiền chuyển <span className="text-red-500">*</span></Label>
-              <div className="relative"><Input id="amount" type="number" placeholder="Nhập số tiền" value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 pl-4 pr-12 ${errors.amount ? 'border-red-500' : ''}`} min="1000" step="1000" /><span className="text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2">₫</span></div>
+              <Label htmlFor="amount">{t('wallets.transfer.form.amount')} <span className="text-red-500">*</span></Label>
+              <div className="relative"><Input id="amount" type="number" placeholder={t('wallets.transfer.form.amountPlaceholder')} value={amount} onChange={(e) => setAmount(e.target.value)} className={`h-12 pl-4 pr-12 ${errors.amount ? 'border-red-500' : ''}`} min="1000" step="1000" /><span className="text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2">₫</span></div>
               {errors.amount && <p className="text-sm text-red-500">{errors.amount}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Ghi chú (tùy chọn)</Label>
+              <Label htmlFor="description">{t('wallets.transfer.form.note')}</Label>
               <textarea 
                 id="description" 
-                placeholder="Nhập ghi chú cho giao dịch..." 
+                placeholder={t('wallets.transfer.form.notePlaceholder')} 
                 value={description} 
                 onChange={(e) => {
                   setDescription(e.target.value);
@@ -333,15 +335,15 @@ const TransferMoney = () => {
               />
               <div className="flex justify-between text-xs text-gray-500">
                 <div className="flex flex-col">
-                  <span>Nhập tối đa 500 ký tự, có thể xuống dòng</span>
-                  <span className="text-gray-400">Hỗ trợ emoji và ký tự đặc biệt</span>
+                  <span>{t('wallets.transfer.form.noteHelp')}</span>
+                  <span className="text-gray-400">{t('wallets.transfer.form.noteSupport')}</span>
                 </div>
                 <div className="flex flex-col items-end">
                   <span className={description.length > 450 ? 'text-orange-500' : description.length > 480 ? 'text-red-500' : ''}>
                     {description.length}/500
                   </span>
                   <span className="text-gray-400">
-                    {description.split(/\s+/).filter(word => word.length > 0).length} từ
+                    {description.split(/\s+/).filter(word => word.length > 0).length} {t('wallets.transfer.form.wordCount')}
                   </span>
                 </div>
               </div>
@@ -352,7 +354,7 @@ const TransferMoney = () => {
                 </div>
               )}
             </div>
-            <div className="pt-6"><Button onClick={handleOpenConfirm} disabled={isSubmitting || !fromWallet || !toWallet || !amount} className="w-full h-12 rounded-lg">{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isSubmitting ? 'Đang chuyển...' : 'Chuyển Tiền'}</Button></div>
+            <div className="pt-6"><Button onClick={handleOpenConfirm} disabled={isSubmitting || !fromWallet || !toWallet || !amount} className="w-full h-12 rounded-lg">{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isSubmitting ? t('wallets.transfer.form.transferring') : t('wallets.transfer.form.transferButton')}</Button></div>
           </div>
         </div>
     )
@@ -362,10 +364,10 @@ const TransferMoney = () => {
       <>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-green-600">Chuyển tiền</h1>
-            <p className="text-muted-foreground mt-2">Chuyển tiền nhanh chóng và an toàn giữa các ví của bạn</p></div>
+            <h1 className="text-3xl font-bold tracking-tight text-green-600">{t('wallets.transfer.title')}</h1>
+            <p className="text-muted-foreground mt-2">{t('wallets.transfer.subtitle')}</p></div>
           <div className="mt-4 sm:mt-0">
-            <Button onClick={() => navigate(-1)} variant="ghost" size="sm" className="h-10 px-4 text-sm font-light bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-800/30 text-green-600 dark:text-green-400 rounded-md border-0"><ArrowLeftIcon className="w-4 h-4 mr-1" />Quay lại</Button>
+            <Button onClick={() => navigate(-1)} variant="ghost" size="sm" className="h-10 px-4 text-sm font-light bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-800/30 text-green-600 dark:text-green-400 rounded-md border-0"><ArrowLeftIcon className="w-4 h-4 mr-1" />{t('common.back')}</Button>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -373,7 +375,7 @@ const TransferMoney = () => {
           <div className="space-y-6">
             <div className="bg-card rounded-lg shadow-lg border border-border">
               <div className="p-6">
-                <div className="flex items-center space-x-3 mb-6"><div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg"><ReceiptIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div><h3 className="text-lg font-semibold text-foreground">Chuyển Tiền Gần Đây</h3></div>
+                <div className="flex items-center space-x-3 mb-6"><div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg"><ReceiptIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div><h3 className="text-lg font-semibold text-foreground">{t('wallets.transfer.recentTransfers')}</h3></div>
                 {recentTransfers && recentTransfers.length > 0 ? (
                     <div className="space-y-3">
                       {recentTransfers.map(t => (
@@ -391,18 +393,18 @@ const TransferMoney = () => {
                     </div>
                 ) : (
                     <div className="text-center py-4">
-                      <ReceiptIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" /><p className="text-sm text-muted-foreground">Chưa có giao dịch nào</p>
+                      <ReceiptIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" /><p className="text-sm text-muted-foreground">{t('wallets.transfer.noTransactions')}</p>
                     </div>
                 )}
               </div>
             </div>
             <div className="bg-card rounded-lg shadow-lg border border-border">
               <div className="p-6">
-                <div className="flex items-center space-x-3 mb-6"><div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg"><StarIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400" /></div><h3 className="text-lg font-semibold text-foreground">Mẹo Hữu Ích</h3></div>
+                <div className="flex items-center space-x-3 mb-6"><div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg"><StarIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400" /></div><h3 className="text-lg font-semibold text-foreground">{t('wallets.transfer.tips.title')}</h3></div>
                 <div className="space-y-3 text-sm text-muted-foreground">
-                  <div className="flex items-start space-x-2"><CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /><p>Chỉ có thể chuyển tiền giữa các ví có cùng loại tiền tệ.</p></div>
-                  <div className="flex items-start space-x-2"><CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /><p>Kiểm tra kỹ số dư và thông tin ví trước khi xác nhận.</p></div>
-                  <div className="flex items-start space-x-2"><CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /><p>Sử dụng ghi chú để theo dõi mục đích chuyển tiền dễ dàng hơn.</p></div>
+                  <div className="flex items-start space-x-2"><CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /><p>{t('wallets.transfer.tips.tip1')}</p></div>
+                  <div className="flex items-start space-x-2"><CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /><p>{t('wallets.transfer.tips.tip2')}</p></div>
+                  <div className="flex items-start space-x-2"><CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /><p>{t('wallets.transfer.tips.tip3')}</p></div>
                 </div>
               </div>
             </div>
@@ -412,26 +414,26 @@ const TransferMoney = () => {
         <AlertDialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Xác nhận Chuyển Tiền</AlertDialogTitle>
+              <AlertDialogTitle>{t('wallets.transfer.confirmDialog.title')}</AlertDialogTitle>
               <AlertDialogDescription asChild>
                 <div className="pt-2 text-sm">
-                  <p className="mb-4">Vui lòng kiểm tra lại thông tin chuyển tiền trước khi xác nhận.</p>
+                  <p className="mb-4">{t('wallets.transfer.confirmDialog.description')}</p>
                   <div className="space-y-3 rounded-md border bg-muted/50 p-4">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Từ ví:</span>
+                      <span className="text-muted-foreground">{t('wallets.transfer.confirmDialog.fromWallet')}</span>
                       <span className="font-semibold text-foreground">{wallets.find(w => w.id.toString() === fromWallet)?.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Đến ví:</span>
+                      <span className="text-muted-foreground">{t('wallets.transfer.confirmDialog.toWallet')}</span>
                       <span className="font-semibold text-foreground">{wallets.find(w => w.id.toString() === toWallet)?.name}</span>
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t">
-                      <span className="text-muted-foreground">Số tiền:</span>
+                      <span className="text-muted-foreground">{t('wallets.transfer.confirmDialog.amount')}</span>
                       <span className="font-bold text-lg text-primary">{formatCurrency(parseFloat(amount || 0), 'VND', settings)}</span>
                     </div>
                     {description.trim() && (
                         <div className="flex justify-between items-start pt-2 border-t">
-                          <span className="text-muted-foreground">Ghi chú:</span>
+                          <span className="text-muted-foreground">{t('wallets.transfer.confirmDialog.note')}</span>
                           <span className="font-semibold text-foreground text-right pl-4">{description}</span>
                         </div>
                     )}
@@ -440,10 +442,10 @@ const TransferMoney = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isSubmitting}>Hủy</AlertDialogCancel>
+              <AlertDialogCancel disabled={isSubmitting}>{t('common.cancel')}</AlertDialogCancel>
               <AlertDialogAction onClick={confirmTransfer} disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Xác nhận
+                {t('wallets.transfer.confirmDialog.confirm')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -455,13 +457,17 @@ const TransferMoney = () => {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
                 <CheckCircleIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
               </div>
-              <DialogTitle className="text-center">Chuyển Tiền Thành Công!</DialogTitle>
+              <DialogTitle className="text-center">{t('wallets.transfer.successDialog.title')}</DialogTitle>
               <DialogDescription className="text-center px-4">
-                Đã chuyển thành công {formatCurrency(successData?.amount || 0, 'VND', settings)} từ ví {successData?.fromWalletName} đến ví {successData?.toWalletName}.
+                {t('wallets.transfer.successDialog.description', { 
+                  amount: formatCurrency(successData?.amount || 0, 'VND', settings), 
+                  fromWallet: successData?.fromWalletName, 
+                  toWallet: successData?.toWalletName 
+                })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button onClick={() => setIsSuccessModalOpen(false)} className="w-full">Đóng</Button>
+              <Button onClick={() => setIsSuccessModalOpen(false)} className="w-full">{t('common.close')}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

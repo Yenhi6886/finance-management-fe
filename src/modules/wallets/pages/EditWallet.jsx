@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card.jsx'
 import { Button } from '../../../components/ui/button.jsx'
 import { Input } from '../../../components/ui/input.jsx'
@@ -13,6 +14,7 @@ import { availableIcons, IconComponent, defaultIcon } from '../../../shared/conf
 const EditWallet = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const { refreshWallets } = useContext(WalletContext)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -27,7 +29,7 @@ const EditWallet = () => {
   const [errors, setErrors] = useState({})
 
   const currencies = [
-    { code: 'VND', name: 'Việt Nam Đồng (₫)' }
+    { code: 'VND', name: t('wallets.edit.currency.vnd') }
   ]
 
   useEffect(() => {
@@ -48,11 +50,11 @@ const EditWallet = () => {
           const hasTransactions = walletData.balance > 0 || walletData.transactionCount > 0
           setHasTransactions(hasTransactions)
         } else {
-          toast.error('Không tìm thấy ví bạn yêu cầu.')
+          toast.error(t('wallets.edit.walletNotFound'))
           navigate('/wallets')
         }
       } catch (error) {
-        toast.error('Có lỗi xảy ra khi tải thông tin ví.')
+        toast.error(t('wallets.edit.loadError'))
         navigate('/wallets')
       } finally {
         setLoading(false)
@@ -77,11 +79,11 @@ const EditWallet = () => {
     let error = ''
     switch (name) {
       case 'name':
-        if (!value.trim()) error = 'Tên ví là bắt buộc.'
-        else if (value.trim().length > 50) error = 'Tên ví không được quá 50 ký tự.'
+        if (!value.trim()) error = t('wallets.edit.validation.nameRequired')
+        else if (value.trim().length > 50) error = t('wallets.edit.validation.nameLength')
         break
       case 'description':
-        if (value.trim().length > 200) error = 'Mô tả không được quá 200 ký tự.'
+        if (value.trim().length > 200) error = t('wallets.edit.validation.descriptionLength')
         break
       default:
         break
@@ -114,7 +116,7 @@ const EditWallet = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateForm()) {
-      toast.warning('Vui lòng kiểm tra lại các thông tin đã nhập.')
+      toast.warning(t('wallets.edit.validationError'))
       return
     }
 
@@ -129,31 +131,31 @@ const EditWallet = () => {
       await walletService.updateWallet(id, updateData)
       await refreshWallets()
       navigate('/wallets', {
-        state: { message: `Ví "${formData.name}" đã được cập nhật thành công!`, type: 'success' },
+        state: { message: t('wallets.edit.updateSuccess', { name: formData.name }), type: 'success' },
         replace: true
       })
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật ví.')
+      toast.error(error.response?.data?.message || t('wallets.edit.updateError'))
     } finally {
       setSaving(false)
     }
   }
 
   if (loading) {
-    return <div>Đang tải dữ liệu ví...</div>
+    return <div>{t('wallets.edit.loading')}</div>
   }
 
   return (
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-green-600">Chỉnh Sửa Ví</h1>
-            <p className="text-muted-foreground mt-1">Cập nhật thông tin cho ví của bạn</p>
+            <h1 className="text-3xl font-bold tracking-tight text-green-600">{t('wallets.edit.title')}</h1>
+            <p className="text-muted-foreground mt-1">{t('wallets.edit.subtitle')}</p>
           </div>
           <div className="mt-4 sm:mt-0">
             <Button onClick={() => navigate('/wallets')} variant="ghost" className="h-10 px-4 text-sm bg-muted hover:bg-muted/80 rounded-md">
               <ArrowLeftIcon className="w-4 h-4 mr-2" />
-              Quay lại
+              {t('wallets.edit.backButton')}
             </Button>
           </div>
         </div>
@@ -163,17 +165,17 @@ const EditWallet = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-600">
-                  Chỉnh Sửa Thông Tin
+                  {t('wallets.edit.formTitle')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-base font-medium">Tên ví <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="name" className="text-base font-medium">{t('wallets.edit.nameLabel')} <span className="text-red-500">*</span></Label>
                   <Input 
                     id="name" 
                     name="name" 
                     type="text" 
-                    placeholder="Ví tiền mặt, Tài khoản ngân hàng..." 
+                    placeholder={t('wallets.edit.namePlaceholder')} 
                     value={formData.name} 
                     onChange={handleInputChange} 
                     className={`h-12 text-base bg-background text-foreground border-input ${errors.name ? 'border-red-500' : ''}`} 
@@ -185,7 +187,7 @@ const EditWallet = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {hasTransactions && (
                       <div className="space-y-2">
-                        <Label htmlFor="balance" className="text-base font-medium">Số dư hiện tại</Label>
+                        <Label htmlFor="balance" className="text-base font-medium">{t('wallets.edit.currentBalance')}</Label>
                         <Input 
                           id="balance" 
                           name="balance" 
@@ -198,7 +200,7 @@ const EditWallet = () => {
                       </div>
                   )}
                   <div className="space-y-2">
-                    <Label htmlFor="currency" className="text-base font-medium">Loại tiền tệ</Label>
+                    <Label htmlFor="currency" className="text-base font-medium">{t('wallets.edit.currencyLabel')}</Label>
                     <select 
                       id="currency" 
                       name="currency" 
@@ -221,10 +223,10 @@ const EditWallet = () => {
                         </div>
                         <div className="ml-3">
                           <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                            Ví chưa có giao dịch
+                            {t('wallets.edit.noTransactionsTitle')}
                           </h3>
                           <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
-                            <p>Ví này chưa có giao dịch nào. Bạn có thể nạp tiền vào ví để bắt đầu sử dụng.</p>
+                            <p>{t('wallets.edit.noTransactionsDescription')}</p>
                           </div>
                         </div>
                       </div>
@@ -232,7 +234,7 @@ const EditWallet = () => {
                 )}
 
                 <div className="space-y-2">
-                  <Label className="text-base font-medium">Icon ví <span className="text-red-500">*</span></Label>
+                  <Label className="text-base font-medium">{t('wallets.edit.iconLabel')} <span className="text-red-500">*</span></Label>
                   <div className="grid grid-cols-8 sm:grid-cols-12 gap-2 mt-2">
                     {Object.keys(availableIcons).map((iconName) => (
                         <button 
@@ -252,11 +254,11 @@ const EditWallet = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-base font-medium">Mô tả (Tùy chọn)</Label>
+                  <Label htmlFor="description" className="text-base font-medium">{t('wallets.edit.descriptionLabel')}</Label>
                   <textarea 
                     id="description" 
                     name="description" 
-                    placeholder="Mô tả về mục đích của ví này..." 
+                    placeholder={t('wallets.edit.descriptionPlaceholder')} 
                     value={formData.description} 
                     onChange={handleInputChange} 
                     rows={3} 
@@ -269,7 +271,7 @@ const EditWallet = () => {
                 <div className="pt-4">
                   <Button type="submit" disabled={saving || Object.values(errors).some(e => e)} className="w-full h-12 text-base font-semibold bg-green-600 hover:bg-green-700 text-white rounded-lg">
                     {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <SaveIcon className="w-5 h-5 mr-2" />}
-                    {saving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                    {saving ? t('wallets.edit.savingButton') : t('wallets.edit.saveButton')}
                   </Button>
                 </div>
               </CardContent>
@@ -279,15 +281,15 @@ const EditWallet = () => {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-600">Xem trước</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-green-600">{t('wallets.edit.previewTitle')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="p-4 border rounded-lg bg-card border-border">
                   <div className="flex items-center gap-3 mb-4">
                     <IconComponent name={formData.icon} className="w-8 h-8 text-foreground"/>
-                    <h3 className="font-bold text-lg text-foreground">{formData.name.trim() || 'Tên ví'}</h3>
+                    <h3 className="font-bold text-lg text-foreground">{formData.name.trim() || t('wallets.edit.previewName')}</h3>
                   </div>
-                  <p className="text-sm text-muted-foreground">Số dư</p>
+                  <p className="text-sm text-muted-foreground">{t('wallets.edit.previewBalance')}</p>
                   <p className="text-2xl font-bold text-foreground">{formatPreviewCurrency(formData.balance)}</p>
                 </div>
               </CardContent>
@@ -296,14 +298,14 @@ const EditWallet = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg text-green-600">
-                  <StarIcon className="w-5 h-5 text-yellow-500" /> Mẹo Hữu Ích
+                  <StarIcon className="w-5 h-5 text-yellow-500" /> {t('wallets.edit.tipsTitle')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                    <span>Mô tả rõ ràng giúp bạn nhớ lại mục đích của ví sau này.</span>
+                    <span>{t('wallets.edit.tipsDescription')}</span>
                   </li>
                 </ul>
               </CardContent>

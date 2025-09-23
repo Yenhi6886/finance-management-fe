@@ -11,6 +11,7 @@ import { transactionService } from '../services/transactionService.js';
 import { categoryService } from '../services/categoryService.js';
 import { useSettings } from '../../../shared/contexts/SettingsContext.jsx';
 import { useWallet } from '../../../shared/hooks/useWallet.js';
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx';
 import { formatCurrency, formatRelativeTime} from '../../../shared/utils/formattingUtils.js';
 import { useDateFormat } from '../../../shared/hooks/useDateFormat.js';
 import AddTransactionModal from '../components/AddTransactionModal.jsx';
@@ -21,6 +22,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 const Transactions = () => {
+    const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState('transactions');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -46,7 +48,7 @@ const Transactions = () => {
                 const response = await categoryService.getCategoryById(id);
                 setViewingCategory(response.data.data);
             } catch (error) {
-                toast.error("Không tìm thấy danh mục để xem.");
+                toast.error(t('transactions.messages.errors.loadCategoryDetails'));
                 setViewingCategory(null);
                 setSearchParams(params => {
                     params.delete('viewCategory');
@@ -130,8 +132,8 @@ const Transactions = () => {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-green-600">Quản Lý Thu Chi</h1>
-                <p className="text-muted-foreground mt-1">Theo dõi, phân loại và quản lý tất cả các khoản thu chi của bạn tại một nơi.</p>
+                <h1 className="text-3xl font-bold tracking-tight text-green-600">{t('transactions.title')}</h1>
+                <p className="text-muted-foreground mt-1">{t('transactions.subtitle')}</p>
             </div>
             <div className="border-b">
                 <nav className="-mb-px flex space-x-6">
@@ -140,14 +142,14 @@ const Transactions = () => {
                         className={cn('whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm',
                             activeTab === 'transactions' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border')}
                     >
-                        Giao Dịch
+                        {t('transactions.tabs.transactions')}
                     </button>
                     <button
                         onClick={() => handleTabChange('categories')}
                         className={cn('whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm',
                             activeTab === 'categories' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border')}
                     >
-                        Danh Mục Chi Tiêu
+                        {t('transactions.tabs.categories')}
                     </button>
                 </nav>
             </div>
@@ -193,6 +195,7 @@ const Transactions = () => {
 };
 
 const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) => {
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const { settings } = useSettings();
     const [transactions, setTransactions] = useState([]);
@@ -215,11 +218,11 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
             const response = await transactionService.getTransactions(params);
             setTransactions(response.data.data || []);
         } catch (error) {
-            toast.error('Không thể tải danh sách giao dịch.');
+            toast.error(t('transactions.messages.errors.loadTransactions'));
         } finally {
             setLoading(false);
         }
-    }, [selectedCategory, selectedDate]);
+    }, [selectedCategory, selectedDate, t]);
 
     useEffect(() => {
         fetchTransactions();
@@ -231,11 +234,11 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
                 const response = await categoryService.getCategories();
                 setCategories(response.data.data || []);
             } catch (error) {
-                toast.error('Không thể tải danh sách danh mục.');
+                toast.error(t('transactions.messages.errors.loadCategories'));
             }
         };
         fetchCategories();
-    }, []);
+    }, [t]);
 
 
     const totalIncome = transactions.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
@@ -246,36 +249,36 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Tổng Quan</CardTitle>
-                    <CardDescription>Tổng hợp thu chi trong kỳ này</CardDescription>
+                    <CardTitle>{t('transactions.summary.title')}</CardTitle>
+                    <CardDescription>{t('transactions.summary.subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex justify-between items-center p-3 bg-muted rounded-md">
-                        <span className="text-sm font-medium">Tổng Thu</span>
+                        <span className="text-sm font-medium">{t('transactions.summary.totalIncome')}</span>
                         <span className="font-bold text-green-600">{formatCurrency(totalIncome, 'VND', settings)}</span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-muted rounded-md">
-                        <span className="text-sm font-medium">Tổng Chi</span>
+                        <span className="text-sm font-medium">{t('transactions.summary.totalExpense')}</span>
                         <span className="font-bold text-red-500">{formatCurrency(totalExpense, 'VND', settings)}</span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-muted rounded-md border-t-2">
-                        <span className="text-sm font-medium">Cân Bằng</span>
+                        <span className="text-sm font-medium">{t('transactions.summary.balance')}</span>
                         <span className={cn("font-bold", balance >= 0 ? 'text-foreground' : 'text-red-500')}>{formatCurrency(balance, 'VND', settings)}</span>
                     </div>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle>Hành Động</CardTitle>
+                    <CardTitle>{t('transactions.actions.title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
                     <div className="grid grid-cols-2 gap-2">
-                        <Button onClick={() => onOpenAddModal('expense')} variant="destructive" className="rounded-md bg-red-600 hover:bg-red-700 text-white"><MinusCircle className="mr-2 h-4 w-4" />Chi Tiêu</Button>
-                        <Button onClick={() => onOpenAddModal('income')} className="rounded-md"><PlusCircle className="mr-2 h-4 w-4" />Thu Nhập</Button>
+                        <Button onClick={() => onOpenAddModal('expense')} variant="destructive" className="rounded-md bg-red-600 hover:bg-red-700 text-white"><MinusCircle className="mr-2 h-4 w-4" />{t('transactions.actions.addExpense')}</Button>
+                        <Button onClick={() => onOpenAddModal('income')} className="rounded-md"><PlusCircle className="mr-2 h-4 w-4" />{t('transactions.actions.addIncome')}</Button>
                     </div>
                     <Button onClick={() => navigate('/reports')} variant="secondary" className="w-full rounded-md">
                         <BarChart3Icon className="mr-2 h-4 w-4" />
-                        Xem Báo Cáo Chi Tiết
+                        {t('transactions.actions.viewReports')}
                     </Button>
                 </CardContent>
             </Card>
@@ -289,16 +292,16 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
             </div>
             <div className="lg:col-span-2 space-y-6">
                 <Card>
-                    <CardHeader><CardTitle>Bộ Lọc</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('transactions.filters.title')}</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label>Lọc theo danh mục</Label>
+                            <Label>{t('transactions.filters.byCategory')}</Label>
                             <Select value={selectedCategory || ''} onValueChange={(value) => setSelectedCategory(value === 'all' ? null : value)}>
                                 <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Chọn danh mục" />
+                                    <SelectValue placeholder={t('transactions.filters.selectCategory')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Tất cả danh mục</SelectItem>
+                                    <SelectItem value="all">{t('transactions.filters.allCategories')}</SelectItem>
                                     {categories.map((category) => (
                                         <SelectItem key={category.id} value={String(category.id)}>
                                             {category.name}
@@ -308,12 +311,12 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Lọc theo ngày</Label>
+                            <Label>{t('transactions.filters.byDate')}</Label>
                             <div className="flex gap-2">
                                 <FMDatePicker
                                     value={selectedDate}
                                     onChange={(selectedDate) => setSelectedDate(selectedDate)}
-                                    placeholder="Chọn ngày"
+                                    placeholder={t('transactions.filters.selectDate')}
                                     className="flex-1"
                                 />
                                 <Select value={quickSelectValue || undefined} onValueChange={(value) => {
@@ -327,11 +330,11 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
                                     }
                                 }}>
                                     <SelectTrigger className="w-40">
-                                        <SelectValue placeholder="Chọn ngày nhanh" />
+                                        <SelectValue placeholder={t('transactions.filters.quickSelect')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="today">Hôm nay</SelectItem>
-                                        <SelectItem value="yesterday">Hôm qua</SelectItem>
+                                        <SelectItem value="today">{t('transactions.filters.today')}</SelectItem>
+                                        <SelectItem value="yesterday">{t('transactions.filters.yesterday')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 {selectedDate && (
@@ -352,7 +355,7 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader><CardTitle>Danh Sách Giao Dịch</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('transactions.list.title')}</CardTitle></CardHeader>
                     <CardContent>
                         {loading ? <div className="text-center py-16"><Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" /></div> :
                             transactions.length > 0 ? (
@@ -362,8 +365,8 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
                                             <div className="flex items-center gap-4">
                                                 {tx.type === 'INCOME' ? <ArrowUpCircle className="w-8 h-8 text-green-500 flex-shrink-0" /> : <ArrowDownCircle className="w-8 h-8 text-red-500 flex-shrink-0" />}
                                                 <div>
-                                                    <p className="font-semibold">{tx.description || (tx.type === 'INCOME' ? 'Khoản thu nhập' : 'Khoản chi tiêu')}</p>
-                                                    <p className="text-sm text-muted-foreground">{tx.walletName} • {tx.category || 'Chưa phân loại'} • {formatRelativeTime(tx.date)}</p>
+                                                    <p className="font-semibold">{tx.description || (tx.type === 'INCOME' ? t('transactions.list.defaultIncome') : t('transactions.list.defaultExpense'))}</p>
+                                                    <p className="text-sm text-muted-foreground">{tx.walletName} • {tx.category || t('transactions.list.uncategorized')} • {formatRelativeTime(tx.date)}</p>
                                                 </div>
                                             </div>
                                             <p className={cn("text-lg font-bold text-right pl-4", tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600')}>
@@ -375,8 +378,8 @@ const TransactionList = ({ onOpenAddModal, onOpenEditModal, refreshTrigger }) =>
                             ) : (
                                 <div className="text-center py-16">
                                     <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                                    <h3 className="text-lg font-semibold">Chưa có giao dịch nào</h3>
-                                    <p className="text-muted-foreground text-sm">Không tìm thấy giao dịch nào phù hợp với bộ lọc của bạn.</p>
+                                    <h3 className="text-lg font-semibold">{t('transactions.list.empty.title')}</h3>
+                                    <p className="text-muted-foreground text-sm">{t('transactions.list.empty.subtitle')}</p>
                                 </div>
                             )}
                     </CardContent>

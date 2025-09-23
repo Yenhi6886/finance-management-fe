@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useLanguage } from '../../../shared/contexts/LanguageContext.jsx'
 import { Button } from '../../../components/ui/button.jsx'
 import { Input } from '../../../components/ui/input.jsx'
 import { Label } from '../../../components/ui/label.jsx'
@@ -16,6 +17,7 @@ import { availableIcons, IconComponent, defaultIcon } from '../../../shared/conf
 
 const AddWallet = () => {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -26,18 +28,18 @@ const AddWallet = () => {
   const [errors, setErrors] = useState({})
 
   const currencies = [
-    { code: 'VND', name: 'Việt Nam Đồng (₫)', symbol: '₫' }
+    { code: 'VND', name: t('wallets.add.currencyVND'), symbol: '₫' }
   ]
 
   const validateField = (field, value) => {
     let error = null
     switch (field) {
       case 'name':
-        if (!value.trim()) error = 'Tên ví là bắt buộc.'
-        else if (value.trim().length > 50) error = 'Tên ví không được quá 50 ký tự.'
+        if (!value.trim()) error = t('wallets.add.validation.nameRequired')
+        else if (value.trim().length > 50) error = t('wallets.add.validation.nameMaxLength')
         break;
       case 'description':
-        if (value && value.trim().length > 200) error = 'Mô tả không được quá 200 ký tự.';
+        if (value && value.trim().length > 200) error = t('wallets.add.validation.descriptionMaxLength');
         break;
       default:
         break;
@@ -69,7 +71,7 @@ const AddWallet = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
-      toast.warning('Vui lòng kiểm tra lại các thông tin đã nhập.');
+      toast.warning(t('wallets.add.checkFormMessage'));
       return;
     }
 
@@ -86,14 +88,14 @@ const AddWallet = () => {
 
       navigate('/wallets', {
         state: {
-          message: `Ví "${walletData.name}" đã được tạo thành công!`,
+          message: t('wallets.add.successMessage', { walletName: walletData.name }),
           type: 'success'
         },
         replace: true
       })
 
     } catch (error) {
-      const errorMsg = error.response?.data?.message || 'Có lỗi xảy ra khi tạo ví. Vui lòng thử lại.'
+      const errorMsg = error.response?.data?.message || t('wallets.add.createError')
       toast.error(errorMsg)
     } finally {
       setLoading(false)
@@ -111,9 +113,9 @@ const AddWallet = () => {
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-green-600">Thêm Ví Mới</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-green-600">{t('wallets.add.title')}</h1>
             <p className="text-muted-foreground mt-1">
-              Tạo một ví mới để quản lý tài chính của bạn
+              {t('wallets.add.subtitle')}
             </p>
           </div>
           <div className="mt-4 sm:mt-0">
@@ -124,7 +126,7 @@ const AddWallet = () => {
                 className="h-10 px-4 text-sm font-light bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-800/30 text-green-600 dark:text-green-400 rounded-md border-0"
             >
               <ArrowLeftIcon className="w-4 h-4 mr-1" />
-              Quay lại
+              {t('wallets.add.backButton')}
             </Button>
           </div>
         </div>
@@ -134,16 +136,16 @@ const AddWallet = () => {
             <Card>
               <div className="py-6 p-6">
                 <div className="flex items-center space-x-3 mb-6">
-                  <h2 className="text-2xl font-semibold text-foreground">Thông Tin Ví</h2>
+                  <h2 className="text-2xl font-semibold text-foreground">{t('wallets.add.walletInformation')}</h2>
                 </div>
               </div>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-base font-medium">Tên ví <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="name" className="text-base font-medium">{t('wallets.add.nameLabel')} <span className="text-red-500">*</span></Label>
                   <Input
                       id="name"
                       type="text"
-                      placeholder="Ví tiền mặt, Tài khoản ngân hàng..."
+                      placeholder={t('wallets.add.namePlaceholder')}
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       className={`h-12 text-base ${errors.name ? 'border-red-500' : ''}`}
@@ -153,7 +155,7 @@ const AddWallet = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-base font-medium">Icon ví</Label>
+                  <Label className="text-base font-medium">{t('wallets.add.iconLabel')}</Label>
                   <div className="grid grid-cols-8 sm:grid-cols-12 gap-2 mt-2">
                     {Object.keys(availableIcons).map((iconName) => (
                         <button
@@ -173,7 +175,7 @@ const AddWallet = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="currency" className="text-base font-medium">Loại tiền tệ <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="currency" className="text-base font-medium">{t('wallets.add.currency')} <span className="text-red-500">*</span></Label>
                   <select
                       id="currency"
                       value={formData.currency}
@@ -187,10 +189,10 @@ const AddWallet = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-base font-medium">Mô tả (tùy chọn)</Label>
+                  <Label htmlFor="description" className="text-base font-medium">{t('wallets.add.description')}</Label>
                   <textarea
                       id="description"
-                      placeholder="Mô tả về ví này..."
+                      placeholder={t('wallets.add.descriptionPlaceholder')}
                       value={formData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
                       rows={3}
@@ -207,7 +209,7 @@ const AddWallet = () => {
                       className="w-full h-12 text-base font-semibold bg-green-600 hover:bg-green-700 text-white rounded-lg"
                   >
                     {loading && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
-                    {loading ? 'Đang tạo ví...' : 'Tạo Ví Mới'}
+                    {loading ? t('wallets.add.creating') : t('wallets.add.createButton')}
                   </Button>
                 </div>
               </CardContent>
@@ -217,15 +219,15 @@ const AddWallet = () => {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-600 dark:text-white">Xem trước</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-green-600 dark:text-white">{t('wallets.add.preview')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="p-4 border rounded-lg bg-card">
                   <div className="flex items-center gap-3 mb-4">
                     <IconComponent name={formData.icon} className="w-6 h-6"/>
-                    <h3 className="font-bold text-lg">{formData.name.trim() || 'Tên ví'}</h3>
+                    <h3 className="font-bold text-lg">{formData.name.trim() || t('wallets.add.previewName')}</h3>
                   </div>
-                  <p className="text-sm text-muted-foreground">Số dư</p>
+                  <p className="text-sm text-muted-foreground">{t('wallets.add.balance')}</p>
                   <p className="text-2xl font-bold">
                     {formatPreviewCurrency(formData.currency)}
                   </p>
@@ -236,18 +238,18 @@ const AddWallet = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg text-green-600 dark:text-white">
-                  <StarIcon className="w-5 h-5 text-yellow-500" /> Mẹo Hữu Ích
+                  <StarIcon className="w-5 h-5 text-yellow-500" /> {t('wallets.add.tips')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                    <span>Chọn icon phù hợp giúp bạn dễ dàng nhận biết ví khi giao dịch.</span>
+                    <span>{t('wallets.add.tip1')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                    <span>Bạn có thể tạo nhiều ví cho các mục đích khác nhau như chi tiêu, tiết kiệm.</span>
+                    <span>{t('wallets.add.tip2')}</span>
                   </li>
                 </ul>
               </CardContent>
