@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../../../components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../components/ui/alert-dialog';
 import { Button } from '../../../components/ui/button';
@@ -7,6 +7,7 @@ import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { useWallet } from '../../../shared/hooks/useWallet';
 import { useNotification } from '../../../shared/contexts/NotificationContext';
+import { WalletContext } from '../../../shared/contexts/WalletContext';
 import { categoryService } from '../services/categoryService';
 import { transactionService } from '../services/transactionService';
 import { toast } from 'sonner';
@@ -19,10 +20,16 @@ import { IconComponent } from '../../../shared/config/icons';
 import { validateTransaction, validateField } from '../../../shared/utils/validationUtils';
 
 const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transaction }) => {
+    const { currentWallet } = useContext(WalletContext);
     const { wallets } = useWallet();
     const { settings } = useSettings();
     const { refreshNotifications } = useNotification();
     const { formatDateTime } = useDateFormat();
+    
+    // Kiểm tra quyền của người dùng với ví hiện tại
+    const isShared = !!currentWallet?.sharedBy;
+    const canEdit = isShared ? ['EDIT', 'OWNER'].includes(currentWallet?.permissionLevel) : true;
+    const canDelete = isShared ? ['EDIT', 'OWNER'].includes(currentWallet?.permissionLevel) : true;
     const [amount, setAmount] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [walletId, setWalletId] = useState('');
@@ -266,6 +273,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                             step="0.01"
                             min="0"
                             max="999999999"
+                            disabled={!canEdit}
                         />
                         {errors.amount && (
                             <div className="flex items-center gap-1 text-sm text-red-500">
@@ -282,6 +290,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                                 validateFieldRealTime('categoryId', value);
                             }} 
                             value={categoryId}
+                            disabled={!canEdit}
                         >
                             <SelectTrigger><SelectValue placeholder="Chọn danh mục" /></SelectTrigger>
                             <SelectContent>
@@ -309,6 +318,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                                 }
                             }} 
                             value={walletId}
+                            disabled={!canEdit}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Chọn ví">
@@ -350,6 +360,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                             onBlur={(e) => validateFieldRealTime('description', e.target.value)}
                             placeholder="Ghi chú về giao dịch..." 
                             maxLength={500}
+                            disabled={!canEdit}
                         />
                         <div className="flex justify-between text-xs text-gray-500">
                             <div className="flex flex-col">
@@ -383,6 +394,7 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                                 validateFieldRealTime('date', e.target.value);
                             }}
                             onBlur={(e) => validateFieldRealTime('date', e.target.value)}
+                            disabled={!canEdit}
                         />
                         {errors.date && (
                             <div className="flex items-center gap-1 text-sm text-red-500">
@@ -392,29 +404,38 @@ const EditTransactionModal = ({ isOpen, onClose, onTransactionUpdated, transacti
                         )}
                     </div>
                     <DialogFooter className="pt-4 sm:justify-between">
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button type="button" variant="destructive" size="sm" className="rounded bg-red-600 hover:bg-red-700">
-                                    <Trash2 className="mr-2 h-4 w-4"/>Xóa
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
-                                    <AlertDialogDescription>Hành động này không thể hoàn tác. Giao dịch sẽ bị xóa vĩnh viễn và số dư ví sẽ được cập nhật lại.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel size="sm" className="rounded">Hủy</AlertDialogCancel>
-                                    <AlertDialogAction size="sm" className={cn("rounded", loading && 'cursor-not-allowed')} onClick={handleDelete} disabled={loading}>
-                                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Tiếp tục xóa
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                        <Button type="submit" disabled={loading} size="sm" className="rounded">
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Lưu Thay Đổi
-                        </Button>
+                        {canDelete && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button type="button" variant="destructive" size="sm" className="rounded bg-red-600 hover:bg-red-700">
+                                        <Trash2 className="mr-2 h-4 w-4"/>Xóa
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
+                                        <AlertDialogDescription>Hành động này không thể hoàn tác. Giao dịch sẽ bị xóa vĩnh viễn và số dư ví sẽ được cập nhật lại.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel size="sm" className="rounded">Hủy</AlertDialogCancel>
+                                        <AlertDialogAction size="sm" className={cn("rounded", loading && 'cursor-not-allowed')} onClick={handleDelete} disabled={loading}>
+                                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Tiếp tục xóa
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                        {canEdit && (
+                            <Button type="submit" disabled={loading} size="sm" className="rounded">
+                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Lưu Thay Đổi
+                            </Button>
+                        )}
+                        {!canEdit && !canDelete && (
+                            <div className="text-sm text-muted-foreground">
+                                Bạn chỉ có quyền xem giao dịch này
+                            </div>
+                        )}
                     </DialogFooter>
                 </form>
             </DialogContent>

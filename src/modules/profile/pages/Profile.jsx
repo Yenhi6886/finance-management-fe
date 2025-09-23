@@ -6,6 +6,7 @@ import { Label } from '../../../components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card'
 import { Avatar } from '../../../components/ui/avatar'
 import { CameraIcon, Loader2 } from 'lucide-react'
+import { validatePhoneNumber } from '../../../shared/utils/validationUtils'
 
 const Profile = () => {
   // Lấy hàm uploadAvatar từ AuthContext
@@ -19,6 +20,7 @@ const Profile = () => {
 
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl || null)
   const [isUploading, setIsUploading] = useState(false)
+  const [errors, setErrors] = useState({})
 
   // Đồng bộ avatarPreview khi user.avatarUrl thay đổi
   useEffect(() => {
@@ -37,6 +39,15 @@ const Profile = () => {
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    
+    // Validation real-time cho số điện thoại
+    if (name === 'phoneNumber') {
+      const phoneErrors = validatePhoneNumber(value)
+      setErrors(prev => ({ 
+        ...prev, 
+        phoneNumber: phoneErrors.length > 0 ? phoneErrors[0] : '' 
+      }))
+    }
   }
 
   const handleAvatarChange = async (e) => {
@@ -62,6 +73,19 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Validation trước khi submit
+    const newErrors = {}
+    const phoneErrors = validatePhoneNumber(formData.phoneNumber)
+    if (phoneErrors.length > 0) {
+      newErrors.phoneNumber = phoneErrors[0]
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+    
     const updateData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -69,6 +93,7 @@ const Profile = () => {
     }
     try {
       await updateProfile(updateData)
+      setErrors({}) // Clear errors on success
     } catch (error) {
       // Error is handled in AuthContext
     }
@@ -80,6 +105,7 @@ const Profile = () => {
       lastName: user?.lastName || '',
       phoneNumber: user?.phoneNumber || '',
     })
+    setErrors({}) // Clear errors when reset
     // avatarPreview sẽ được đồng bộ tự động qua useEffect
   }
 
@@ -162,7 +188,18 @@ const Profile = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="phoneNumber">Số điện thoại</Label>
-                  <Input id="phoneNumber" name="phoneNumber" type="tel" placeholder="Nhập số điện thoại" value={formData.phoneNumber} onChange={handleChange} />
+                  <Input 
+                    id="phoneNumber" 
+                    name="phoneNumber" 
+                    type="tel" 
+                    placeholder="Nhập số điện thoại (10 chữ số)" 
+                    value={formData.phoneNumber} 
+                    onChange={handleChange}
+                    className={errors.phoneNumber ? 'border-red-500 focus:border-red-500' : ''}
+                  />
+                  {errors.phoneNumber && (
+                    <p className="text-sm text-red-500">{errors.phoneNumber}</p>
+                  )}
                 </div>
 
                 <div className="flex justify-end space-x-4">

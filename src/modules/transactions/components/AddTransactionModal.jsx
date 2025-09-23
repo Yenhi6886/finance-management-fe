@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Dialog, DialogContent, DialogHeader,DialogFooter } from '../../../components/ui/dialog';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -8,6 +8,7 @@ import { Textarea } from '../../../components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../components/ui/alert-dialog';
 import { useWallet } from '../../../shared/hooks/useWallet';
 import { useNotification } from '../../../shared/contexts/NotificationContext';
+import { WalletContext } from '../../../shared/contexts/WalletContext';
 import { categoryService } from '../services/categoryService';
 import { transactionService } from '../services/transactionService';
 import { toast } from 'sonner';
@@ -21,7 +22,12 @@ import { validateTransaction, validateField } from '../../../shared/utils/valida
 
 const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateConfirm }) => {
     const { wallets, currentWallet } = useWallet();
+    const { currentWallet: walletContext } = useContext(WalletContext);
     const { settings } = useSettings();
+    
+    // Kiểm tra quyền của người dùng với ví hiện tại
+    const isShared = !!walletContext?.sharedBy;
+    const canAddTransaction = isShared ? ['EDIT', 'OWNER'].includes(walletContext?.permissionLevel) : true;
     const [amount, setAmount] = useState('');
     const [categoryId, setCategoryId] = useState(initialCategoryId || '');
     const [walletId, setWalletId] = useState('');
@@ -381,10 +387,16 @@ const TransactionForm = ({ type, onFormSubmit, initialCategoryId, onFutureDateCo
                 )}
             </div>
             <DialogFooter className="pt-4 sm:justify-end flex">
-                <Button type="submit" disabled={loading} size="sm" className={cn('rounded', type === 'expense' && 'bg-red-600 hover:bg-red-700')}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Thêm Khoản {type === 'income' ? 'Thu' : 'Chi'}
-                </Button>
+                {canAddTransaction ? (
+                    <Button type="submit" disabled={loading} size="sm" className={cn('rounded', type === 'expense' && 'bg-red-600 hover:bg-red-700')}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Thêm Khoản {type === 'income' ? 'Thu' : 'Chi'}
+                    </Button>
+                ) : (
+                    <div className="text-sm text-muted-foreground">
+                        Bạn chỉ có quyền xem ví này
+                    </div>
+                )}
             </DialogFooter>
         </form>
     );

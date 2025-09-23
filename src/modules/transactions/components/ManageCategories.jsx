@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useContext } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { PlusCircle, Trash2, Loader2, BadgePlus, Edit, MoreVertical, TrendingUp, TrendingDown, ArrowRightLeft, ChevronLeft, ChevronRight, EyeIcon, X, FileText, ArrowUpCircle, ArrowDownCircle, PieChart } from 'lucide-react';
 import { useSettings } from '../../../shared/contexts/SettingsContext';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
+import { WalletContext } from '../../../shared/contexts/WalletContext';
 import { formatCurrency } from '../../../shared/utils/formattingUtils.js';
 import { useDateFormat } from '../../../shared/hooks/useDateFormat';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../../../components/ui/dropdown-menu';
@@ -479,6 +480,11 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
     const [detailedCategory, setDetailedCategory] = useState(null);
     const [loading, setLoading] = useState(true);
     const { settings } = useSettings();
+    const { currentWallet } = useContext(WalletContext);
+    
+    // Kiểm tra quyền của người dùng với ví hiện tại
+    const isShared = !!currentWallet?.sharedBy;
+    const canAddTransaction = isShared ? ['EDIT', 'OWNER'].includes(currentWallet?.permissionLevel) : true;
 
     // Generate random soft colors for category borders
     const generateSoftColor = (id) => {
@@ -640,7 +646,9 @@ const ManageCategories = ({ onAddTransaction, refreshTrigger, onTransactionClick
                                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button></DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
                                                                 <DropdownMenuItem onSelect={() => handleViewDetails(cat)}><EyeIcon className="mr-2 h-4 w-4"/>Xem Chi Tiết</DropdownMenuItem>
-                                                                <DropdownMenuItem onSelect={() => onAddTransaction(String(cat.id))}><ArrowRightLeft className="mr-2 h-4 w-4"/>Thêm Giao Dịch</DropdownMenuItem>
+                                                                {canAddTransaction && (
+                                                                    <DropdownMenuItem onSelect={() => onAddTransaction(String(cat.id))}><ArrowRightLeft className="mr-2 h-4 w-4"/>Thêm Giao Dịch</DropdownMenuItem>
+                                                                )}
                                                                 <DropdownMenuSeparator />
                                                                 <DropdownMenuItem onSelect={() => handleOpenEditModal(cat)}><Edit className="mr-2 h-4 w-4"/>Chỉnh sửa</DropdownMenuItem>
                                                                 <DropdownMenuItem onSelect={() => handleOpenDeleteAlert(cat)} className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/50"><Trash2 className="mr-2 h-4 w-4"/>Xóa</DropdownMenuItem>

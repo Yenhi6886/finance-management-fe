@@ -497,8 +497,8 @@ export const validatePhoneNumber = (phoneNumber) => {
   }
   
   const digitsOnly = phoneNumber.replace(/[^0-9]/g, '');
-  if (digitsOnly.length < 10 || digitsOnly.length > 15) {
-    errors.push('Số điện thoại phải có từ 10 đến 15 chữ số');
+  if (digitsOnly.length !== 10) {
+    errors.push('Số điện thoại phải có đúng 10 chữ số');
   }
   
   return errors;
